@@ -4,7 +4,7 @@ import os
 def collect_files_recursively(directory: str, extensions: tuple[str, ...]) -> list[str]:
     """指定したディレクトリ以下のファイルを再帰的に検索する"""
     paths = []
-    for root, dirs, files in os.walk(directory):
+    for root, _dirs, files in os.walk(directory):
         for file in files:
             if file.endswith(extensions):
                 paths.append(os.path.join(root, file))
