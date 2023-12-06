@@ -12,4 +12,4 @@ class TestGetAllFilePaths:
         file_paths = get_all_file_paths(self.root_path)
 
         # テスト用のディレクトリ以下のファイルパスが取得できていることを確認
-        assert len(file_paths) == 31
+        assert len(file_paths) == 32
