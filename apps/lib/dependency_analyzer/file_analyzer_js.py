@@ -1,8 +1,9 @@
 import re
 import os
+from apps.lib.dependency_analyzer.main import FileAnalyzerIF, make_absolute_path, make_relative_path, read_file_content
 
 
-def extract_module_paths_from_imports(file_content: str) -> list[str]:
+def extract_module_names_from_imports(file_content: str) -> list[str]:
     """ファイルの内容からモジュールパスを抽出する
 
     Args:
@@ -15,7 +16,11 @@ def extract_module_paths_from_imports(file_content: str) -> list[str]:
     import_pattern = r"import .* from ['\"](@?[^'\"]+)['\"]"
 
     # 正規表現を用いてインポート文を検索
-    matches = re.findall(import_pattern, file_content)
+    matches: list[str] = re.findall(import_pattern, file_content)
+
+    # matchesの中身が全て文字列で無い場合は例外を発生させる
+    if not all(isinstance(match, str) for match in matches):
+        raise ValueError('matches の中身が全て文字列である必要があります')
 
     # アットマークを除去してリストに追加
     paths = [match.lstrip('@') for match in matches if match.startswith('@')]
@@ -56,51 +61,30 @@ def extract_module_paths_from_imports(file_content: str) -> list[str]:
 # print(module_paths)
 
 
-def find_matching_file_path(
-    root_dir: str,
-    module_path: str,
-    all_file_paths: list[str],
-    extensions: list[str] | None = None
-) -> str | None:
-    """指定されたファイルパスのリストから、指定されたモジュールパスにマッチするものを探す
 
-    Args:
-        root_dir (str): ルートディレクトリのパス
-        module_path (str): モジュールのパス
-        all_file_paths (list[str]): ファイルパスのリスト
-        extensions (list[str], optional): 拡張子のリスト. Defaults to ['.js', '.ts', '.tsx', '.jsx'].
+class FileAnalyzerJs(FileAnalyzerIF):
+    def analyze(self, target_path: str) -> list[str]:
+        return []  # TODO: 未実装
 
-    Returns:
-        str: マッチしたファイルパス
-    """
-    if extensions is None:
+    def convert_module_name_to_file_path(self, module_name: str) -> str | None:
+        """指定されたモジュール名にマッチするファイルパスを探す
+
+        Args:
+            module_name (str): モジュール名
+
+        Returns:
+            str: マッチしたファイルパス
+        """
         extensions = ['.ts', '.js', '.tsx', '.jsx']
-    # ルートディレクトリとモジュールのパスを組み合わせて基本パスを生成
-    base_path = os.path.join(root_dir, module_path)
 
-    # 指定されたすべての拡張子に対してチェック
-    for ext in extensions:
-        potential_path = f"{base_path}{ext}"
-        if potential_path in all_file_paths:
-            return potential_path
+        # ルートディレクトリとモジュールのパスを組み合わせて拡張子のないパスを生成
+        base_path = make_absolute_path(self.root_path, module_name)
 
-    # マッチするものが見つからない場合は None を返す
-    return None
+        # 指定されたすべての拡張子に対してチェック
+        for ext in extensions:
+            potential_path = f"{base_path}{ext}"
+            if potential_path in self.all_file_paths:
+                return potential_path
 
-
-# 使用例
-# root_dir = "/path/to/root"
-# module_path = "src/servers/shared/lib/handlers/postEmailLogin"
-# file_paths = [
-#     "/path/to/root/src/servers/shared/lib/handlers/postEmailLogin.js",
-#     "/path/to/root/src/servers/shared/lib/handlers/postEmailLogin.ts",
-#     # その他のファイルパス...
-# ]
-# extensions = ['.js', '.ts', '.tsx', '.jsx']
-
-# matching_path = find_matching_file_path(root_dir, module_path, file_paths, extensions)
-# print("matching_path")
-# print(matching_path)
-
-
-# ファイルのパスから、そのファイルが依存しているモジュールのパスを抽出して返す
+        # マッチするものが見つからない場合は None を返す
+        return None
