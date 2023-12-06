@@ -1,0 +1,1 @@
+export const ts_mock_a_b_1 = 'ts_mock_a_b_1';
