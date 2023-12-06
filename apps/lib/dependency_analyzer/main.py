@@ -92,14 +92,22 @@ def read_file_content(file_path: str) -> str:
 
 
 class FileAnalyzerIF(ABC):
-    file_path: str
+    target_path: str
     root_path: str
     all_file_paths: list[str]
 
+    def __init__(
+        self,
+        root_path: str,
+        all_file_paths: list[str]
+    ):
+        self.root_path = root_path
+        self.all_file_paths = all_file_paths
+
     # 解析する
     @abstractmethod
-    def analyze(self) -> list[str]:
-        pass
+    def analyze(self, target_path: str) -> list[str]:
+        raise NotImplementedError
 
 
 class ProgramType(enum.Enum):
