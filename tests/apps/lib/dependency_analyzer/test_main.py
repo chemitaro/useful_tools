@@ -1,4 +1,5 @@
 import os
+
 from apps.lib.dependency_analyzer.main import get_all_file_paths
 
 
@@ -11,4 +12,4 @@ class TestGetAllFilePaths:
         file_paths = get_all_file_paths(self.root_path)
 
         # テスト用のディレクトリ以下のファイルパスが取得できていることを確認
-        assert len(file_paths) == 30
+        assert len(file_paths) == 31
