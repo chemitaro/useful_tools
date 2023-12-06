@@ -1,6 +1,11 @@
-import os
 import enum
-from abc import ABC, abstractmethod
+import logging
+import os
+
+from apps.lib.dependency_analyzer.utils import (make_absolute_path,
+                                                make_relative_path,
+                                                read_file_content)
+from apps.lib.dependency_analyzer.file_analyzer import FileAnalyzerIF, FileAnalyzerJs, FileAnalyzerPy
 
 
 def get_all_file_paths(
@@ -42,32 +47,6 @@ def get_all_file_paths(
     return valid_paths
 
 
-def make_absolute_path(root_path: str, relative_path: str) -> str:
-    """ルートパスと相対パスを組み合わせて絶対パスを生成する
-
-    Args:
-        root_path (str): ルートパス
-        relative_path (str): 相対パス
-
-    Returns:
-        str: 絶対パス
-    """
-    return os.path.join(root_path, relative_path)
-
-
-def make_relative_path(root_path: str, absolute_path: str) -> str:
-    """ルートパスと絶対パスを組み合わせて相対パスを生成する
-
-    Args:
-        root_path (str): ルートパス
-        absolute_path (str): 絶対パス
-
-    Returns:
-        str: 相対パス
-    """
-    return os.path.relpath(absolute_path, root_path)
-
-
 def filter_paths(
     file_paths: list[str],
     ignore_paths: list[str]
@@ -82,32 +61,6 @@ def filter_paths(
         list[str]: 除外後のファイルパスのリスト
     """
     return [p for p in file_paths if p not in ignore_paths]
-
-
-def read_file_content(file_path: str) -> str:
-    """指定したファイルの内容を読み込み、文字列として返す"""
-    with open(file_path, 'r') as f:
-        content = f.read()
-    return content
-
-
-class FileAnalyzerIF(ABC):
-    target_path: str
-    root_path: str
-    all_file_paths: list[str]
-
-    def __init__(
-        self,
-        root_path: str,
-        all_file_paths: list[str]
-    ):
-        self.root_path = root_path
-        self.all_file_paths = all_file_paths
-
-    # 解析する
-    @abstractmethod
-    def analyze(self, target_path: str) -> list[str]:
-        raise NotImplementedError
 
 
 class ProgramType(enum.Enum):
@@ -131,6 +84,7 @@ class DependencyAnalyzer:
     start_paths: list[str]
     all_file_paths: list[str]
     depth: int = 9999
+    file_analyzer: FileAnalyzerIF
     result_paths: list[str] = []
 
     def __init__(
@@ -138,12 +92,14 @@ class DependencyAnalyzer:
         root_path: str,
         start_paths: list[str],
         all_file_paths: list[str],
-        depth: int
+        depth: int,
+        file_analyzer: FileAnalyzerIF
     ) -> None:
         self.root_path = root_path
         self.start_paths = start_paths
         self.all_file_paths = all_file_paths
         self.depth = depth
+        self.file_analyzer = file_analyzer
 
     # クラスのインスタンスを生成するメソッドを定義する
     @classmethod
@@ -168,5 +124,52 @@ class DependencyAnalyzer:
         # 収集したファイルパスから無視するパスを除外
         all_file_paths = filter_paths(all_file_paths, ignore_paths)
 
+        # ファイルのタイプを確認して、適切なファイル解析クラスを生成
+        file_type = ProgramType.get_program_type(start_paths[0])
+        file_analyzer: FileAnalyzerIF
+
+        if file_type == ProgramType.PYTHON:
+            file_analyzer = FileAnalyzerPy(root_path, all_file_paths)
+        elif file_type == ProgramType.JAVASCRIPT:
+            file_analyzer = FileAnalyzerJs(root_path, all_file_paths)
+        else:
+            raise ValueError('invalid file type')
+
         # クラスのインスタンスを生成して返す
-        return cls(root_path, start_paths, all_file_paths, depth)
+        return cls(root_path, start_paths, all_file_paths, depth, file_analyzer)
+
+    def analyze(self) -> list[str]:
+        """指定したファイルの依存関係を解析する"""
+        search_paths: list[list[str]] = [self.start_paths]
+        self.result_paths = []
+        current_depth: int = 0  # 探索中の階層の深さを0で初期化
+        logging.info('\n== Parsing module dependencies ==')
+        # 指定された深さまで依存関係を解析する
+        for _ in range(0, self.depth + 1):
+            # 次に探索するファイルのパスを格納するリスト追加する
+            search_paths.append([])
+            # 現在の階層のログを出力する
+            logging.info(f"\nDepth: {current_depth}")
+            # 現在の階層のファイルのパスを取得する
+            for path in search_paths[current_depth]:
+                # 現在の階層のファイルのパスが探索済みのパスに含まれている場合、次のファイルのパスを探索する
+                if path in self.result_paths or path not in self.all_file_paths:
+                    continue
+
+                logging.info(f"  {path}")
+                # 現在の階層のファイルのパスを探索済みのパスの先頭に追加する
+                self.result_paths.insert(0, path)
+                # 現在の階層のファイルのパスから、依存関係を解析して、ファイルのパスを取得する。この時、絶対パスに変換する
+                dependencies: list[str] = self.file_analyzer.analyze(path)
+                # 現在の階層のファイルのパスの依存関係のうち、探索済みのファイルのパスに含まれていない、かつ、探索候補のファイルのパスに含まれている場合は、次の階層のファイルのパスに追加する
+                for dependency in dependencies:
+                    if dependency in self.result_paths or dependency not in self.all_file_paths:
+                        continue
+
+                    search_paths[current_depth + 1].append(dependency)
+            current_depth += 1  # 次の階層に移動する
+            # 次の階層のファイルのパスが存在しない場合、探索を終了する
+            if len(search_paths[current_depth]) == 0:
+                break
+
+        return self.result_paths
