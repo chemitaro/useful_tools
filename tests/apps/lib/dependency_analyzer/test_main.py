@@ -4,7 +4,7 @@ from apps.lib.dependency_analyzer.main import get_all_file_paths
 
 class TestGetAllFilePaths:
     # テスト用のファイルとディレクトリとして、mock 以下を使用
-    root_path = os.path.join(os.path.dirname(__file__), 'mock')
+    root_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'mock')
 
     def test_get_all_file_paths(self):
         # テスト用のディレクトリ以下のファイルパスを取得
