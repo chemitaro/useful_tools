@@ -29,7 +29,7 @@ def get_all_file_paths(
     if ignore_dirs is None:
         ignore_dirs = ['node_modules', 'cypress', 'coverage', '__pycashe__']
     if extensions is None:
-        extensions = ('.py', '.js', '.jsx', '.ts', '.tsx')
+        extensions = ('.py', '.js', 'json', '.jsx', '.ts', '.tsx')
 
     paths = []
     for root, dirs, files in os.walk(root_path):
@@ -65,7 +65,7 @@ def filter_paths(
 
 class ProgramType(enum.Enum):
     PYTHON = ['.py']
-    JAVASCRIPT = ['.js', '.jsx', '.ts', '.tsx']
+    JAVASCRIPT = ['.js', 'json', '.jsx', '.ts', '.tsx']
 
     # 渡されたファイルのパスの拡張子からプログラムの種類を判定するメソッドを定義する
     @classmethod

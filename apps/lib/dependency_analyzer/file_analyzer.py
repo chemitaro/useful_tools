@@ -71,7 +71,7 @@ class FileAnalyzerJs(FileAnalyzerIF):
         Returns:
             str: マッチしたファイルパス
         """
-        extensions = ['.ts', '.js', '.tsx', '.jsx']
+        extensions = ['.js', 'json', '.jsx', '.ts', '.tsx']
 
         # ルートディレクトリとモジュールのパスを組み合わせて拡張子のないパスを生成
         base_path = make_absolute_path(self.root_path, module_name)
