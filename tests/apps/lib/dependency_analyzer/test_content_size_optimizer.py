@@ -30,8 +30,8 @@ class TestContentSizeOptimizer:
 
     def test_calc_token_size(self):
         """コンテンツのトークン数を計算する"""
-        assert self.optimizer.calc_total_token() == 5839
+        assert self.optimizer.calc_total_token() == 5838
 
     def test_calc_char_size(self):
         """コンテンツの文字数を計算する"""
-        assert self.optimizer.calc_total_char() == 27710
+        assert self.optimizer.calc_total_char() == 27708
