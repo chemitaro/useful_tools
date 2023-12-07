@@ -1,4 +1,4 @@
-from apps.lib.dependency_analyzer.utils import read_file_content
+from apps.lib.utils import read_file_content
 from .test_main import mock_path
 import os
 

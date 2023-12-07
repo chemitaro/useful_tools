@@ -1,7 +1,7 @@
 import re
 import logging
 from abc import ABC, abstractmethod
-from apps.lib.dependency_analyzer.utils import make_absolute_path, read_file_content
+from apps.lib.utils import make_absolute_path, read_file_content
 
 
 class FileAnalyzerIF(ABC):
