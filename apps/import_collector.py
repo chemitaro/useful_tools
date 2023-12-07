@@ -19,7 +19,7 @@ if root_directory not in sys.path:
 from apps.lib.content_size_optimizer import ContentSizeOptimizer  # noqa: E402
 from apps.lib.dependency_analyzer.main import DependencyAnalyzer  # noqa: E402
 from apps.lib.file_content_collector import FileContentCollector  # noqa: E402
-from apps.lib.utils import copy_to_clipboard, print_result  # noqa: E402
+from apps.lib.outputs import copy_to_clipboard, print_result  # noqa: E402
 
 
 def main(
