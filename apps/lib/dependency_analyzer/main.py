@@ -174,5 +174,3 @@ class DependencyAnalyzer:
                 break
 
         return self.result_paths
-    
-    # 
