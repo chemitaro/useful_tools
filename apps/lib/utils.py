@@ -56,13 +56,13 @@ def read_file_content(file_path: str) -> str:
 
 
 # 取得したコードと文字数やトークン数、chunkの数を表示する
-def print_result(contents: list[str], max_chara: int, max_token: int) -> None:
+def print_result(contents: list[str], max_char: int, max_token: int) -> None:
     """
     取得したコードと文字数やトークン数、chunkの数を表示する
 
     Args:
         chunked_content (List[str]): 取得したコードのリスト
-        max_chara (int, optional): ファイルの内容を取得する際のチャンクサイズ. Defaults to sys.maxsize.
+        max_char (int, optional): ファイルの内容を取得する際のチャンクサイズ. Defaults to sys.maxsize.
         max_token (int, optional): ファイルの内容を取得する際のチャンクサイズ. Defaults to sys.maxsize.
 
     Returns:
@@ -70,16 +70,16 @@ def print_result(contents: list[str], max_chara: int, max_token: int) -> None:
     """
     joined_content: str = ''.join(contents)
     lines = joined_content.split('\n')
-    total_chara = len(joined_content)
+    total_char = len(joined_content)
     total_token = count_tokens(joined_content)
     print('\n== Result ==\n')
-    print(f'total characters: {total_chara}')
+    print(f'total characters: {total_char}')
     print(f'total lines:      {len(lines)}')
     print(f'total tokens:     {total_token} (encoded for gpt-4)')
     if len(contents) > 1:
         print(f'total chunks:     {len(contents)}')
-        if max_chara < total_chara:
-            print(f'  ({max_chara} characters per chunk.)')
+        if max_char < total_char:
+            print(f'  ({max_char} characters per chunk.)')
         if max_token < total_token:
             print(f'  ({max_token} tokens per chunk.)')
 
@@ -101,7 +101,7 @@ def copy_to_clipboard(contents: list[str]):
         # chunkのナンバーを表示する
         print(f'\nChunk {contents.index(content) + 1} of {len(contents)} copied to clipboard.')
         # 文字数とトークン数を表示する
-        print(f'  ({len(content)} chara, {count_tokens(content)} tokens)')
+        print(f'  ({len(content)} char, {count_tokens(content)} tokens)')
         # chunkが最後のchunkでない場合、Enterキーを押すまで待機する
         if contents.index(content) + 1 < len(contents):
             input('\nPress Enter to continue...')
