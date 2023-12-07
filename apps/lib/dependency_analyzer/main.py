@@ -1,9 +1,11 @@
-import enum
 import logging
 import os
 
+from apps.lib.dependency_analyzer.file_analyzer import (FileAnalyzerIF,
+                                                        FileAnalyzerJs,
+                                                        FileAnalyzerPy)
+from apps.lib.enum import ProgramType
 from apps.lib.utils import make_absolute_path
-from apps.lib.dependency_analyzer.file_analyzer import FileAnalyzerIF, FileAnalyzerJs, FileAnalyzerPy
 
 
 def get_all_file_paths(
@@ -59,22 +61,6 @@ def filter_paths(
         list[str]: 除外後のファイルパスのリスト
     """
     return [p for p in file_paths if p not in ignore_paths]
-
-
-class ProgramType(enum.Enum):
-    PYTHON = ['.py']
-    JAVASCRIPT = ['.js', '.json', '.jsx', '.ts', '.tsx']
-
-    # 渡されたファイルのパスの拡張子からプログラムの種類を判定するメソッドを定義する
-    @classmethod
-    def get_program_type(cls, file_path: str) -> 'ProgramType':
-        ext = os.path.splitext(file_path)[1]
-        if ext in cls.PYTHON.value:
-            return cls.PYTHON
-        elif ext in cls.JAVASCRIPT.value:
-            return cls.JAVASCRIPT
-        else:
-            raise ValueError('invalid file extension')
 
 
 class DependencyAnalyzer:
