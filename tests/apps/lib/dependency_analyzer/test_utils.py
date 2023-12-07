@@ -3,6 +3,17 @@ from .test_main import mock_path
 import os
 
 
+class TestMakeAbsolutePath:
+    """make_absolute_path のテスト"""
+
+    def test_make_absolute_path(self):
+        """ルートパスと相対パスを組み合わせて絶対パスを生成できることを確認する"""
+        root_path = '/Users/hogehoge/workspace/python/useful_tools/tests/mock'
+        relative_path = 'ts_mock/ts_mock_b/ts_mock_b_1'
+        absolute_path = os.path.join(root_path, relative_path)
+        assert absolute_path == '/Users/hogehoge/workspace/python/useful_tools/tests/mock/ts_mock/ts_mock_b/ts_mock_b_1'
+
+
 class TestReadFileContent:
     mock_file_path = os.path.join(mock_path, 'ts_mock', 'ts_mock_1.ts')
 
