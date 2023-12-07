@@ -5,7 +5,7 @@ from apps.lib.dependency_analyzer.file_analyzer import (FileAnalyzerIF,
                                                         FileAnalyzerJs,
                                                         FileAnalyzerPy)
 from apps.lib.enum import ProgramType
-from apps.lib.utils import make_absolute_path
+from apps.lib.utils import make_absolute_path, make_relative_path
 
 
 def get_all_file_paths(
@@ -144,7 +144,7 @@ class DependencyAnalyzer:
                 if path not in self.all_file_paths:
                     continue
 
-                logging.info(f"  {path}")
+                logging.info(f"  {make_relative_path(self.root_path, path)}")
                 # 現在の階層のファイルのパスを探索済みのパスの先頭に追加する
                 self.result_paths.insert(0, path)
                 # 現在の階層のファイルのパスから、依存関係を解析して、ファイルのパスを取得する。この時、絶対パスに変換する
