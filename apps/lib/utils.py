@@ -1,4 +1,20 @@
 import os
+import tiktoken
+
+
+def count_tokens(text: str, model: str = 'gpt-4') -> int:
+    """
+    受け取ったテキストのトークン数を返す
+
+    Args:
+        text (str): 受け取ったテキスト
+        model (str, optional): トークナイザーのモデル名. Defaults to 'gpt-4'.
+
+    Returns:
+        int: 受け取ったテキストのトークン数
+    """
+    encoding = tiktoken.encoding_for_model(model)
+    return len(encoding.encode(text))
 
 
 def make_absolute_path(root_path: str, relative_path: str) -> str:
