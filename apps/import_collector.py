@@ -1,11 +1,25 @@
+#!/usr/bin/env python3
+
 import argparse
 import logging
 import os
+import sys
 
-from apps.lib.content_size_optimizer import ContentSizeOptimizer
-from apps.lib.dependency_analyzer.main import DependencyAnalyzer
-from apps.lib.file_content_collector import FileContentCollector
-from apps.lib.utils import copy_to_clipboard, print_result
+# 現在のファイルの絶対パスを取得
+current_file_path = os.path.abspath(__file__)
+
+# ルートディレクトリまでのパスを取得（例：2階層上がルートディレクトリの場合）
+root_directory = os.path.dirname(os.path.dirname(current_file_path))
+
+# Pythonの実行パスにルートディレクトリを追加
+if root_directory not in sys.path:
+    sys.path.append(root_directory)
+
+
+from apps.lib.content_size_optimizer import ContentSizeOptimizer  # noqa: E402
+from apps.lib.dependency_analyzer.main import DependencyAnalyzer  # noqa: E402
+from apps.lib.file_content_collector import FileContentCollector  # noqa: E402
+from apps.lib.utils import copy_to_clipboard, print_result  # noqa: E402
 
 
 def main(
@@ -94,10 +108,10 @@ if __name__ == "__main__":
     )
     parser.add_argument('module_path', nargs='+', help='Path of the Python file from which to parse dependencies, multiple paths can be specified')
     parser.add_argument('-d', '--depth', type=int, default=999, help='Specify depth of dependency analysis')
-    parser.add_argument('-n', '--no-comment', action='store_true', help='Omit document comments')
-    parser.add_argument('-mc', '--max_char', type=int, default=3000000,
+    parser.add_argument('-nc', '--no-comment', action='store_true', help='Omit document comments')
+    parser.add_argument('-mc', '--max_char', type=int, default=999_999_999,
                         help='Split by a specified number of characters when copying to the clipboard')
-    parser.add_argument('-mt', '--max_token', type=int, default=120000,
+    parser.add_argument('-mt', '--max_token', type=int, default=120_000,
                         help='Split by a specified number of tokens when copying to the clipboard')
     parser.add_argument('-i', '--ignore', nargs='*', default=[], help='Specify paths of files to ignore, multiple files can be specified')
     args = parser.parse_args()
@@ -118,7 +132,7 @@ if __name__ == "__main__":
     )
 
     # 取得したコードと文字数やトークン数、chunkの数を表示する
-    print_result(chunked_content, max_chara=args.max_chara, max_token=args.max_token)
+    print_result(chunked_content, max_char=args.max_char, max_token=args.max_token)
 
     # chunked_content を順番にクリップボードにコピーする
     copy_to_clipboard(chunked_content)
