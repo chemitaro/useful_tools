@@ -1,4 +1,5 @@
 import re
+import logging
 from abc import ABC, abstractmethod
 from apps.lib.dependency_analyzer.utils import make_absolute_path, read_file_content
 
@@ -54,12 +55,15 @@ class FileAnalyzerJs(FileAnalyzerIF):
         """指定されたファイルの内容から、そのファイルが依存しているファイルのパスを抽出する"""
         file_content = read_file_content(target_path)
         module_names = extract_module_names_from_imports(file_content)
+        logging.debug(f'module_names: {module_names}')
         # モジュール名をファイルパスに変換
         file_paths = []
         for module_name in module_names:
             file_path = self.convert_module_name_to_file_path(module_name)
+            logging.debug(f'解析して得た依存パス: {file_path}')
             if type(file_path) is str:
                 file_paths.append(file_path)
+        logging.debug(f'解析して得た依存パス群: {file_paths}')
         return file_paths
 
     def convert_module_name_to_file_path(self, module_name: str) -> str | None:
@@ -71,18 +75,23 @@ class FileAnalyzerJs(FileAnalyzerIF):
         Returns:
             str: マッチしたファイルパス
         """
-        extensions = ['.js', 'json', '.jsx', '.ts', '.tsx']
+        extensions = ['.js', '.json', '.jsx', '.ts', '.tsx']
 
         # ルートディレクトリとモジュールのパスを組み合わせて拡張子のないパスを生成
         base_path = make_absolute_path(self.root_path, module_name)
+        logging.debug(f'self.root_path: {self.root_path}')
+        logging.debug(f'☆base_path: {base_path}')
 
         # 指定されたすべての拡張子に対してチェック
         for ext in extensions:
             potential_path = f"{base_path}{ext}"
+            logging.debug(f'potential_path: {potential_path}')
             if potential_path in self.all_file_paths:
+                logging.debug(f"マッチしたファイルパス: {potential_path}")
                 return potential_path
 
         # マッチするものが見つからない場合は None を返す
+        logging.debug(f"マッチするファイルパスが見つかりませんでした: {base_path}")
         return None
 
 

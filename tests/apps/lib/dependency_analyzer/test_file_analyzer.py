@@ -6,7 +6,7 @@ class TestExtractModuleNamesFromImports:
     'use server'
 
     import { postEmailLogin, EmailLoginRequestDto, ApiResponse } from '@/src/servers/shared/lib/handlers/postEmailLogin'
-    import { revalidatePath, revalidateTag } from 'next/cache'
+    import { revalidatePath, revalidateTag } from 'next/cache';
     import { ServerSessionStore } from '@/src/servers/shared/lib/ServerSessionStore'
     """
 
@@ -22,6 +22,7 @@ class TestExtractModuleNamesFromImports:
 
 
 class TestFileAnalyzerJs:
+    """FileAnalyzerJs のテスト"""
 
     # 初期化してインスタンスを生成できることを確認する
     def test_init(self):
