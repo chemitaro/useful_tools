@@ -17,8 +17,7 @@ class TestContentSizeOptimizer:
 
     def test_init(self):
         """初期化してインスタンスを生成できることを確認する"""
-        optimizer = ContentSizeOptimizer()
-        assert type(optimizer) is ContentSizeOptimizer
+        assert type(self.optimizer) is ContentSizeOptimizer
 
     def test_optimize(self):
         """コンテンツのサイズを最大トークン数と最大文字数を超えないように結合したり分割したりする"""

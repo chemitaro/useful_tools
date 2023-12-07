@@ -11,7 +11,6 @@ class CalcSizedContent:
 
 
 class ContentSizeOptimizer:
-    contents: list[str]
     max_token: int
     max_char: int
     calc_sized_contents: list[CalcSizedContent] = []
@@ -22,10 +21,9 @@ class ContentSizeOptimizer:
         max_token: int = 120_000,
         max_char: int = 9_999_999
     ):
-        self.contents = contents
         self.max_token = max_token
         self.max_char = max_char
-        self.calc_size_contents()
+        self.calc_size_contents(contents)
 
     def optimize_contents(self) -> list[str]:
         """コンテンツのサイズを最大トークン数と最大文字数を超えないように結合したり分割したりする"""
@@ -34,9 +32,9 @@ class ContentSizeOptimizer:
 
         return concat_contents
 
-    def calc_size_contents(self) -> None:
+    def calc_size_contents(self, contents) -> None:
         self.calc_sized_contents = []
-        for content in self.contents:
+        for content in contents:
             calc_sized_content: CalcSizedContent = self.calc_size_content(content)
             self.calc_sized_contents.append(calc_sized_content)
 
