@@ -29,7 +29,7 @@ def get_all_file_paths(
     if ignore_dirs is None:
         ignore_dirs = ['node_modules', 'cypress', 'coverage', '__pycashe__']
     if extensions is None:
-        extensions = ('.py', '.js', 'json', '.jsx', '.ts', '.tsx')
+        extensions = ('.py', '.js', '.json', '.jsx', '.ts', '.tsx')
 
     paths = []
     for root, dirs, files in os.walk(root_path):
@@ -65,7 +65,7 @@ def filter_paths(
 
 class ProgramType(enum.Enum):
     PYTHON = ['.py']
-    JAVASCRIPT = ['.js', 'json', '.jsx', '.ts', '.tsx']
+    JAVASCRIPT = ['.js', '.json', '.jsx', '.ts', '.tsx']
 
     # 渡されたファイルのパスの拡張子からプログラムの種類を判定するメソッドを定義する
     @classmethod
@@ -83,8 +83,10 @@ class DependencyAnalyzer:
     root_path: str
     start_paths: list[str]
     all_file_paths: list[str]
-    depth: int = 9999
     file_analyzer: FileAnalyzerIF
+    depth: int = 9999
+    current_depth: int = 0
+    search_paths: list[list[str]]
     result_paths: list[str] = []
 
     def __init__(
@@ -140,20 +142,22 @@ class DependencyAnalyzer:
 
     def analyze(self) -> list[str]:
         """指定したファイルの依存関係を解析する"""
-        search_paths: list[list[str]] = [self.start_paths]
+        self.search_paths: list[list[str]] = [self.start_paths]
         self.result_paths = []
-        current_depth: int = 0  # 探索中の階層の深さを0で初期化
+        self.current_depth: int = 0  # 探索中の階層の深さを0で初期化
         logging.info('\n== Parsing module dependencies ==')
         # 指定された深さまで依存関係を解析する
         for _ in range(0, self.depth + 1):
             # 次に探索するファイルのパスを格納するリスト追加する
-            search_paths.append([])
+            self.search_paths.append([])
             # 現在の階層のログを出力する
-            logging.info(f"\nDepth: {current_depth}")
+            logging.info(f"\nDepth: {self.current_depth}")
             # 現在の階層のファイルのパスを取得する
-            for path in search_paths[current_depth]:
+            for path in self.search_paths[self.current_depth]:
                 # 現在の階層のファイルのパスが探索済みのパスに含まれている場合、次のファイルのパスを探索する
-                if path in self.result_paths or path not in self.all_file_paths:
+                if path in self.result_paths:
+                    continue
+                if path not in self.all_file_paths:
                     continue
 
                 logging.info(f"  {path}")
@@ -163,13 +167,12 @@ class DependencyAnalyzer:
                 dependencies: list[str] = self.file_analyzer.analyze(path)
                 # 現在の階層のファイルのパスの依存関係のうち、探索済みのファイルのパスに含まれていない、かつ、探索候補のファイルのパスに含まれている場合は、次の階層のファイルのパスに追加する
                 for dependency in dependencies:
-                    if dependency in self.result_paths or dependency not in self.all_file_paths:
-                        continue
-
-                    search_paths[current_depth + 1].append(dependency)
-            current_depth += 1  # 次の階層に移動する
+                    self.search_paths[self.current_depth + 1].append(dependency)
+            self.current_depth += 1  # 次の階層に移動する
             # 次の階層のファイルのパスが存在しない場合、探索を終了する
-            if len(search_paths[current_depth]) == 0:
+            if len(self.search_paths[self.current_depth]) == 0:
                 break
 
         return self.result_paths
+    
+    # 
