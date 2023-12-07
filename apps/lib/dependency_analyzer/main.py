@@ -2,9 +2,7 @@ import enum
 import logging
 import os
 
-from apps.lib.dependency_analyzer.utils import (make_absolute_path,
-                                                make_relative_path,
-                                                read_file_content)
+from apps.lib.dependency_analyzer.utils import make_absolute_path
 from apps.lib.dependency_analyzer.file_analyzer import FileAnalyzerIF, FileAnalyzerJs, FileAnalyzerPy
 
 
