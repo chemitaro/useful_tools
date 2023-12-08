@@ -24,12 +24,13 @@ from apps.lib.outputs import copy_to_clipboard, print_result  # noqa: E402
 
 def main(
     root_path: str,
-    target_paths: list[str],
+    target_paths: list[str] | None = None,
     depth: int = 999,
     no_comment: bool = False,
     max_char: int = 999_999_999,
     max_token: int = 120_000,
-    ignores: list[str] | None = None
+    scope_paths: list[str] | None = None,
+    ignore_paths: list[str] | None = None
 ) -> list[str]:
     """指定されたファイルのパスのファイルの内容を取得する
 
@@ -44,8 +45,12 @@ def main(
     Returns:
         List[str]: 指定されたファイルのパスのファイルの内容のリスト
     """
-    if ignores is None:
-        ignores = []
+    if target_paths is None:
+        target_paths = []
+    if scope_paths is None:
+        scope_paths = []
+    if ignore_paths is None:
+        ignore_paths = []
 
     # 引数の検証
     if type(root_path) is not str:
@@ -67,14 +72,17 @@ def main(
         raise TypeError('max_token must be int')
     if max_token < 1:
         raise ValueError('max_token must be positive')
-    if type(ignores) is not list:
+    if type(scope_paths) is not list:
+        raise TypeError('scopes must be list')
+    if type(ignore_paths) is not list:
         raise TypeError('ignores must be list')
 
     # ファイルの依存関係を解析
     dependency_analyzer = DependencyAnalyzer.factory(
         root_path=root_path,
         start_relative_paths=target_paths,
-        ignore_relative_paths=ignores,
+        scope_relative_paths=scope_paths,
+        ignore_relative_paths=ignore_paths,
         depth=depth
     )
     dependency_file_paths: list[str] = dependency_analyzer.analyze()
@@ -106,14 +114,53 @@ if __name__ == "__main__":
         Assuming a character limit, you can also split the copy to the clipboard by a specified number of characters.
         """
     )
-    parser.add_argument('module_path', nargs='+', help='Path of the Python file from which to parse dependencies, multiple paths can be specified')
-    parser.add_argument('-d', '--depth', type=int, default=999, help='Specify depth of dependency analysis')
-    parser.add_argument('-nc', '--no-comment', action='store_true', help='Omit document comments')
-    parser.add_argument('-mc', '--max_char', type=int, default=999_999_999,
-                        help='Split by a specified number of characters when copying to the clipboard')
-    parser.add_argument('-mt', '--max_token', type=int, default=120_000,
-                        help='Split by a specified number of tokens when copying to the clipboard')
-    parser.add_argument('-i', '--ignore', nargs='*', default=[], help='Specify paths of files to ignore, multiple files can be specified')
+    parser.add_argument(
+        'target_path',
+        nargs='*',
+        default=[],
+        help='Path of the Python file from which to parse dependencies, multiple paths can be specified'
+    )
+    parser.add_argument(
+        '-d',
+        '--depth',
+        type=int,
+        default=999,
+        help='Specify depth of dependency analysis'
+    )
+    parser.add_argument(
+        '-nc',
+        '--no-comment',
+        action='store_true',
+        help='Omit document comments'
+    )
+    parser.add_argument(
+        '-mc',
+        '--max_char',
+        type=int,
+        default=999_999_999,
+        help='Split by a specified number of characters when copying to the clipboard'
+    )
+    parser.add_argument(
+        '-mt',
+        '--max_token',
+        type=int,
+        default=120_000,
+        help='Split by a specified number of tokens when copying to the clipboard'
+    )
+    parser.add_argument(
+        '-s',
+        '--scope',
+        nargs='*',
+        default=[],
+        help='Specify paths of files to scope, multiple files can be specified'
+    )
+    parser.add_argument(
+        '-i',
+        '--ignore',
+        nargs='*',
+        default=[],
+        help='Specify paths of files to ignore, multiple files can be specified'
+    )
     args = parser.parse_args()
 
     root_dir = os.getcwd()
@@ -123,12 +170,13 @@ if __name__ == "__main__":
     # メイン処理
     chunked_content = main(
         root_dir,
-        args.module_path,
+        target_paths=args.target_path,
         depth=args.depth,
         no_comment=args.no_comment,
         max_char=args.max_char,
         max_token=args.max_token,
-        ignores=args.ignore
+        scope_paths=args.scope,
+        ignore_paths=args.ignore
     )
 
     # 取得したコードと文字数やトークン数、chunkの数を表示する
