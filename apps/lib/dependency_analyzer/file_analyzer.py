@@ -6,7 +6,8 @@ import pkgutil
 import re
 from abc import ABC, abstractmethod
 
-from apps.lib.utils import make_absolute_path, make_relative_path, read_file_content
+from apps.lib.utils import (make_absolute_path, make_relative_path,
+                            read_file_content)
 
 
 class FileAnalyzerIF(ABC):
@@ -201,3 +202,8 @@ class FileAnalyzerPy(FileAnalyzerIF):
         if absolute_path in self.all_file_paths:
             return absolute_path
         return None
+
+
+class FileAnalyzerUnknown(FileAnalyzerIF):
+    def analyze(self, target_path: str) -> list[str]:
+        return []
