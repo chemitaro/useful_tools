@@ -5,6 +5,7 @@ import os
 class ProgramType(enum.Enum):
     PYTHON = ['.py']
     JAVASCRIPT = ['.js', '.json', '.jsx', '.ts', '.tsx']
+    UNKNOWN = ['']
 
     # 渡されたファイルのパスの拡張子からプログラムの種類を判定するメソッドを定義する
     @classmethod
@@ -15,4 +16,4 @@ class ProgramType(enum.Enum):
         elif ext in cls.JAVASCRIPT.value:
             return cls.JAVASCRIPT
         else:
-            raise ValueError('invalid file extension')
+            return cls.UNKNOWN
