@@ -6,7 +6,7 @@ import pkgutil
 import re
 from abc import ABC, abstractmethod
 
-from apps.lib.utils import make_absolute_path, read_file_content
+from apps.lib.utils import make_absolute_path, make_relative_path, read_file_content
 
 
 class FileAnalyzerIF(ABC):
@@ -157,14 +157,15 @@ class FileAnalyzerPy(FileAnalyzerIF):
             for alias in node.names:
                 import_class_and_func_names.append(alias.name)
 
-            # 相対インポートの場合は、絶対インポートに変換する
+            # 相対インポートの場合は、絶対インポートに変換する *相対インポートは未対応
             if node.level > 0:
-                base_dir = os.path.dirname(target_path)
-                for _ in range(node.level - 1):
-                    base_dir = os.path.dirname(base_dir)
+                base_path = target_path
+                for _ in range(node.level):
+                    base_path = os.path.dirname(base_path)
 
                 # パッケージ名を取得する
-                package_name = os.path.basename(base_dir)
+                package_relative_path = make_relative_path(self.root_path, base_path)
+                package_name = package_relative_path.replace('/', '.')
                 # モジュール名を結合する
                 module_name = f"{package_name}.{module_name}"
 
@@ -180,8 +181,23 @@ class FileAnalyzerPy(FileAnalyzerIF):
         # モジュール名をファイルの絶対パスに変換する
         collected_paths = []
         for module_name in result_module_names:
-            relative_path = module_name.replace(".", "/") + ".py"
-            absolute_path = make_absolute_path(self.root_path, relative_path)
-            if absolute_path in self.all_file_paths:
-                collected_paths.append(absolute_path)
+            path = self.convert_module_name_to_file_path(module_name)
+            if path:
+                collected_paths.append(path)
         return collected_paths
+
+    # モジュール名をファイルの絶対パスに変換するメソッド
+    def convert_module_name_to_file_path(self, module_name: str) -> str | None:
+        """指定されたモジュール名にマッチするファイルパスを探す
+
+        Args:
+            module_name (str): モジュール名
+
+        Returns:
+            str: マッチしたファイルパス
+        """
+        relative_path = module_name.replace(".", "/") + ".py"
+        absolute_path = make_absolute_path(self.root_path, relative_path)
+        if absolute_path in self.all_file_paths:
+            return absolute_path
+        return None
