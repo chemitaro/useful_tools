@@ -11,8 +11,8 @@ from apps.lib.utils import make_absolute_path, make_relative_path
 
 def get_all_file_paths(
     root_path: str,
-    scope_relative_paths: list[str] | None = None,
-    ignore_relative_paths: list[str] | None = None,
+    scope_paths: list[str] | None = None,
+    ignore_paths: list[str] | None = None,
     ignore_dirs: list[str] | None = None,
     extensions: tuple[str, ...] | None = None
 ) -> list[str]:
@@ -26,10 +26,10 @@ def get_all_file_paths(
     Returns:
         list[str]: 検索結果のファイルパスのリスト
     """
-    if scope_relative_paths is None:
-        scope_relative_paths = []
-    if ignore_relative_paths is None:
-        ignore_relative_paths = []
+    if scope_paths is None:
+        scope_paths = []
+    if ignore_paths is None:
+        ignore_paths = []
     if ignore_dirs is None:
         ignore_dirs = ['__pycashe__', 'node_modules', 'cypress', 'coverage', '.next', '.devcontainer', '.storybook', '.swc', '.vscode', 'cypress', ]
     if extensions is None:
@@ -43,17 +43,19 @@ def get_all_file_paths(
             if file.endswith(extensions):
                 all_file_paths.append(os.path.join(root, file))
 
-    if len(scope_relative_paths) > 0:
-        # 探索範囲の相対パスを絶対パスに変換
-        scope_absolute_paths = [os.path.join(root_path, p) for p in scope_relative_paths]
-        # 収集したファイルパスのうち、探索範囲に含まれていないパスを除外する。
-        all_file_paths = [p for p in all_file_paths if any([p.startswith(scope_path) for scope_path in scope_absolute_paths])]
+    if len(scope_paths) > 0:
+        # scope_paths が相対パスの場合は絶対パスに変換する
+        scope_paths = [make_absolute_path(root_path, p) for p in scope_paths]
 
-    if len(ignore_relative_paths) > 0:
-        # 無視する相対パスを絶対パスに変換
-        ignore_absolute_paths = [os.path.join(root_path, p) for p in ignore_relative_paths]
+        # 収集したファイルパスから探索範囲外のパスを除外する。
+        all_file_paths = [p for p in all_file_paths if any([p.startswith(scope_path) for scope_path in scope_paths])]
+
+    if len(ignore_paths) > 0:
+        # ignore_paths が相対パスの場合は絶対パスに変換する
+        ignore_paths = [make_absolute_path(root_path, p) for p in ignore_paths]
+
         # 収集したファイルパスから無視するパスを除外する。
-        all_file_paths = [p for p in all_file_paths if not any([p.startswith(ignore_path) for ignore_path in ignore_absolute_paths])]
+        all_file_paths = [p for p in all_file_paths if not any([p.startswith(ignore_path) for ignore_path in ignore_paths])]
 
     return all_file_paths
 
@@ -104,27 +106,34 @@ class DependencyAnalyzer:
         cls,
         root_path: str,
         start_relative_paths: list[str] | None = None,
+        scope_relative_paths: list[str] | None = None,
         ignore_relative_paths: list[str] | None = None,
         depth: int = 9999
     ) -> 'DependencyAnalyzer':
         if start_relative_paths is None:
             start_relative_paths = []
+        if scope_relative_paths is None:
+            scope_relative_paths = []
         if ignore_relative_paths is None:
             ignore_relative_paths = []
 
         # 相対パスを絶対パスに変換
         start_paths = [make_absolute_path(root_path, p) for p in start_relative_paths]
 
+        # 探索範囲のパスを相対パスを絶対パスに変換
+        scope_paths = [make_absolute_path(root_path, p) for p in scope_relative_paths]
+
         # 無視するパスを相対パスを絶対パスに変換
         ignore_paths = [make_absolute_path(root_path, p) for p in ignore_relative_paths]
         # ファイルパスを収集
-        all_file_paths = get_all_file_paths(root_path)
-
-        # 収集したファイルパスから無視するパスを除外
-        all_file_paths = filter_paths(all_file_paths, ignore_paths)
+        all_file_paths = get_all_file_paths(
+            root_path,
+            scope_paths=scope_paths,
+            ignore_paths=ignore_paths
+        )
 
         # ファイルのタイプを確認して、適切なファイル解析クラスを生成
-        if len(start_paths):
+        if len(start_paths) >= 1:
             file_type = ProgramType.get_program_type(start_paths[0])
         else:
             file_type = ProgramType.UNKNOWN

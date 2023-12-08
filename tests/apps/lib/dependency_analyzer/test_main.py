@@ -1,6 +1,7 @@
 import os
 
-from apps.lib.dependency_analyzer.main import get_all_file_paths, DependencyAnalyzer
+from apps.lib.dependency_analyzer.main import (DependencyAnalyzer,
+                                               get_all_file_paths)
 
 # テスト用のファイルとディレクトリとして、mock 以下を使用
 relative_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'mock')
@@ -20,7 +21,7 @@ class TestGetAllFilePaths:
     def test_scope_paths(self):
         """探索範囲を指定できることを確認する"""
         # テスト用のディレクトリ以下のファイルパスを取得
-        file_paths = get_all_file_paths(mock_path, scope_relative_paths=['ts_mock'])
+        file_paths = get_all_file_paths(mock_path, scope_paths=['ts_mock'])
 
         # テスト用のディレクトリ以下のファイルパスが取得できていることを確認
         assert len(file_paths) == 13
@@ -30,7 +31,7 @@ class TestGetAllFilePaths:
     def test_ignore_paths(self):
         """無視するパスを指定できることを確認する"""
         # テスト用のディレクトリ以下のファイルパスを取得
-        file_paths = get_all_file_paths(mock_path, ignore_relative_paths=['ts_mock'])
+        file_paths = get_all_file_paths(mock_path, ignore_paths=['ts_mock'])
 
         # テスト用のディレクトリ以下のファイルパスが取得できていることを確認
         assert len(file_paths) == 20
@@ -53,7 +54,11 @@ class TestDependencyAnalyzer:
     def test_ts_analyze(self):
         """TypeScript のファイルを解析できることを確認する"""
         # 解析する
-        result_paths = self.analyzer.analyze()
+        analyzer = DependencyAnalyzer.factory(
+            mock_path,
+            start_relative_paths=['ts_mock/ts_mock_1.ts']
+        )
+        result_paths = analyzer.analyze()
 
         # 解析結果を確認
         assert len(result_paths) == 7
