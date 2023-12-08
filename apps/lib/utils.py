@@ -28,6 +28,10 @@ def make_absolute_path(root_path: str, relative_path: str) -> str:
     Returns:
         str: 絶対パス
     """
+    # relative_pathが絶対パスである場合はそのまま返す
+    if os.path.isabs(relative_path):
+        return relative_path
+
     # 相対パスの先頭にスラッシュがある場合は除去しておく
     relative_path = relative_path.lstrip('/')
     absolute_path = os.path.join(root_path, relative_path)
@@ -44,6 +48,10 @@ def make_relative_path(root_path: str, absolute_path: str) -> str:
     Returns:
         str: 相対パス
     """
+    # absolute_pathが相対パスである場合はそのまま返す
+    if not os.path.isabs(absolute_path):
+        return absolute_path
+
     return os.path.relpath(absolute_path, root_path)
 
 
