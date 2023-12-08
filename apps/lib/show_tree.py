@@ -1,17 +1,24 @@
 from urllib.parse import urlparse
 from collections import defaultdict
+import os
 
 
-class URLTree:
-    tree: defaultdict
+class PathTree:
+    def __init__(self, paths, root_path=None):
+        self.root_path = root_path
+        self.tree = self.create_tree(paths)
 
-    def __init__(self, urls):
-        self.tree = self.create_tree(urls)
-
-    def parse_url(self, url):
-        parsed_url = urlparse(url)
-        paths = parsed_url.path.split('/')
-        return filter(None, paths)  # 空の要素を除去
+    def parse_path(self, path):
+        if self.root_path and path.startswith(self.root_path):
+            # ルートパスを基に相対パスを取得
+            path = os.path.relpath(path, self.root_path)
+        if path.startswith('http://') or path.startswith('https://'):
+            # URLの場合
+            parsed_path = urlparse(path).path.split('/')
+        else:
+            # ディレクトリパスの場合
+            parsed_path = path.split(os.sep)
+        return filter(None, parsed_path)  # 空の要素を除去
 
     def insert_into_tree(self, tree, paths):
         for path in paths:
@@ -19,11 +26,11 @@ class URLTree:
                 tree[path] = defaultdict(dict)
             tree = tree[path]
 
-    def create_tree(self, urls):
+    def create_tree(self, paths):
         tree = defaultdict(dict)
-        for url in urls:
-            paths = list(self.parse_url(url))
-            self.insert_into_tree(tree, paths)
+        for path in paths:
+            parsed_paths = list(self.parse_path(path))
+            self.insert_into_tree(tree, parsed_paths)
         return tree
 
     def print_tree(self, tree=None, prefix="", is_root=True):
@@ -52,6 +59,19 @@ urls = [
     'http://example.com/xyz/def/ghi'
 ]
 
-url_tree = URLTree(urls)
+url_tree = PathTree(urls)
 tree_string = url_tree.print_tree()
 print(tree_string)
+
+
+paths = [
+    '/home/user/documents',
+    '/home/user/documents/file.txt',
+    '/home/user/pictures',
+    '/home/user/pictures/photo.jpg'
+]
+
+root_path = '/home/user'
+
+path_tree = PathTree(paths, root_path=root_path)
+print(path_tree.print_tree())
