@@ -16,8 +16,8 @@ class TestExtractModuleNamesFromImports:
         module_paths = extract_module_names_from_imports(self.file_contest)
         print(module_paths)
         assert module_paths == [
-            '/src/servers/shared/lib/handlers/postEmailLogin',
-            '/src/servers/shared/lib/ServerSessionStore'
+            'src/servers/shared/lib/handlers/postEmailLogin',
+            'src/servers/shared/lib/ServerSessionStore'
         ]
 
 
