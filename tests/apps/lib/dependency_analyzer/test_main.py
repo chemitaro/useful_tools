@@ -17,6 +17,26 @@ class TestGetAllFilePaths:
         # テスト用のディレクトリ以下のファイルパスが取得できていることを確認
         assert len(file_paths) == 33
 
+    def test_scope_paths(self):
+        """探索範囲を指定できることを確認する"""
+        # テスト用のディレクトリ以下のファイルパスを取得
+        file_paths = get_all_file_paths(mock_path, scope_relative_paths=['ts_mock'])
+
+        # テスト用のディレクトリ以下のファイルパスが取得できていることを確認
+        assert len(file_paths) == 13
+        # pathの戦闘が指定したディレクトリ(mock_path/ts_mock)以下であることを確認
+        assert all([p.startswith(os.path.join(mock_path, 'ts_mock')) for p in file_paths])
+
+    def test_ignore_paths(self):
+        """無視するパスを指定できることを確認する"""
+        # テスト用のディレクトリ以下のファイルパスを取得
+        file_paths = get_all_file_paths(mock_path, ignore_relative_paths=['ts_mock'])
+
+        # テスト用のディレクトリ以下のファイルパスが取得できていることを確認
+        assert len(file_paths) == 20
+        # pathの戦闘が指定したディレクトリ(mock_path/ts_mock)以下でないことを確認
+        assert all([not p.startswith(os.path.join(mock_path, 'ts_mock')) for p in file_paths])
+
 
 class TestDependencyAnalyzer:
     """DependencyAnalyzer のテスト"""

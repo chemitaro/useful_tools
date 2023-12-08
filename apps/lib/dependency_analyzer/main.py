@@ -3,13 +3,15 @@ import os
 
 from apps.lib.dependency_analyzer.file_analyzer import (FileAnalyzerIF,
                                                         FileAnalyzerJs,
-                                                        FileAnalyzerPy)
+                                                        FileAnalyzerPy,
+                                                        FileAnalyzerUnknown)
 from apps.lib.enum import ProgramType
 from apps.lib.utils import make_absolute_path, make_relative_path
 
 
 def get_all_file_paths(
     root_path: str,
+    scope_relative_paths: list[str] | None = None,
     ignore_relative_paths: list[str] | None = None,
     ignore_dirs: list[str] | None = None,
     extensions: tuple[str, ...] | None = None
@@ -24,27 +26,36 @@ def get_all_file_paths(
     Returns:
         list[str]: 検索結果のファイルパスのリスト
     """
+    if scope_relative_paths is None:
+        scope_relative_paths = []
     if ignore_relative_paths is None:
         ignore_relative_paths = []
     if ignore_dirs is None:
-        ignore_dirs = ['node_modules', 'cypress', 'coverage', '__pycashe__']
+        ignore_dirs = ['__pycashe__', 'node_modules', 'cypress', 'coverage', '.next', '.devcontainer', '.storybook', '.swc', '.vscode', 'cypress', ]
     if extensions is None:
         extensions = ('.py', '.js', '.json', '.jsx', '.ts', '.tsx')
 
-    paths = []
+    all_file_paths: list[str] = []
     for root, dirs, files in os.walk(root_path):
         # 無視するディレクトリをここで除外
         dirs[:] = [d for d in dirs if d not in ignore_dirs]
         for file in files:
             if file.endswith(extensions):
-                paths.append(os.path.join(root, file))
+                all_file_paths.append(os.path.join(root, file))
 
-    # 無視する相対パスを絶対パスに変換
-    ignore_absolute_paths = [os.path.join(root_path, p) for p in ignore_relative_paths]
+    if len(scope_relative_paths) > 0:
+        # 探索範囲の相対パスを絶対パスに変換
+        scope_absolute_paths = [os.path.join(root_path, p) for p in scope_relative_paths]
+        # 収集したファイルパスのうち、探索範囲に含まれていないパスを除外する。
+        all_file_paths = [p for p in all_file_paths if any([p.startswith(scope_path) for scope_path in scope_absolute_paths])]
 
-    # 収集したファイルパスから無視するパスを除外
-    valid_paths = [p for p in paths if p not in ignore_absolute_paths]
-    return valid_paths
+    if len(ignore_relative_paths) > 0:
+        # 無視する相対パスを絶対パスに変換
+        ignore_absolute_paths = [os.path.join(root_path, p) for p in ignore_relative_paths]
+        # 収集したファイルパスから無視するパスを除外する。
+        all_file_paths = [p for p in all_file_paths if not any([p.startswith(ignore_path) for ignore_path in ignore_absolute_paths])]
+
+    return all_file_paths
 
 
 def filter_paths(
@@ -92,10 +103,12 @@ class DependencyAnalyzer:
     def factory(
         cls,
         root_path: str,
-        start_relative_paths: list[str],
+        start_relative_paths: list[str] | None = None,
         ignore_relative_paths: list[str] | None = None,
         depth: int = 9999
     ) -> 'DependencyAnalyzer':
+        if start_relative_paths is None:
+            start_relative_paths = []
         if ignore_relative_paths is None:
             ignore_relative_paths = []
 
@@ -111,21 +124,29 @@ class DependencyAnalyzer:
         all_file_paths = filter_paths(all_file_paths, ignore_paths)
 
         # ファイルのタイプを確認して、適切なファイル解析クラスを生成
-        file_type = ProgramType.get_program_type(start_paths[0])
-        file_analyzer: FileAnalyzerIF
+        if len(start_paths):
+            file_type = ProgramType.get_program_type(start_paths[0])
+        else:
+            file_type = ProgramType.UNKNOWN
 
+        file_analyzer: FileAnalyzerIF
         if file_type == ProgramType.PYTHON:
             file_analyzer = FileAnalyzerPy(root_path, all_file_paths)
         elif file_type == ProgramType.JAVASCRIPT:
             file_analyzer = FileAnalyzerJs(root_path, all_file_paths)
         else:
-            raise ValueError('invalid file type')
+            file_analyzer = FileAnalyzerUnknown(root_path, all_file_paths)
 
         # クラスのインスタンスを生成して返す
         return cls(root_path, start_paths, all_file_paths, depth, file_analyzer)
 
     def analyze(self) -> list[str]:
         """指定したファイルの依存関係を解析する"""
+        # start_pathsが空の場合、全てのファイルのパスを返す
+        if len(self.start_paths) == 0:
+            return self.all_file_paths
+
+        # 指定したファイルの依存関係を解析する
         self.search_paths: list[list[str]] = [self.start_paths]
         self.result_paths = []
         self.current_depth: int = 0  # 探索中の階層の深さを0で初期化
