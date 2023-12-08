@@ -31,3 +31,13 @@ class TestMain:
         assert len(optimized_contents) == 3
         assert type(optimized_contents) is list
         assert all([count_tokens(content) <= 200 for content in optimized_contents])
+
+    def test_import_python_file(self):
+        optimized_contents = main(
+            mock_path,
+            ["py_mock/py_mock_1.py"],
+            max_token=220
+        )
+
+        assert type(optimized_contents) is list
+        assert all([count_tokens(content) <= 220 for content in optimized_contents])
