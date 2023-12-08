@@ -1,5 +1,5 @@
 from apps.lib.utils import read_file_content
-from .test_main import mock_path
+from .dependency_analyzer.test_main import mock_path
 import os
 
 
