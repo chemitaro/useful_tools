@@ -1,6 +1,5 @@
 import ast
 import importlib.util
-import logging
 import os
 import pkgutil
 import re
@@ -48,7 +47,7 @@ def extract_module_names_from_imports(file_content: str) -> list[str]:
         raise ValueError('matches の中身が全て文字列である必要があります')
 
     # アットマークを除去してリストに追加
-    paths = [match.lstrip('@') for match in matches if match.startswith('@')]
+    paths = [match.lstrip('@/') for match in matches if match.startswith('@/')]
 
     return paths
 
@@ -81,19 +80,14 @@ class FileAnalyzerJs(FileAnalyzerIF):
 
         # ルートディレクトリとモジュールのパスを組み合わせて拡張子のないパスを生成
         base_path = make_absolute_path(self.root_path, module_name)
-        logging.debug(f'self.root_path: {self.root_path}')
-        logging.debug(f'☆base_path: {base_path}')
 
         # 指定されたすべての拡張子に対してチェック
         for ext in extensions:
             potential_path = f"{base_path}{ext}"
-            logging.debug(f'potential_path: {potential_path}')
             if potential_path in self.all_file_paths:
-                logging.debug(f"マッチしたファイルパス: {potential_path}")
                 return potential_path
 
         # マッチするものが見つからない場合は None を返す
-        logging.debug(f"マッチするファイルパスが見つかりませんでした: {base_path}")
         return None
 
 
