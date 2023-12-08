@@ -8,17 +8,14 @@ class PathTree:
         self.root_path = root_path
         self.tree = self.create_tree(paths)
 
-    def parse_path(self, path):
+    def parse_url(self, url):
+        parsed_url = urlparse(url)
+        return filter(None, parsed_url.path.split('/'))  # 空の要素を除去
+
+    def parse_directory_path(self, path):
         if self.root_path and path.startswith(self.root_path):
-            # ルートパスを基に相対パスを取得
             path = os.path.relpath(path, self.root_path)
-        if path.startswith('http://') or path.startswith('https://'):
-            # URLの場合
-            parsed_path = urlparse(path).path.split('/')
-        else:
-            # ディレクトリパスの場合
-            parsed_path = path.split(os.sep)
-        return filter(None, parsed_path)  # 空の要素を除去
+        return filter(None, path.split(os.sep))  # 空の要素を除去
 
     def insert_into_tree(self, tree, paths):
         for path in paths:
@@ -29,7 +26,10 @@ class PathTree:
     def create_tree(self, paths):
         tree = defaultdict(dict)
         for path in paths:
-            parsed_paths = list(self.parse_path(path))
+            if path.startswith('http://') or path.startswith('https://'):
+                parsed_paths = list(self.parse_url(path))
+            else:
+                parsed_paths = list(self.parse_directory_path(path))
             self.insert_into_tree(tree, parsed_paths)
         return tree
 
