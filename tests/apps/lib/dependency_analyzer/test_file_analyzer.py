@@ -1,4 +1,4 @@
-from apps.lib.dependency_analyzer.file_analyzer import extract_module_names_from_imports, FileAnalyzerJs
+from apps.lib.dependency_analyzer.file_analyzer import extract_module_names_from_imports, FileAnalyzerJs, FileAnalyzerPy
 
 
 class TestExtractModuleNamesFromImports:
@@ -30,5 +30,18 @@ class TestFileAnalyzerJs:
         all_file_paths = ['/root/path/file1.js', '/root/path/file2.js']
         analyzer = FileAnalyzerJs(root_path, all_file_paths)
         assert type(analyzer) is FileAnalyzerJs
+        assert analyzer.root_path == root_path
+        assert analyzer.all_file_paths == all_file_paths
+
+
+class TestFileAnalyzerPy:
+    """FileAnalyzerPy のテスト"""
+
+    # 初期化してインスタンスを生成できることを確認する
+    def test_init(self):
+        root_path = '/root/path'
+        all_file_paths = ['/root/path/file1.py', '/root/path/file2.py']
+        analyzer = FileAnalyzerPy(root_path, all_file_paths)
+        assert type(analyzer) is FileAnalyzerPy
         assert analyzer.root_path == root_path
         assert analyzer.all_file_paths == all_file_paths
