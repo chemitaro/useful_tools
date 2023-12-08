@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import logging
 
 from apps.lib.utils import count_tokens
 
@@ -44,7 +45,7 @@ class ContentSizeOptimizer:
         char_size = len(content)
         if self.max_token < token_size or self.max_char < char_size:
             # 未実装: 文字数もしくはトークン数が最大文字数もしくは最大トークン数を超えているコンテンツを抽出して分割する。
-            print(f'コンテンツのサイズが最大文字数および最大トークン数を超えています。: token_size={token_size}, char_size={char_size}')
+            logging.warning(f'コンテンツのサイズが最大文字数および最大トークン数を超えています。: token_size={token_size}, char_size={char_size}')
         calc_sized_content = CalcSizedContent(
             content=content,
             token=token_size,
@@ -65,7 +66,7 @@ class ContentSizeOptimizer:
             total_char += content.char
             if self.max_token < total_token or self.max_char < total_char:
                 connected_contents.append(buffer_content)
-                buffer_content = ""
+                buffer_content = content.content
                 total_token = content.token
                 total_char = content.char
             else:
