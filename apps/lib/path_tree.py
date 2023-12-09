@@ -7,43 +7,41 @@ from apps.lib.utils import make_relative_path
 
 class PathTree:
     paths: list[str]
-    root_path: str
-    tree: defaultdict
+    root_path: str | None
+    tree: defaultdict[str, dict]
 
-    def __init__(self, paths, root_path=None):
+    def __init__(self, paths: list[str], root_path: str | None = None):
         self.root_path = root_path
         self.paths = paths
-
-        # パスのリストから木構造を生成
         self.tree = self.create_tree(self.paths)
 
-    def parse_url(self, url):
+    def parse_url(self, url: str) -> list[str]:
         parsed_url = urlparse(url)
-        return filter(None, parsed_url.path.split('/'))  # 空の要素を除去
+        return list(filter(None, parsed_url.path.split('/')))  # 空の要素を除去
 
-    def parse_directory_path(self, path):
+    def parse_directory_path(self, path: str) -> list[str]:
         if self.root_path and path.startswith(self.root_path):
             root_dir_path = os.path.dirname(self.root_path)
             path = make_relative_path(root_dir_path, path)
-        return filter(None, path.split(os.sep))  # 空の要素を除去
+        return list(filter(None, path.split(os.sep)))  # 空の要素を除去
 
-    def insert_into_tree(self, tree, paths):
+    def insert_into_tree(self, tree: dict[str, dict], paths: list[str]) -> None:
         for path in paths:
             if path not in tree:
                 tree[path] = defaultdict(dict)
             tree = tree[path]
 
-    def create_tree(self, paths):
-        tree = defaultdict(dict)
+    def create_tree(self, paths: list[str]) -> defaultdict[str, dict]:
+        tree: defaultdict[str, dict] = defaultdict(dict)
         for path in paths:
             if path.startswith('http://') or path.startswith('https://'):
-                parsed_paths = list(self.parse_url(path))
+                parsed_paths = self.parse_url(path)
             else:
-                parsed_paths = list(self.parse_directory_path(path))
+                parsed_paths = self.parse_directory_path(path)
             self.insert_into_tree(tree, parsed_paths)
         return tree
 
-    def get_tree_layout(self, tree=None, prefix="", is_root=True):
+    def get_tree_layout(self, tree: dict[str, dict] | None = None, prefix: str = "", is_root: bool = True) -> str:
         if tree is None:
             tree = self.tree
         result = ""
@@ -55,16 +53,3 @@ class PathTree:
             if isinstance(value, dict):
                 result += self.get_tree_layout(value, new_prefix, is_root=False)
         return result
-
-
-# 使用例
-urls = [
-    'http://example.com/foo/bar',
-    'http://example.com/foo/baz',
-    'http://example.com/xyz',
-    'http://example.com/foo/bar/item1',
-    'http://example.com/foo/bar/item2',
-    'http://example.com/xyz/abc',
-    'http://example.com/xyz/def',
-    'http://example.com/xyz/def/ghi'
-]
