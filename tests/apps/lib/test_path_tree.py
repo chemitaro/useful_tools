@@ -37,16 +37,16 @@ class TestPathTree:
     def test_view_tree_urls(self):
         """URL のリストから木構造を生成できることを確認する"""
         url_tree = PathTree(self.urls)
-        assert url_tree.print_tree() == 'foo\n├── bar\n│   ├── item1\n│   └── item2\n└── baz\nxyz\n├── abc\n└── def\n    └── ghi\n'
+        assert url_tree.get_tree_layout() == 'foo\n├── bar\n│   ├── item1\n│   └── item2\n└── baz\nxyz\n├── abc\n└── def\n    └── ghi\n'
 
     def test_view_tree_paths(self):
         """パスのリストから木構造を生成できることを確認する"""
         path_tree = PathTree(self.paths)
-        assert type(path_tree.print_tree()) == str
-        assert path_tree.print_tree() == 'User\n└── hoge\n    └── home\n        └── user\n            ├── documents\n            │   └── file.txt\n            └── pictures\n                ├── photo.jpg\n                ├── today\n                │   ├── 2021-01-01.jpg\n                │   ├── 2021-01-02.jpg\n                │   └── morning\n                │       └── 2021-01-02.jpg\n                └── old\n                    ├── 2020-12-31.jpg\n                    └── 2020-12-30.jpg\n'  # noqa: E501
+        assert type(path_tree.get_tree_layout()) == str
+        assert path_tree.get_tree_layout() == 'User\n└── hoge\n    └── home\n        └── user\n            ├── documents\n            │   └── file.txt\n            └── pictures\n                ├── photo.jpg\n                ├── today\n                │   ├── 2021-01-01.jpg\n                │   ├── 2021-01-02.jpg\n                │   └── morning\n                │       └── 2021-01-02.jpg\n                └── old\n                    ├── 2020-12-31.jpg\n                    └── 2020-12-30.jpg\n'  # noqa: E501
 
     def test_view_tree_paths_with_root(self):
         """パスのリストから木構造を生成できることを確認する"""
         path_tree = PathTree(self.paths, root_path=self.root_path)
-        assert type(path_tree.print_tree()) == str
-        assert path_tree.print_tree() == 'user\n├── documents\n│   └── file.txt\n└── pictures\n    ├── photo.jpg\n    ├── today\n    │   ├── 2021-01-01.jpg\n    │   ├── 2021-01-02.jpg\n    │   └── morning\n    │       └── 2021-01-02.jpg\n    └── old\n        ├── 2020-12-31.jpg\n        └── 2020-12-30.jpg\n'  # noqa: E501
+        assert type(path_tree.get_tree_layout()) == str
+        assert path_tree.get_tree_layout() == 'user\n├── documents\n│   └── file.txt\n└── pictures\n    ├── photo.jpg\n    ├── today\n    │   ├── 2021-01-01.jpg\n    │   ├── 2021-01-02.jpg\n    │   └── morning\n    │       └── 2021-01-02.jpg\n    └── old\n        ├── 2020-12-31.jpg\n        └── 2020-12-30.jpg\n'  # noqa: E501

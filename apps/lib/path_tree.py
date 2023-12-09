@@ -1,6 +1,6 @@
-from urllib.parse import urlparse
-from collections import defaultdict
 import os
+from collections import defaultdict
+from urllib.parse import urlparse
 
 from apps.lib.utils import make_relative_path
 
@@ -43,7 +43,7 @@ class PathTree:
             self.insert_into_tree(tree, parsed_paths)
         return tree
 
-    def print_tree(self, tree=None, prefix="", is_root=True):
+    def get_tree_layout(self, tree=None, prefix="", is_root=True):
         if tree is None:
             tree = self.tree
         result = ""
@@ -53,7 +53,7 @@ class PathTree:
             new_prefix = "" if is_root else (prefix + ("    " if i == len(items) - 1 else "│   "))
             result += prefix + connector + key + "\n"
             if isinstance(value, dict):
-                result += self.print_tree(value, new_prefix, is_root=False)
+                result += self.get_tree_layout(value, new_prefix, is_root=False)
         return result
 
 
