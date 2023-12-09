@@ -5,7 +5,7 @@ from apps.lib.dependency_analyzer.file_analyzer import (FileAnalyzerIF,
                                                         FileAnalyzerJs,
                                                         FileAnalyzerPy,
                                                         FileAnalyzerUnknown)
-from apps.lib.enum import ProgramType
+from apps.lib.enums import ProgramType
 from apps.lib.utils import make_absolute_path, make_relative_path
 
 

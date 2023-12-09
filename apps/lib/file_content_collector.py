@@ -1,5 +1,5 @@
 import re
-from apps.lib.enum import ProgramType
+from apps.lib.enums import ProgramType
 from apps.lib.utils import read_file_content, make_relative_path
 
 
