@@ -4,8 +4,8 @@ from apps.lib.dependency_analyzer.main import (DependencyAnalyzer,
                                                get_all_file_paths)
 
 # テスト用のファイルとディレクトリとして、mock 以下を使用
-relative_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'mock')
-mock_path = os.path.abspath(relative_path)
+relative_path: str = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'mock')
+mock_path: str = os.path.abspath(relative_path)
 
 
 class TestGetAllFilePaths:
