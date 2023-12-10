@@ -34,8 +34,8 @@ class WebCrawlerScraper:
         self,
         root_urls: list[str] | str,
         ignore_urls: list[str] | None = None,
-        limit_token: int = 999_999_999_999,
-        limit_char: int = 999_999_999_999,
+        limit_token: int | None = None,
+        limit_char: int | None = None,
         scraped_data: list[ScrapedData] | None = None,
         found_urls: set[str] | None = None,
         visited_urls: set[str] | None = None
@@ -52,7 +52,12 @@ class WebCrawlerScraper:
             normalized_ignore_urls = [self.normalize_url(url) for url in ignore_urls]
             self.ignore_urls = set(normalized_ignore_urls)
 
+        if limit_token is None:
+            limit_token = 999_999_999_999
         self.limit_token = limit_token
+
+        if limit_char is None:
+            limit_char = 999_999_999_999
         self.limit_char = limit_char
 
         if scraped_data is not None:
@@ -159,7 +164,7 @@ class WebCrawlerScraper:
         """スクレイプデータをテキストに変換する"""
         contents: list[str] = []
         for data in self.scraped_data:
-            contents.append(format_content(data.url, data.content, style="code"))
+            contents.append(format_content(data.url, data.content, style="doc"))
         return contents
 
     def get_urls(self) -> list[str]:
