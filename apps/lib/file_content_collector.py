@@ -1,6 +1,7 @@
 import re
+
 from apps.lib.enums import ProgramType
-from apps.lib.utils import read_file_content, make_relative_path
+from apps.lib.utils import make_relative_path, read_file_content, format_content
 
 
 def remove_py_docstring(content):
@@ -75,7 +76,7 @@ class FileContentCollector:
             str: 整形されたファイルの内容。
         """
         relative_path = make_relative_path(self.root_path, file_path)
-        formatted_content = f'{relative_path}\n```\n{content}\n```\n'
+        formatted_content = format_content(relative_path, content, style="code")
         return formatted_content
 
     # ドキュメントコメントを削除する
