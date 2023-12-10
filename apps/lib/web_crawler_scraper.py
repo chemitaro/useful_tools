@@ -4,7 +4,7 @@ from urllib.parse import urljoin, urlparse, urlunparse
 import requests  # type: ignore
 from bs4 import BeautifulSoup  # type: ignore
 
-from apps.lib.utils import count_tokens, format_content, print_colored
+from apps.lib.utils import count_tokens, format_content, print_colored, format_number
 
 
 # リミットを超えたことを知らせる例外
@@ -89,7 +89,7 @@ class WebCrawlerScraper:
         print_colored(('Exploring: ', 'green'), f'{len(self.visited_urls)} / {len(self.found_urls)}', " ", (normalized_url, 'grey'))
 
         if normalized_url.endswith('.pdf') or normalized_url.endswith('.jpg') or normalized_url.endswith('.jpeg'):
-            print(f'Skipping file URL: {normalized_url}')
+            print_colored(('Skipping :', "red"), " ", (normalized_url, "grey"))
             return  # PDFや画像ファイルのURLはスキップ
 
         try:
@@ -98,10 +98,10 @@ class WebCrawlerScraper:
                 soup: BeautifulSoup = BeautifulSoup(response.content, 'html.parser')
                 self.scrape_content(soup, normalized_url)
             else:
-                print(f"Error: {normalized_url} returned status code {response.status_code}")
+                print_colored((f"Error: {normalized_url} returned status code {response.status_code}", "red"))
                 return
         except requests.exceptions.RequestException as e:
-            print(f"Error exploring {normalized_url}: {e}")
+            print_colored((f"Error exploring {normalized_url}: {e}", "red"))
             return
 
         # HTMLリンク探索
@@ -154,6 +154,9 @@ class WebCrawlerScraper:
             except LimitException:
                 print('クローリングを終了します。')
                 break
+        print_colored(('Finished: ', 'green'), f'{len(self.visited_urls)} / {len(self.found_urls)}')
+        print_colored("  total token size: ", format_number(self.total_token_size()))
+        print_colored("  total char size: ", format_number(self.total_char_size()))
 
     def sort_scraped_data(self):
         """スクレイプデータをURLのアルファベット順にソートする"""
