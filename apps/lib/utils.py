@@ -86,8 +86,9 @@ def print_colored(*args: object | Tuple[str, Literal["black", "grey", "red", "gr
     """指定されたテキストと色の組み合わせを連結して表示する関数.
 
     Args:
-        str: 表示するテキスト
-        Tuple[str, Literal["black", "grey", "red", "green", "yellow", "blue", "magenta", "cyan", "white"]]: 表示するテキストと色の組み合わせ
+        *args
+            object: 表示するテキスト
+            Tuple[str, Literal["black", "grey", "red", "green", "yellow", "blue", "magenta", "cyan", "white"]]: 表示するテキストと色の組み合わせ
 
     Returns:
         None
@@ -110,14 +111,11 @@ def print_colored(*args: object | Tuple[str, Literal["black", "grey", "red", "gr
             text, color = arg
             color_code = colors.get(color, "")
             colored_text += f"{color_code}{text}\033[0m"
-            colored_text += " "
         elif isinstance(arg, str):
             text = arg
             colored_text += text
-            colored_text += " "
         else:
             text = str(arg)
             colored_text += text
-            colored_text += " "
 
     print(colored_text)
