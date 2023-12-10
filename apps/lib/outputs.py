@@ -37,7 +37,7 @@ def copy_to_clipboard(contents: list[str]):
     chunked_content を順番にクリップボードにコピーする
 
     Args:
-        chunked_content (List[str]): コピーする内容のリスト
+        chunked_content (list[str]): コピーする内容のリスト
 
     Returns:
         None
