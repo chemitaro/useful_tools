@@ -82,8 +82,16 @@ def format_content(name: str, content: str, style: Literal["doc", "code"] = "doc
     return formatted_content
 
 
-def print_colored(*args: str | Tuple[str, Literal["black", "grey", "red", "green", "yellow", "blue", "magenta", "cyan", "white"]]):
-    """指定されたテキストと色の組み合わせを連結して表示する関数."""
+def print_colored(*args: str | Tuple[str, Literal["black", "grey", "red", "green", "yellow", "blue", "magenta", "cyan", "white"]]) -> None:
+    """指定されたテキストと色の組み合わせを連結して表示する関数.
+
+    Args:
+        str: 表示するテキスト
+        Tuple[str, Literal["black", "grey", "red", "green", "yellow", "blue", "magenta", "cyan", "white"]]: 表示するテキストと色の組み合わせ
+
+    Returns:
+        None
+    """
     colors = {
         "black": "\033[30m",
         "grey": "\033[90m",
@@ -94,7 +102,6 @@ def print_colored(*args: str | Tuple[str, Literal["black", "grey", "red", "green
         "magenta": "\033[95m",
         "cyan": "\033[96m",
         "white": "\033[97m",
-        "end": "\033[0m",
     }
 
     colored_text = ""
@@ -106,6 +113,6 @@ def print_colored(*args: str | Tuple[str, Literal["black", "grey", "red", "green
             text = arg
             color_code = ""
 
-        colored_text += f"{color_code}{text}{colors['end']}"
+        colored_text += f"{color_code}{text}\033[0m"
 
     print(colored_text)
