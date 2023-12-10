@@ -1,4 +1,3 @@
-import logging
 import os
 
 from apps.lib.dependency_analyzer.file_analyzer import (FileAnalyzerIF,
@@ -159,13 +158,13 @@ class DependencyAnalyzer:
         self.search_paths: list[list[str]] = [self.start_paths]
         self.result_paths = []
         self.current_depth: int = 0  # 探索中の階層の深さを0で初期化
-        logging.info('\n== Parsing module dependencies ==')
+        print('\n== Parsing module dependencies ==')
         # 指定された深さまで依存関係を解析する
         for _ in range(0, self.depth + 1):
             # 次に探索するファイルのパスを格納するリスト追加する
             self.search_paths.append([])
             # 現在の階層のログを出力する
-            logging.info(f"\nDepth: {self.current_depth}")
+            print(f"\nDepth: {self.current_depth}")
             # 現在の階層のファイルのパスを取得する
             for path in self.search_paths[self.current_depth]:
                 # 現在の階層のファイルのパスが探索済みのパスに含まれている場合、次のファイルのパスを探索する
@@ -174,7 +173,7 @@ class DependencyAnalyzer:
                 if path not in self.all_file_paths:
                     continue
 
-                logging.info(f"  {make_relative_path(self.root_path, path)}")
+                print(f"  {make_relative_path(self.root_path, path)}")
                 # 現在の階層のファイルのパスを探索済みのパスの先頭に追加する
                 self.result_paths.insert(0, path)
                 # 現在の階層のファイルのパスから、依存関係を解析して、ファイルのパスを取得する。この時、絶対パスに変換する

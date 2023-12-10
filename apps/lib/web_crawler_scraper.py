@@ -1,11 +1,10 @@
-import logging
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlparse, urlunparse
 
 import requests  # type: ignore
 from bs4 import BeautifulSoup  # type: ignore
 
-from apps.lib.utils import count_tokens, format_content
+from apps.lib.utils import count_tokens, format_content, print_colored
 
 
 # リミットを超えたことを知らせる例外
@@ -87,7 +86,7 @@ class WebCrawlerScraper:
             return
 
         self.visited_urls.add(normalized_url)
-        logging.info('Exploring:', len(self.visited_urls), '/', len(self.found_urls), '\n', normalized_url)
+        print_colored(('Exploring: ', 'green'), (f'{len(self.visited_urls)} / {len(self.found_urls)}', 'grey'), (normalized_url, 'grey'))
 
         if normalized_url.endswith('.pdf') or normalized_url.endswith('.jpg') or normalized_url.endswith('.jpeg'):
             print(f'Skipping file URL: {normalized_url}')
@@ -99,10 +98,10 @@ class WebCrawlerScraper:
                 soup: BeautifulSoup = BeautifulSoup(response.content, 'html.parser')
                 self.scrape_content(soup, normalized_url)
             else:
-                logging.warning(f"Error: {normalized_url} returned status code {response.status_code}")
+                print(f"Error: {normalized_url} returned status code {response.status_code}")
                 return
         except requests.exceptions.RequestException as e:
-            logging.warning(f"Error exploring {normalized_url}: {e}")
+            print(f"Error exploring {normalized_url}: {e}")
             return
 
         # HTMLリンク探索
@@ -128,11 +127,11 @@ class WebCrawlerScraper:
         char_size = len(text)
 
         if token_size + self.total_token_size() > self.limit_token:
-            logging.warning('トークン数が上限を超えました。')
+            print('トークン数が上限を超えました。')
             raise LimitException('トークン数が上限を超えました。')
 
         if char_size + self.total_char_size() > self.limit_char:
-            logging.warning('文字数が上限を超えました。')
+            print('文字数が上限を超えました。')
             raise LimitException('文字数が上限を超えました。')
 
         # スクレイプデータを追加する
@@ -153,7 +152,7 @@ class WebCrawlerScraper:
             try:
                 self.explore_and_scrape(url)
             except LimitException:
-                logging.info('クローリングを終了します。')
+                print('クローリングを終了します。')
                 break
 
     def sort_scraped_data(self):

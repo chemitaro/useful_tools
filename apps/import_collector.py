@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import logging
 import os
 import sys
 
@@ -164,8 +163,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     root_dir = os.getcwd()
-
-    logging.basicConfig(level=logging.INFO, format='%(message)s')
 
     # メイン処理
     chunked_content = main(
