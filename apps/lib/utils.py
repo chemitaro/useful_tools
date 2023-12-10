@@ -1,4 +1,5 @@
 import os
+from typing import Literal
 
 import tiktoken
 
@@ -65,3 +66,17 @@ def read_file_content(file_path: str) -> str:
 def format_number(number: int) -> str:
     """数値を3桁ごとにカンマ区切りにして文字列に変換する"""
     return "{:,}".format(number)
+
+
+def format_content(name: str, content: str, style: Literal["doc", "code"] = "doc") -> str:
+    """受け取ったコンテントをパス名```コンテントの内容```の形式に整形します。"""
+    boundary: str
+    if style == "doc":
+        boundary = '"""'
+    elif style == "code":
+        boundary = "```"
+    else:
+        boundary = '"""'
+
+    formatted_content = f'{name}\n{boundary}\n{content}\n{boundary}\n'
+    return formatted_content
