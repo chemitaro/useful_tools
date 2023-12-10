@@ -86,7 +86,7 @@ class WebCrawlerScraper:
             return
 
         self.visited_urls.add(normalized_url)
-        print_colored(('Exploring: ', 'green'), (f'{len(self.visited_urls)} / {len(self.found_urls)}', 'grey'), (normalized_url, 'grey'))
+        print_colored(('Exploring: ', 'green'), f'{len(self.visited_urls)} / {len(self.found_urls)}', " ", (normalized_url, 'grey'))
 
         if normalized_url.endswith('.pdf') or normalized_url.endswith('.jpg') or normalized_url.endswith('.jpeg'):
             print(f'Skipping file URL: {normalized_url}')
