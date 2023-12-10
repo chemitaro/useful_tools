@@ -1,11 +1,16 @@
+import logging
 from dataclasses import dataclass
-from io import BytesIO
 from urllib.parse import urljoin, urlparse, urlunparse
 
-import requests
-from bs4 import BeautifulSoup
+import requests  # type: ignore
+from bs4 import BeautifulSoup  # type: ignore
 
 from apps.lib.utils import count_tokens, format_content
+
+
+# リミットを超えたことを知らせる例外
+class LimitException(Exception):
+    pass
 
 
 @dataclass
@@ -75,8 +80,9 @@ class WebCrawlerScraper:
         normalized_url = self.normalize_url(url)
         if normalized_url in self.visited_urls or not self.is_subpath(normalized_url) or self.should_ignore(normalized_url):
             return
+
         self.visited_urls.add(normalized_url)
-        print('Exploring:', len(self.visited_urls), '/', len(self.found_urls), '\n', normalized_url)
+        logging.info('Exploring:', len(self.visited_urls), '/', len(self.found_urls), '\n', normalized_url)
 
         if normalized_url.endswith('.pdf') or normalized_url.endswith('.jpg') or normalized_url.endswith('.jpeg'):
             print(f'Skipping file URL: {normalized_url}')
@@ -88,10 +94,10 @@ class WebCrawlerScraper:
                 soup: BeautifulSoup = BeautifulSoup(response.content, 'html.parser')
                 self.scrape_content(soup, normalized_url)
             else:
-                print(f"Error: {normalized_url} returned status code {response.status_code}")
+                logging.warning(f"Error: {normalized_url} returned status code {response.status_code}")
                 return
         except requests.exceptions.RequestException as e:
-            print(f"Error exploring {normalized_url}: {e}")
+            logging.warning(f"Error exploring {normalized_url}: {e}")
             return
 
         # HTMLリンク探索
@@ -104,26 +110,46 @@ class WebCrawlerScraper:
 
     def scrape_content(self, soup: BeautifulSoup, url: str) -> None:
         """スクレイプしてテキストを取得する"""
+        # 本文以外の要素を削除する
         for selector in ['header', 'footer', 'nav', 'aside']:
             for element in soup.select(selector):
                 element.decompose()
-        text = soup.get_text(separator=' ', strip=True).replace('\0', '')  # Null文字を除去
+
+        # 本文を取得する
+        text = soup.get_text(separator=' ', strip=True)
+        text = text.replace('\0', '')  # null文字を削除する
+
+        token_size = count_tokens(text)
+        char_size = len(text)
+
+        if token_size + self.total_token_size() > self.limit_token:
+            logging.warning('トークン数が上限を超えました。')
+            raise LimitException('トークン数が上限を超えました。')
+
+        if char_size + self.total_char_size() > self.limit_char:
+            logging.warning('文字数が上限を超えました。')
+            raise LimitException('文字数が上限を超えました。')
+
+        # スクレイプデータを追加する
         scraped_data: ScrapedData = ScrapedData(
             url=url,
             content=text,
-            token_size=count_tokens(text),
-            char_size=len(text)
+            token_size=token_size,
+            char_size=char_size
         )
         self.scraped_data.append(scraped_data)
 
     def run(self) -> None:
         """URLを探索し、スクレイプする"""
-        for root_url in self.root_urls:
-            self.explore_and_scrape(root_url)
+        self.found_urls = set(self.root_urls)
 
         while self.found_urls - self.visited_urls:
-            next_url = (self.found_urls - self.visited_urls).pop()
-            self.explore_and_scrape(next_url)
+            url = (self.found_urls - self.visited_urls).pop()
+            try:
+                self.explore_and_scrape(url)
+            except LimitException:
+                logging.info('クローリングを終了します。')
+                break
 
     def sort_scraped_data(self):
         """スクレイプデータをURLのアルファベット順にソートする"""

@@ -122,7 +122,7 @@ class TestWebCrawlerScraper:
         )
         web_crawler_scraper.run()
 
-        assert len(web_crawler_scraper.scraped_data) > 12
+        assert len(web_crawler_scraper.scraped_data) == 12
         assert all([type(scraped_data) is ScrapedData for scraped_data in web_crawler_scraper.scraped_data])
         assert all([scraped_data.url.startswith('https://www.nintendo.co.jp') for scraped_data in web_crawler_scraper.scraped_data])
         assert all([scraped_data.token_size > 0 for scraped_data in web_crawler_scraper.scraped_data])
@@ -130,3 +130,24 @@ class TestWebCrawlerScraper:
         assert all([type(scraped_data.content) is str for scraped_data in web_crawler_scraper.scraped_data])
         assert all([len(scraped_data.content) > 0 for scraped_data in web_crawler_scraper.scraped_data])
 
+    # トークン数のリミットでスクレイピングが停止することを確認する
+    def test_run_scraping_with_limit_token(self):
+        """トークン数のリミットでスクレイピングが停止することを確認する"""
+        web_crawler_scraper = WebCrawlerScraper(
+            'https://www.nintendo.co.jp/n02/shvc/bm4j/',
+            limit_token=3000
+        )
+        web_crawler_scraper.run()
+
+        assert web_crawler_scraper.total_token_size() < 3000
+
+    # 文字数のリミットでスクレイピングが停止することを確認する
+    def test_run_scraping_with_limit_char(self):
+        """文字数のリミットでスクレイピングが停止することを確認する"""
+        web_crawler_scraper = WebCrawlerScraper(
+            'https://www.nintendo.co.jp/n02/shvc/bm4j/',
+            limit_char=3000
+        )
+        web_crawler_scraper.run()
+
+        assert web_crawler_scraper.total_char_size() < 3000
