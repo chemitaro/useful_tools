@@ -65,10 +65,10 @@ class TestWebCrawlerScraper:
         )
         contents = web_crawler_scraper.get_contents()
         assert len(contents) == 4
-        assert contents[0] == 'https://example.com\n```\nExample Domain Domain Domain Domain Domain Domain\n```\n'
-        assert contents[1] == 'https://example.com/foo\n```\nExample Foo Foo Foo Foo Foo Foo Foo Foo Foo Foo Foo\n```\n'
-        assert contents[2] == 'https://example.com/bar\n```\nExample Hogehoge Hogehoge Hogehoge Hogehoge Hogehoge\n```\n'
-        assert contents[3] == 'https://example.com/baz\n```\nExample Fugafuga Fugafuga Fugafuga Fugafuga Fugafuga\n```\n'
+        assert contents[0] == 'https://example.com\n"""\nExample Domain Domain Domain Domain Domain Domain\n"""\n'
+        assert contents[1] == 'https://example.com/foo\n"""\nExample Foo Foo Foo Foo Foo Foo Foo Foo Foo Foo Foo\n"""\n'
+        assert contents[2] == 'https://example.com/bar\n"""\nExample Hogehoge Hogehoge Hogehoge Hogehoge Hogehoge\n"""\n'
+        assert contents[3] == 'https://example.com/baz\n"""\nExample Fugafuga Fugafuga Fugafuga Fugafuga Fugafuga\n"""\n'
 
     def test_get_urls(self):
         """URLからURLを取得できることを確認する"""
@@ -134,20 +134,20 @@ class TestWebCrawlerScraper:
     def test_run_scraping_with_limit_token(self):
         """トークン数のリミットでスクレイピングが停止することを確認する"""
         web_crawler_scraper = WebCrawlerScraper(
-            'https://www.nintendo.co.jp/n02/shvc/bm4j/',
-            limit_token=3000
+            'https://www.nintendo.co.jp/',
+            limit_token=10000
         )
         web_crawler_scraper.run()
 
-        assert web_crawler_scraper.total_token_size() < 3000
+        assert web_crawler_scraper.total_token_size() < 10000
 
     # 文字数のリミットでスクレイピングが停止することを確認する
     def test_run_scraping_with_limit_char(self):
         """文字数のリミットでスクレイピングが停止することを確認する"""
         web_crawler_scraper = WebCrawlerScraper(
-            'https://www.nintendo.co.jp/n02/shvc/bm4j/',
-            limit_char=3000
+            'https://www.nintendo.co.jp/',
+            limit_char=10000
         )
         web_crawler_scraper.run()
 
-        assert web_crawler_scraper.total_char_size() < 3000
+        assert web_crawler_scraper.total_char_size() < 10000
