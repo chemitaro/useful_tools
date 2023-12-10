@@ -1,5 +1,5 @@
 import os
-from typing import Literal
+from typing import Literal, Tuple
 
 import tiktoken
 
@@ -80,3 +80,26 @@ def format_content(name: str, content: str, style: Literal["doc", "code"] = "doc
 
     formatted_content = f'{name}\n{boundary}\n{content}\n{boundary}\n'
     return formatted_content
+
+
+def print_colored(*args: Tuple[str, Literal["black", "grey", "red", "green", "yellow", "blue", "magenta", "cyan", "white"]]):
+    """指定されたテキストと色の組み合わせを連結して表示する関数."""
+    colors = {
+        "black": "\033[30m",
+        "grey": "\033[90m",
+        "red": "\033[91m",
+        "green": "\033[92m",
+        "yellow": "\033[93m",
+        "blue": "\033[94m",
+        "magenta": "\033[95m",
+        "cyan": "\033[96m",
+        "white": "\033[97m",
+        "end": "\033[0m",
+    }
+
+    colored_text = ""
+    for text, color in args:
+        color_code = colors.get(color, "")
+        colored_text += f"{color_code}{text}{colors['end']}"
+
+    print(colored_text)
