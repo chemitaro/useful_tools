@@ -19,14 +19,27 @@ class TestContentSizeOptimizer:
         """初期化してインスタンスを生成できることを確認する"""
         assert type(self.optimizer) is ContentSizeOptimizer
 
-    def test_optimize(self):
+    def test_optimize_by_token(self):
         """コンテンツのサイズを最大トークン数と最大文字数を超えないように結合したり分割したりする"""
-        # コンテンツを結合する
-
         # コンテンツが結合されていることを確認
         joined_contents = self.optimizer.optimize_contents()
         assert len(joined_contents) == 2
         assert all([count_tokens(content) <= 3_000 for content in joined_contents])
+
+    def test_optimize_by_char(self):
+        """コンテンツのサイズを最大トークン数と最大文字数を超えないように結合したり分割したりする"""
+        # コンテンツが結合されていることを確認
+        optimizer = ContentSizeOptimizer(self.contents, max_token=None, max_char=10_000)
+        joined_contents = optimizer.optimize_contents()
+        assert len(joined_contents) == 4
+        assert all([len(content) <= 10_000 for content in joined_contents])
+
+    def test_no_optimize(self):
+        """max_tokenの値がNoneの場合はコンテンツが一つに結合される"""
+        optimizer = ContentSizeOptimizer(self.contents, max_token=None, max_char=None)
+        joined_contents = optimizer.optimize_contents()
+        assert len(joined_contents) == 1
+        assert len(joined_contents[0]) > 25_000
 
     def test_calc_token_size(self):
         """コンテンツのトークン数を計算する"""

@@ -11,16 +11,21 @@ class CalcSizedContent:
 
 
 class ContentSizeOptimizer:
-    max_token: int
-    max_char: int
+    max_token: int | None
+    max_char: int | None
     calc_sized_contents: list[CalcSizedContent] = []
 
     def __init__(
         self,
         contents: list[str],
-        max_token: int = 120_000,
-        max_char: int = 9_999_999
+        max_token: int | None = None,
+        max_char: int | None = None
     ):
+        if max_token is None:
+            max_token = 120_000
+        if max_char is None:
+            max_char = 999_999_999
+
         self.max_token = max_token
         self.max_char = max_char
         self.calc_size_contents(contents)
@@ -42,7 +47,7 @@ class ContentSizeOptimizer:
     def calc_size_content(self, content: str) -> CalcSizedContent:
         token_size = count_tokens(content)
         char_size = len(content)
-        if self.max_token < token_size or self.max_char < char_size:
+        if self.max_token and self.max_token < token_size or self.max_char and self.max_char < char_size:
             # 未実装: 文字数もしくはトークン数が最大文字数もしくは最大トークン数を超えているコンテンツを抽出して分割する。
             print_colored((f'コンテンツのサイズが最大文字数および最大トークン数を超えています。: token_size={token_size}, char_size={char_size}', "red"))
         calc_sized_content = CalcSizedContent(
@@ -63,7 +68,7 @@ class ContentSizeOptimizer:
         for content in self.calc_sized_contents:
             total_token += content.token
             total_char += content.char
-            if self.max_token < total_token or self.max_char < total_char:
+            if self.max_token and self.max_token < total_token or self.max_char and self.max_char < total_char:
                 connected_contents.append(buffer_content)
                 buffer_content = content.content
                 total_token = content.token
