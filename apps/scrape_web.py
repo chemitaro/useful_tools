@@ -21,10 +21,8 @@ from apps.lib.content_size_optimizer import ContentSizeOptimizer  # noqa: E402
 from apps.lib.outputs import (FileWriter, copy_to_clipboard,  # noqa: E402
                               print_result)
 from apps.lib.path_tree import PathTree  # noqa: E402
-from apps.lib.utils import print_colored
+from apps.lib.utils import print_colored  # noqa: E402
 from apps.lib.web_crawler_scraper import WebCrawlerScraper  # noqa: E402
-
-# noqa: E402
 
 default_root_urls: list[str] = ['']
 default_ignore_urls: list[str] = []
