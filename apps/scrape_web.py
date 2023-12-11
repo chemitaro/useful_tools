@@ -221,12 +221,6 @@ if __name__ == '__main__':
         limit_char=scrape_web_args.limit_char
     )
 
-    print_result(
-        contents,
-        max_char=scrape_web_args.max_char,
-        max_token=scrape_web_args.max_token
-    )
-
     # 出力方法がcopyの場合
     if scrape_web_args.output_type == 'copy':
         # データをトークン数に合わせて調整する.
@@ -248,6 +242,11 @@ if __name__ == '__main__':
 
     # 出力方法がfileの場合
     if scrape_web_args.output_type == 'file':
+        print_result(
+            contents,
+            max_char=scrape_web_args.max_char,
+            max_token=scrape_web_args.max_token
+        )
         # ファイルに書き込む
         file_writer = FileWriter(
             file_name=scrape_web_args.file_name or default_file_name,
