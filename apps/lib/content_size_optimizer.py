@@ -22,7 +22,7 @@ class ContentSizeOptimizer:
         max_char: int | None = None
     ):
         if max_token is None:
-            max_token = 120_000
+            max_token = 25_000
         if max_char is None:
             max_char = 999_999_999
 
