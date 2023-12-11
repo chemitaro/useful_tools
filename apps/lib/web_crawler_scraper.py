@@ -127,11 +127,11 @@ class WebCrawlerScraper:
         char_size = len(text)
 
         if token_size + self.total_token_size() > self.limit_token:
-            print('トークン数が上限を超えました。')
+            print_colored(('トークン数が上限を超えました。', "red"))
             raise LimitException('トークン数が上限を超えました。')
 
         if char_size + self.total_char_size() > self.limit_char:
-            print('文字数が上限を超えました。')
+            print_colored(('文字数が上限を超えました。', "red"))
             raise LimitException('文字数が上限を超えました。')
 
         # スクレイプデータを追加する
@@ -152,7 +152,7 @@ class WebCrawlerScraper:
             try:
                 self.explore_and_scrape(url)
             except LimitException:
-                print('クローリングを終了します。')
+                print_colored(('クローリングを終了します。', "red"))
                 break
         print_colored(('Finished: ', 'green'), f'{len(self.visited_urls)} / {len(self.found_urls)}')
         print_colored("  total token size: ", format_number(self.total_token_size()))
