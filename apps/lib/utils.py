@@ -78,7 +78,7 @@ def format_content(name: str, content: str, style: Literal["doc", "code"] = "doc
     else:
         boundary = '"""'
 
-    formatted_content = f'{name}\n{boundary}\n{content}\n{boundary}\n'
+    formatted_content = f'\n{name}\n{boundary}\n{content}\n{boundary}\n'
     return formatted_content
 
 
