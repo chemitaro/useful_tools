@@ -205,6 +205,10 @@ if __name__ == '__main__':
             else:
                 scrape_web_args.max_char = 999_999_999
 
+        if scrape_web_args.limit_token > 120_000:
+            print_colored(("\nlimit_token を120,000に設定しました", "red"))
+            scrape_web_args.limit_token = 120_000
+
     if scrape_web_args.output_type == 'file':
         if scrape_web_args.file_name is None:
             print(f'\nファイル名を入力してください。 default: {default_file_name}')
