@@ -1,8 +1,11 @@
-from apps.lib.utils import count_tokens, format_number
+import os
+
 import pyperclip  # type: ignore
 
+from apps.lib.utils import count_tokens, format_number, print_colored
 
-def print_result(contents: list[str], max_char: int, max_token: int) -> None:
+
+def print_result(contents: list[str], max_char: int | None, max_token: int | None) -> None:
     """
     取得したコードと文字数やトークン数、chunkの数を表示する
 
@@ -25,13 +28,12 @@ def print_result(contents: list[str], max_char: int, max_token: int) -> None:
     print(f'total tokens:     {format_number(total_token)} (encoded for gpt-4)')
     if len(contents) > 1:
         print(f'total chunks:     {format_number(len(contents))}')
-        if max_char < total_char:
+        if max_char and max_char < total_char:
             print(f'  ({format_number(max_char)} characters per chunk.)')
-        if max_token < total_token:
+        if max_token and max_token < total_token:
             print(f'  ({format_number(max_token)} tokens per chunk.)')
 
 
-# chunked_content を順番にクリップボードにコピーする
 def copy_to_clipboard(contents: list[str]):
     """
     chunked_content を順番にクリップボードにコピーする
@@ -54,3 +56,37 @@ def copy_to_clipboard(contents: list[str]):
         # chunkが最後のchunkでない場合、Enterキーを押すまで待機する
         if contents.index(content) + 1 < len(contents):
             input('\nPress Enter to continue...')
+
+
+# ファイルに書き出す
+class FileWriter:
+    """ファイルに書き出す"""
+
+    file_path: str
+    file_dir: str
+
+    def __init__(
+        self,
+        file_name: str,
+        file_dir: str = '~/Desktop',
+        extension: str = 'txt'
+    ):
+        """ファイル名とファイルのディレクトリを指定する"""
+        self.file_path = f'{file_dir}/{file_name}.{extension}'
+        self.file_dir = file_dir
+
+    def write(self, contents: list[str]) -> None:
+        """ファイルに書き出す"""
+        print('\n== Write to file ==\n')
+        self.create_dir()
+        text = '\n'.join(contents)
+        with open(self.file_path, 'w') as f:
+            f.write(text)
+        print_colored(('Saved to File: ', 'green'), self.file_path)
+
+    # ディレクトリが存在しない場合は作成する
+    def create_dir(self) -> None:
+        """ディレクトリが存在しない場合は作成する"""
+        if not os.path.exists(self.file_dir):
+            print_colored(('Creating directory: ', 'green'), self.file_dir)
+            os.makedirs(self.file_dir)
