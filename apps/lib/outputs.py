@@ -22,16 +22,16 @@ def print_result(contents: list[str], max_char: int | None, max_token: int | Non
     total_char = len(joined_content)
     total_lines = len(lines)
     total_token = count_tokens(joined_content)
-    print('\n== Result ==\n')
-    print(f'total characters: {format_number(total_char)}')
-    print(f'total lines:      {format_number(total_lines)}')
-    print(f'total tokens:     {format_number(total_token)} (encoded for gpt-4)')
+    print_colored(('\n== Result ==\n', "green"))
+    print_colored(f'total characters: {format_number(total_char)}')
+    print_colored(f'total lines:      {format_number(total_lines)}')
+    print_colored(f'total tokens:     {format_number(total_token)} (encoded for gpt-4)')
     if len(contents) > 1:
-        print(f'total chunks:     {format_number(len(contents))}')
+        print_colored(f'total chunks:     {format_number(len(contents))}')
         if max_char and max_char < total_char:
-            print(f'  ({format_number(max_char)} characters per chunk.)')
+            print_colored(f'  ({format_number(max_char)} characters per chunk.)')
         if max_token and max_token < total_token:
-            print(f'  ({format_number(max_token)} tokens per chunk.)')
+            print_colored(f'  ({format_number(max_token)} tokens per chunk.)')
 
 
 def copy_to_clipboard(contents: list[str]):
@@ -44,15 +44,15 @@ def copy_to_clipboard(contents: list[str]):
     Returns:
         None
     """
-    print('\n== Copy to clipboard ==')
+    print_colored(('\n== Copy to clipboard ==', "green"))
     for content in contents:
         pyperclip.copy(content)
         # chunkのナンバーを表示する
-        print(f'\nChunk {contents.index(content) + 1} of {len(contents)} copied to clipboard.')
+        print_colored(f'\nChunk {contents.index(content) + 1} of {len(contents)} copied to clipboard.')
         # 文字数とトークン数を表示する
         total_char = len(content)
         total_tokens = count_tokens(content)
-        print(f'  ({format_number(total_char)} char, {format_number(total_tokens)} tokens)')
+        print_colored(f'  ({format_number(total_char)} char, {format_number(total_tokens)} tokens)')
         # chunkが最後のchunkでない場合、Enterキーを押すまで待機する
         if contents.index(content) + 1 < len(contents):
             input('\nPress Enter to continue...')
@@ -77,7 +77,7 @@ class FileWriter:
 
     def write(self, contents: list[str]) -> None:
         """ファイルに書き出す"""
-        print('\n== Write to file ==\n')
+        print_colored(('\n== Write to file ==\n', "green"))
         self.create_dir()
         text = '\n'.join(contents)
         with open(self.file_path, 'w') as f:
