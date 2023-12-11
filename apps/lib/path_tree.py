@@ -2,18 +2,18 @@ import os
 from collections import defaultdict
 from urllib.parse import urlparse
 
-from apps.lib.utils import make_relative_path
+from apps.lib.utils import format_content, make_relative_path
 
 
 class PathTree:
     paths: list[str]
     root_path: str | None
-    tree: defaultdict[str, dict]
+    tree: defaultdict[str, dict] = defaultdict(dict)
 
     def __init__(self, paths: list[str], root_path: str | None = None):
         self.root_path = root_path
         self.paths = paths
-        self.tree = self.create_tree(self.paths)
+        self.create_tree()
 
     def parse_url(self, url: str) -> list[str]:
         parsed_url = urlparse(url)
@@ -31,15 +31,31 @@ class PathTree:
                 tree[path] = defaultdict(dict)
             tree = tree[path]
 
-    def create_tree(self, paths: list[str]) -> defaultdict[str, dict]:
-        tree: defaultdict[str, dict] = defaultdict(dict)
-        for path in paths:
+    def is_url(self) -> bool:
+        # すべてのパスがURLかどうかを判定する
+        return all(path.startswith('http://') or path.startswith('https://') for path in self.paths)
+
+    # pathsの中の起点となるパスを取得する
+    def get_root_path(self) -> str:
+        if self.root_path:
+            return self.root_path
+        else:
+            if self.is_url():
+                return self.paths[0]
+            else:
+                return os.path.commonpath(self.paths)
+
+    def create_tree(self) -> None:
+        # まずself.treeを空のdefaultdictにする
+        self.tree = defaultdict(dict)
+
+        self.tree: defaultdict[str, dict] = defaultdict(dict)
+        for path in self.paths:
             if path.startswith('http://') or path.startswith('https://'):
                 parsed_paths = self.parse_url(path)
             else:
                 parsed_paths = self.parse_directory_path(path)
-            self.insert_into_tree(tree, parsed_paths)
-        return tree
+            self.insert_into_tree(self.tree, parsed_paths)
 
     def get_tree_layout(self, tree: dict[str, dict] | None = None, prefix: str = "", is_root: bool = True) -> str:
         if tree is None:
@@ -53,3 +69,13 @@ class PathTree:
             if isinstance(value, dict):
                 result += self.get_tree_layout(value, new_prefix, is_root=False)
         return result
+
+    def get_tree_map(self) -> str:
+        title: str
+        if self.is_url():
+            title = f'Web Site Map: {self.get_root_path()}'
+        else:
+            title = f'Directory Structure Chart: {self.get_root_path()}'
+
+        # titleにpathsを追加
+        return format_content(title, self.get_tree_layout(), style='doc')
