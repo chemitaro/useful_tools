@@ -21,6 +21,7 @@ from apps.lib.content_size_optimizer import ContentSizeOptimizer  # noqa: E402
 from apps.lib.outputs import (FileWriter, copy_to_clipboard,  # noqa: E402
                               print_result)
 from apps.lib.path_tree import PathTree  # noqa: E402
+from apps.lib.utils import print_colored
 from apps.lib.web_crawler_scraper import WebCrawlerScraper  # noqa: E402
 
 # noqa: E402
@@ -108,13 +109,6 @@ if __name__ == '__main__':
         choices=['copy', 'file'],
     )
     parser.add_argument(
-        '-lc',
-        '--limit_char',
-        type=int,
-        default=999_999_999,
-        help='Limit the number of characters when scraping'
-    )
-    parser.add_argument(
         '-lt',
         '--limit_token',
         type=int,
@@ -122,17 +116,23 @@ if __name__ == '__main__':
         help='Limit the number of tokens when scraping'
     )
     parser.add_argument(
-        '-mc',
-        '--max_char',
+        '-lc',
+        '--limit_char',
         type=int,
         default=999_999_999,
-        help='Split by a specified number of characters when copying to the clipboard'
+        help='Limit the number of characters when scraping'
     )
     parser.add_argument(
         '-mt',
         '--max_token',
         type=int,
         help='Split by a specified number of tokens when copying to the clipboard'
+    )
+    parser.add_argument(
+        '-mc',
+        '--max_char',
+        type=int,
+        help='Split by a specified number of characters when copying to the clipboard'
     )
     parser.add_argument(
         '-f',
@@ -154,20 +154,20 @@ if __name__ == '__main__':
 
     # 不足している引数がある場合は、input()で入力を求める
     while scrape_web_args.root_urls is None or len(scrape_web_args.root_urls) == 0:
-        print('\nURLを入力してください。')
+        print_colored('\nURLを入力してください。')
         root_urls: str = input('root_urls: ')
         if root_urls:
             scrape_web_args.root_urls = root_urls.split(' ')
             break
 
     if scrape_web_args.ignore_urls is None:
-        print('\n無視するURLを入力してください。')
+        print_colored('\n無視するURLを入力してください。')
         ignore_urls: str = input('ignore_urls: ')
         if ignore_urls:
             scrape_web_args.ignore_urls = ignore_urls.split(' ')
 
     if scrape_web_args.output_type is None:
-        print('\n出力先方法を入力してください。(copy or file) default: copy')
+        print_colored('\n出力先方法を入力してください。("copy" or "file")', (" default: copy", "grey"))
         output_type: str = input('output_type: ')
         if output_type == 'file':
             scrape_web_args.output_type = 'file'
@@ -175,7 +175,7 @@ if __name__ == '__main__':
             scrape_web_args.output_type = 'copy'
 
     if scrape_web_args.limit_token is None:
-        print('\nクローリングを行うトークン数の上限を入力してください。 default: 999,999,999')
+        print_colored("\nクローリングを行うトークン数の上限を入力してください。", (" default: 999,999,999", "grey"))
         limit_token: str = input('limit_token: ')
         if limit_token:
             scrape_web_args.limit_token = int(limit_token)
@@ -183,7 +183,7 @@ if __name__ == '__main__':
             scrape_web_args.limit_token = 999_999_999
 
     if scrape_web_args.limit_char is None:
-        print('\nクローリングを行う文字数の上限を入力してください。 default: 999,999,999')
+        print_colored("\nクローリングを行う文字数の上限を入力してください。", (" default: 999,999,999", "grey"))
         limit_char: str = input('limit_char: ')
         if limit_char:
             scrape_web_args.limit_char = int(limit_char)
@@ -192,14 +192,15 @@ if __name__ == '__main__':
 
     if scrape_web_args.output_type == 'copy':
         if scrape_web_args.max_token is None:
-            print('\n分割するトークン数を入力してください。 default: 120,000')
+            print_colored("\n分割するトークン数を入力してください。", (" default: 25,000", "grey"))
             max_token: str = input('max_token: ')
             if max_token:
                 scrape_web_args.max_token = int(max_token)
             else:
-                scrape_web_args.max_token = 120_000
+                scrape_web_args.max_token = 25_000
         if scrape_web_args.max_char is None:
-            print('\n分割する文字数を入力してください。 default: 999,999,999')
+            print_colored("\n分割する文字数を入力してください。", (" default: 999,999,999", "grey"))
+            print_colored("                                  ", (" *Bard: 30,000", "grey"))
             max_char: str = input('max_char: ')
             if max_char:
                 scrape_web_args.max_char = int(max_char)
