@@ -34,7 +34,7 @@ def print_result(contents: list[str], max_char: int | None, max_token: int | Non
             print_colored(f'  ({format_number(max_token)} tokens per chunk.)')
 
 
-def copy_to_clipboard(contents: list[str]):
+def copy_to_clipboard(contents: list[str] | str) -> None:
     """
     chunked_content を順番にクリップボードにコピーする
 
@@ -44,7 +44,11 @@ def copy_to_clipboard(contents: list[str]):
     Returns:
         None
     """
+    if type(contents) is str:
+        contents = [contents]
+
     print_colored(('\n== Copy to clipboard ==', "green"))
+
     for content in contents:
         pyperclip.copy(content)
         # chunkのナンバーを表示する
@@ -56,6 +60,14 @@ def copy_to_clipboard(contents: list[str]):
         # chunkが最後のchunkでない場合、Enterキーを押すまで待機する
         if contents.index(content) + 1 < len(contents):
             input('\nPress Enter to continue...')
+
+
+def print_and_copy(text) -> None:
+    """ターミナルに表示し、クリップボードにコピーする関数."""
+    print('\n')
+    print(text)
+    print_colored(("Copy to clipboard.", "grey"))
+    pyperclip.copy(text)
 
 
 class FileWriter:
