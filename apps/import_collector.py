@@ -19,6 +19,7 @@ from apps.lib.content_size_optimizer import ContentSizeOptimizer  # noqa: E402
 from apps.lib.dependency_analyzer.main import DependencyAnalyzer  # noqa: E402
 from apps.lib.file_content_collector import FileContentCollector  # noqa: E402
 from apps.lib.outputs import copy_to_clipboard, print_result  # noqa: E402
+from apps.lib.path_tree import PathTree  # noqa: E402
 
 
 def main(
@@ -86,6 +87,10 @@ def main(
     )
     dependency_file_paths: list[str] = dependency_analyzer.analyze()
 
+    # 取得したファイルのパスをツリー構造で表示
+    path_tree = PathTree(dependency_file_paths, root_path=root_path)
+    path_tree.print_tree_map()
+
     # ファイルの内容を取得
     file_content_collector = FileContentCollector(
         dependency_file_paths,
@@ -93,6 +98,10 @@ def main(
         no_docstring=no_comment
     )
     contents = file_content_collector.collect()
+
+    # ディレクトリ構成図をコンテンツの先頭に追加する
+    path_tree_content = path_tree.get_tree_map()
+    contents.insert(0, path_tree_content)
 
     # 取得したコンテンツをトークン数で調整する
     optimizer = ContentSizeOptimizer(
