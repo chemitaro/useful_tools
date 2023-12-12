@@ -73,10 +73,9 @@ def main(
     # 探索したurlをツリー形式で表示に変換する
     urls = web_crawler_scraper.get_urls()
     path_tree = PathTree(urls)
-    url_tree = path_tree.get_tree_map()
+    path_tree.print_tree_map()
 
-    print(url_tree)
-
+    url_tree: str = path_tree.get_tree_map()
     # contentsの一番最初にurl_treeを追加する
     contents.insert(0, url_tree)
 
