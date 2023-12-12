@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 from urllib.parse import urlparse
 
-from apps.lib.utils import format_content, make_relative_path
+from apps.lib.utils import format_content, make_relative_path, print_colored
 
 
 class PathTree:
@@ -79,3 +79,7 @@ class PathTree:
 
         # titleにpathsを追加
         return format_content(title, self.get_tree_layout(), style='doc')
+
+    def print_tree_map(self) -> None:
+        print_colored(("\n== Tree Map ==", "green"))
+        print_colored("\n", self.get_tree_layout())
