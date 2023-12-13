@@ -19,8 +19,11 @@ class PathTree:
         self.create_tree()
 
     def parse_url(self, url: str) -> list[str]:
+        # URLのパース処理を変更して、ドメイン名を含める
         parsed_url = urlparse(url)
-        return list(filter(None, parsed_url.path.split('/')))  # 空の要素を除去
+        domain = parsed_url.netloc
+        path_segments = list(filter(None, parsed_url.path.split('/')))
+        return [domain] + path_segments  # ドメイン名をリストの最初に追加
 
     def parse_directory_path(self, path: str) -> list[str]:
         if self.root_path and path.startswith(self.root_path):
@@ -58,11 +61,12 @@ class PathTree:
             return None
 
         if self.is_url():
-            # URLの場合、ドメインと最初のパスのセグメントを基にルートを特定
-            common_root = urlparse(self.paths[0]).netloc
-            paths_segments = [self.parse_url(path) for path in self.paths]
-            common_segments = os.path.commonprefix(paths_segments)
-            return f"http://{common_root}/{'/'.join(common_segments)}"
+            # 複数のドメインからなる URL のリストを渡した場合、Noneを返す
+            if len(set(urlparse(path).netloc for path in self.paths)) > 1:
+                return None
+
+            # 単一のドメインからなる URL の場合は、ドメイン名を返す
+            return urlparse(self.paths[0]).netloc
         else:
             # ディレクトリパスの場合
             return os.path.commonpath(self.paths)
@@ -70,8 +74,6 @@ class PathTree:
     def create_tree(self) -> None:
         # まずself.treeを空のdefaultdictにする
         self.tree = defaultdict(dict)
-
-        self.tree: defaultdict[str, dict] = defaultdict(dict)
         for path in self.paths:
             if self.is_url():
                 parsed_paths = self.parse_url(path)
