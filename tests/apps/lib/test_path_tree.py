@@ -37,7 +37,7 @@ class TestPathTree:
     def test_view_tree_urls(self):
         """URL のリストから木構造を生成できることを確認する"""
         url_tree = PathTree(self.urls)
-        assert url_tree.get_tree_layout() == 'example.com\n├── foo\n│   ├── bar\n│   │   ├── item1\n│   │   └── item2\n│   └── baz\n└── xyz\n    ├── abc\n    └── def\n        └── ghi\n'
+        assert url_tree.get_tree_layout() == 'example.com\n├── foo\n│   ├── bar\n│   │   ├── item1\n│   │   └── item2\n│   └── baz\n└── xyz\n    ├── abc\n    └── def\n        └── ghi\n'  # noqa: E501
 
     def test_view_tree_paths(self):
         """パスのリストから木構造を生成できることを確認する"""
