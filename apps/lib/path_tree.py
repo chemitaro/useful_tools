@@ -11,8 +11,11 @@ class PathTree:
     tree: defaultdict[str, dict] = defaultdict(dict)
 
     def __init__(self, paths: list[str], root_path: str | None = None):
-        self.root_path = root_path
         self.paths = paths
+        if root_path:
+            self.root_path = root_path
+        else:
+            self.root_path = self.find_common_root()
         self.create_tree()
 
     def parse_url(self, url: str) -> list[str]:
@@ -45,13 +48,32 @@ class PathTree:
             else:
                 return os.path.commonpath(self.paths)
 
+    def find_common_root(self) -> str | None:
+        """与えられたパスまたはURLのリストから共通のルートを見つけ出す"""
+        # self.root_pathが定義されていて、値が存在する場合にその値を返す
+        if hasattr(self, 'root_path') and self.root_path:
+            return self.root_path
+
+        if len(self.paths) == 0:
+            return None
+
+        if self.is_url():
+            # URLの場合、ドメインと最初のパスのセグメントを基にルートを特定
+            common_root = urlparse(self.paths[0]).netloc
+            paths_segments = [self.parse_url(path) for path in self.paths]
+            common_segments = os.path.commonprefix(paths_segments)
+            return f"http://{common_root}/{'/'.join(common_segments)}"
+        else:
+            # ディレクトリパスの場合
+            return os.path.commonpath(self.paths)
+
     def create_tree(self) -> None:
         # まずself.treeを空のdefaultdictにする
         self.tree = defaultdict(dict)
 
         self.tree: defaultdict[str, dict] = defaultdict(dict)
         for path in self.paths:
-            if path.startswith('http://') or path.startswith('https://'):
+            if self.is_url():
                 parsed_paths = self.parse_url(path)
             else:
                 parsed_paths = self.parse_directory_path(path)
