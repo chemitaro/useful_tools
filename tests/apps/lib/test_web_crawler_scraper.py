@@ -65,10 +65,10 @@ class TestWebCrawlerScraper:
         )
         contents = web_crawler_scraper.get_contents()
         assert len(contents) == 4
-        assert contents[0] == 'https://example.com\n"""\nExample Domain Domain Domain Domain Domain Domain\n"""\n'
-        assert contents[1] == 'https://example.com/foo\n"""\nExample Foo Foo Foo Foo Foo Foo Foo Foo Foo Foo Foo\n"""\n'
-        assert contents[2] == 'https://example.com/bar\n"""\nExample Hogehoge Hogehoge Hogehoge Hogehoge Hogehoge\n"""\n'
-        assert contents[3] == 'https://example.com/baz\n"""\nExample Fugafuga Fugafuga Fugafuga Fugafuga Fugafuga\n"""\n'
+        assert contents[0] == '\nhttps://example.com\n"""\nExample Domain Domain Domain Domain Domain Domain\n"""\n'
+        assert contents[1] == '\nhttps://example.com/foo\n"""\nExample Foo Foo Foo Foo Foo Foo Foo Foo Foo Foo Foo\n"""\n'
+        assert contents[2] == '\nhttps://example.com/bar\n"""\nExample Hogehoge Hogehoge Hogehoge Hogehoge Hogehoge\n"""\n'
+        assert contents[3] == '\nhttps://example.com/baz\n"""\nExample Fugafuga Fugafuga Fugafuga Fugafuga Fugafuga\n"""\n'
 
     def test_get_urls(self):
         """URLからURLを取得できることを確認する"""
