@@ -121,14 +121,20 @@ if __name__ == "__main__":
         help='Path of the Python file from which to parse dependencies, multiple paths can be specified'
     )
     parser.add_argument(
+        '-r',
+        '--root_path',
+        type=str,
+        help='Specify the root path of the project'
+    )
+    parser.add_argument(
         '-s',
-        '--scope',
+        '--scope_paths',
         nargs='*',
         help='Specify paths of files to scope, multiple files can be specified'
     )
     parser.add_argument(
         '-i',
-        '--ignore',
+        '--ignore_paths',
         nargs='*',
         help='Specify paths of files to ignore, multiple files can be specified'
     )
@@ -140,7 +146,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         '-nc',
-        '--no-comment',
+        '--no_comment',
         action='store_true',
         help='Omit document comments'
     )
@@ -160,10 +166,10 @@ if __name__ == "__main__":
 
     # コマンドライン引数をMainArgsに変換
     main_args: MainArgs = MainArgs(
-        root_path=os.getcwd(),
+        root_path=args.root_path or os.getcwd(),
         target_paths=args.target_path,
-        scope_paths=args.scope,
-        ignore_paths=args.ignore,
+        scope_paths=args.scope_paths,
+        ignore_paths=args.ignore_paths,
         depth=args.depth,
         no_comment=args.no_comment,
         max_char=args.max_char,
