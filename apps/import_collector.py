@@ -204,7 +204,7 @@ if __name__ == "__main__":
     if not main_args.no_comment:
         print_colored('\nコメントを除去しますか？("y" or "n")', (" default: n", "grey"))
         input_data = input('no_comment: ')
-        if input_data == 'y':
+        if input_data == 'y' or input_data == 'yes' or input_data == 'Y':
             main_args.no_comment = True
         else:
             main_args.no_comment = False
