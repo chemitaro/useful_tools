@@ -11,16 +11,22 @@ class CalcSizedContent:
 
 
 class ContentSizeOptimizer:
+    """コンテンツのサイズを最大トークン数と最大文字数を超えないように結合したり分割したりする"""
+
     max_token: int | None
     max_char: int | None
+    with_prompt: bool
     calc_sized_contents: list[CalcSizedContent] = []
+    optimized_contents: list[str] = []
 
     def __init__(
         self,
         contents: list[str],
         max_token: int | None = None,
-        max_char: int | None = None
+        max_char: int | None = None,
+        with_prompt: bool = False
     ):
+        """コンストラクタ"""
         if max_token is None:
             max_token = 25_000
         if max_char is None:
@@ -28,6 +34,11 @@ class ContentSizeOptimizer:
 
         self.max_token = max_token
         self.max_char = max_char
+        self.with_prompt = with_prompt
+        # with_promptがTrueの場合はmax_tokenとmax_charを小さくしておく
+        if self.with_prompt:
+            self.max_token -= 50
+            self.max_char -= 150
         self.calc_size_contents(contents)
 
     def optimize_contents(self) -> list[str]:
@@ -63,20 +74,25 @@ class ContentSizeOptimizer:
         total_token: int = 0
         total_char: int = 0
         buffer_content = ""
-        connected_contents = []
+        self.optimized_contents = []
 
         for content in self.calc_sized_contents:
             total_token += content.token
             total_char += content.char
             if self.max_token and self.max_token < total_token or self.max_char and self.max_char < total_char:
-                connected_contents.append(buffer_content)
+                self.optimized_contents.append(buffer_content)
                 buffer_content = content.content
                 total_token = content.token
                 total_char = content.char
             else:
                 buffer_content += content.content
-        connected_contents.append(buffer_content)
-        return connected_contents
+        self.optimized_contents.append(buffer_content)
+
+        # プロンプトを追加する
+        if self.with_prompt:
+            self.add_prompts()
+
+        return self.optimized_contents
 
     def calc_total_token(self) -> int:
         """合計トークン数を計算する"""
@@ -91,3 +107,27 @@ class ContentSizeOptimizer:
         for content in self.calc_sized_contents:
             total_char += content.char
         return total_char
+
+    def add_prompts(self) -> None:
+        """各コンテンツの前後にプロンプトを追加する"""
+        segment_count = len(self.optimized_contents)
+
+        for i, content in enumerate(self.optimized_contents):
+            segment_number = i + 1  # セグメントの番号
+
+            # セグメントが一つだけの場合
+            if segment_count == 1:
+                prompt_start = "# Prompt: Below is the complete document, consisting of a single segment. Please respond to the questions after reading this document.\n"  # noqa: E501
+                prompt_end = "\n# Prompt: Document transmission of the single segment is complete. Please respond to the questions now."  # noqa: E501
+                self.optimized_contents[i] = prompt_start + content + prompt_end
+
+            # 複数のセグメントがある場合
+            else:
+                if i == 0:  # 最初のセグメント
+                    prompt_start = f"# Prompt: Beginning the document transmission. This is part {segment_number} of {segment_count} total segments. Please respond with 'OK, waiting' and do not take any action until all segments have been sent.\n"  # noqa: E501
+                elif i == segment_count - 1:  # 最後のセグメント
+                    prompt_start = f"# Prompt: This is the final segment of the document, segment {segment_number} of {segment_count} total segments. After this segment, please respond to the questions.\n"  # noqa: E501
+                else:  # 中間のセグメント
+                    prompt_start = f"# Prompt: Continuing the document transmission. This is segment {segment_number} of {segment_count} total segments. Please respond with 'OK, waiting' and do not take any action until all segments have been sent.\n"  # noqa: E501
+                prompt_end = f"\n# Prompt: End of segment {segment_number} of {segment_count} total segments. Please wait for the next segment to be sent."  # noqa: E501
+                self.optimized_contents[i] = prompt_start + content + prompt_end
