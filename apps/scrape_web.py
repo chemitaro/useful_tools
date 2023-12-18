@@ -21,13 +21,18 @@ from apps.lib.content_size_optimizer import ContentSizeOptimizer  # noqa: E402
 from apps.lib.outputs import (FileWriter, copy_to_clipboard,  # noqa: E402
                               print_result)
 from apps.lib.path_tree import PathTree  # noqa: E402
-from apps.lib.utils import print_colored  # noqa: E402
+from apps.lib.utils import format_number, print_colored  # noqa: E402
 from apps.lib.web_crawler_scraper import WebCrawlerScraper  # noqa: E402
 
 default_root_urls: list[str] = ['']
 default_ignore_urls: list[str] = []
 default_file_dir: str = '~/Desktop'
 default_file_name: str = 'page-content'
+default_output_type: Literal['copy', 'file'] = 'copy'
+default_limit_token: int = 999_999_999
+default_limit_char: int = 999_999_999
+default_max_token: int = 25_000
+default_max_char: int = 999_999_999
 
 
 @dataclass
@@ -164,49 +169,50 @@ if __name__ == '__main__':
             scrape_web_args.ignore_urls = ignore_urls.split(' ')
 
     if scrape_web_args.output_type is None:
-        print_colored('\n出力先方法を入力してください。("copy" or "file")', (" default: copy", "grey"))
+        print_colored('\n出力先方法を入力してください。("copy" or "file")', (f" default: {default_output_type}", "grey"))
         output_type: str = input('output_type: ')
         if output_type == 'file':
             scrape_web_args.output_type = 'file'
         else:
-            scrape_web_args.output_type = 'copy'
+            scrape_web_args.output_type = default_output_type
 
     if scrape_web_args.limit_token is None:
-        print_colored("\nクローリングを行うトークン数の上限を入力してください。", (" default: 999,999,999", "grey"))
+        print_colored("\nクローリングを行うトークン数の上限を入力してください。", (f" default: {format_number(default_max_token)}", "grey"))
         limit_token: str = input('limit_token: ')
         if limit_token:
             scrape_web_args.limit_token = int(limit_token)
         else:
-            scrape_web_args.limit_token = 999_999_999
+            scrape_web_args.limit_token = default_limit_token
 
     if scrape_web_args.limit_char is None:
-        print_colored("\nクローリングを行う文字数の上限を入力してください。", (" default: 999,999,999", "grey"))
+        print_colored("\nクローリングを行う文字数の上限を入力してください。", (f" default: {format_number(default_limit_char)}", "grey"))
         limit_char: str = input('limit_char: ')
         if limit_char:
             scrape_web_args.limit_char = int(limit_char)
         else:
-            scrape_web_args.limit_char = 999_999_999
+            scrape_web_args.limit_char = default_limit_char
 
     if scrape_web_args.output_type == 'copy':
         if scrape_web_args.max_token is None:
-            print_colored("\n分割するトークン数を入力してください。", (" default: 25,000", "grey"))
+            print_colored("\n分割するトークン数を入力してください。", (f" default: {format_number(default_max_token)}", "grey"))
             max_token: str = input('max_token: ')
             if max_token:
                 scrape_web_args.max_token = int(max_token)
             else:
-                scrape_web_args.max_token = 25_000
+                scrape_web_args.max_token = default_max_token
         if scrape_web_args.max_char is None:
-            print_colored("\n分割する文字数を入力してください。", (" default: 999,999,999", "grey"))
+            print_colored("\n分割する文字数を入力してください。", (f" default: {format_number(default_max_char)}", "grey"))
             print_colored("                                  ", (" *Bard: 30,000", "grey"))
             max_char: str = input('max_char: ')
             if max_char:
                 scrape_web_args.max_char = int(max_char)
             else:
-                scrape_web_args.max_char = 999_999_999
+                scrape_web_args.max_char = default_max_char
 
-        if scrape_web_args.limit_token > 120_000:
-            print_colored(("\nlimit_token を120,000に設定しました。\n", "red"))
-            scrape_web_args.limit_token = 120_000
+        limit_token_on_copy = 120_000
+        if scrape_web_args.limit_token > limit_token_on_copy:
+            print_colored((f"\nlimit_token を{format_number(limit_token_on_copy)}に設定しました。\n", "red"))
+            scrape_web_args.limit_token = limit_token_on_copy
 
     if scrape_web_args.output_type == 'file':
         if scrape_web_args.file_name is None:
@@ -231,7 +237,8 @@ if __name__ == '__main__':
         optimizer = ContentSizeOptimizer(
             contents=contents,
             max_token=scrape_web_args.max_token,
-            max_char=scrape_web_args.max_char
+            max_char=scrape_web_args.max_char,
+            with_prompt=True
         )
         optimized_contents = optimizer.optimize_contents()
 
