@@ -100,7 +100,8 @@ def main(
     optimizer = ContentSizeOptimizer(
         contents,
         max_char=max_char,
-        max_token=max_token
+        max_token=max_token,
+        with_prompt=True
     )
     optimized_contents = optimizer.optimize_contents()
     return optimized_contents
