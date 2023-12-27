@@ -25,7 +25,7 @@ from apps.lib.utils import print_colored  # noqa: E402
 
 default_depth = 999
 default_max_char = 999_999_999
-default_max_token = 25_000
+default_max_token = 23_000
 
 
 @dataclass
@@ -211,7 +211,7 @@ if __name__ == "__main__":
             main_args.no_comment = False
 
     if not main_args.max_token:
-        print_colored('\n分割するトークン数を入力してください。', (" default: 25,000", "grey"))
+        print_colored('\n分割するトークン数を入力してください。', (f" default: {default_max_token}", "grey"))
         input_data = input('max_token: ')
         if input_data:
             main_args.max_token = int(input_data)
