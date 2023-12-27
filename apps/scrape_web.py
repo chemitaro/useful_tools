@@ -31,7 +31,7 @@ default_file_name: str = 'page-content'
 default_output_type: Literal['copy', 'file'] = 'copy'
 default_limit_token: int = 999_999_999
 default_limit_char: int = 999_999_999
-default_max_token: int = 25_000
+default_max_token: int = 23_000
 default_max_char: int = 999_999_999
 
 

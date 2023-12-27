@@ -21,7 +21,7 @@ from apps.lib.dependency_analyzer.main import DependencyAnalyzer  # noqa: E402
 from apps.lib.file_content_collector import FileContentCollector  # noqa: E402
 from apps.lib.outputs import copy_to_clipboard, print_result  # noqa: E402
 from apps.lib.path_tree import PathTree  # noqa: E402
-from apps.lib.utils import print_colored  # noqa: E402
+from apps.lib.utils import print_colored, format_number  # noqa: E402
 
 default_depth = 999
 default_max_char = 999_999_999
@@ -211,7 +211,7 @@ if __name__ == "__main__":
             main_args.no_comment = False
 
     if not main_args.max_token:
-        print_colored('\n分割するトークン数を入力してください。', (f" default: {default_max_token}", "grey"))
+        print_colored('\n分割するトークン数を入力してください。', (f" default: {format_number(default_max_token)}", "grey"))
         input_data = input('max_token: ')
         if input_data:
             main_args.max_token = int(input_data)
