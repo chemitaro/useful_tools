@@ -21,7 +21,7 @@ from apps.lib.dependency_analyzer.main import DependencyAnalyzer  # noqa: E402
 from apps.lib.file_content_collector import FileContentCollector  # noqa: E402
 from apps.lib.outputs import copy_to_clipboard, print_result  # noqa: E402
 from apps.lib.path_tree import PathTree  # noqa: E402
-from apps.lib.utils import print_colored, format_number  # noqa: E402
+from apps.lib.utils import format_number, print_colored  # noqa: E402
 
 default_depth = 999
 default_max_char = 999_999_999
@@ -196,7 +196,7 @@ if __name__ == "__main__":
         if input_data:
             main_args.ignore_paths = input_data.split(' ')
 
-    if main_args.target_paths and not main_args.depth:
+    if main_args.target_paths and main_args.depth is None:
         print_colored('\n依存関係を解析する深さを入力してください。', (" default: 999", "grey"))
         input_data = input('depth: ')
         if input_data:
@@ -222,13 +222,15 @@ if __name__ == "__main__":
         if input_data:
             main_args.max_char = int(input_data)
 
+    print("print_depth", main_args.depth)
+
     # メイン処理
     chunked_content = main(
         main_args.root_path,
         target_paths=main_args.target_paths,
         scope_paths=main_args.scope_paths,
         ignore_paths=main_args.ignore_paths,
-        depth=main_args.depth or default_depth,
+        depth=main_args.depth if main_args.depth is not None else default_depth,
         no_comment=main_args.no_comment or False,
         max_char=main_args.max_char or default_max_char,
         max_token=main_args.max_token or default_max_token
