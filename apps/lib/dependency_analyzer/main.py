@@ -5,7 +5,8 @@ from apps.lib.dependency_analyzer.file_analyzer import (FileAnalyzerIF,
                                                         FileAnalyzerPy,
                                                         FileAnalyzerUnknown)
 from apps.lib.enums import ProgramType
-from apps.lib.utils import make_absolute_path, make_relative_path, print_colored
+from apps.lib.utils import (make_absolute_path, make_relative_path,
+                            print_colored)
 
 
 def get_all_file_paths(
@@ -153,6 +154,11 @@ class DependencyAnalyzer:
         # start_pathsが空の場合、全てのファイルのパスを返す
         if len(self.start_paths) == 0:
             return self.all_file_paths
+
+        # depthが0の場合、start_pathsを返す
+        if self.depth == 0:
+            self.result_paths = self.start_paths
+            return self.result_paths
 
         # 指定したファイルの依存関係を解析する
         self.search_paths: list[list[str]] = [self.start_paths]
