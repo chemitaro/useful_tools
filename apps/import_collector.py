@@ -36,6 +36,7 @@ class MainArgs:
     ignore_paths: list[str] | None
     depth: int | None
     no_comment: bool | None
+    with_prompt: bool | None
     max_char: int | None
     max_token: int | None
 
@@ -47,6 +48,7 @@ def main(
     ignore_paths: list[str] | None = None,
     depth: int = default_depth,
     no_comment: bool = False,
+    with_prompt: bool = False,
     max_char: int = default_max_char,
     max_token: int = default_max_token,
 ) -> list[str]:
@@ -101,7 +103,7 @@ def main(
         contents,
         max_char=max_char,
         max_token=max_token,
-        with_prompt=True
+        with_prompt=with_prompt
     )
     optimized_contents = optimizer.optimize_contents()
     return optimized_contents
@@ -152,6 +154,12 @@ if __name__ == "__main__":
         help='Omit document comments'
     )
     parser.add_argument(
+        '-p',
+        '--with_prompt',
+        action='store_true',
+        help='Whether to display the prompt'
+    )
+    parser.add_argument(
         '-mt',
         '--max_token',
         type=int,
@@ -173,6 +181,7 @@ if __name__ == "__main__":
         ignore_paths=args.ignore_paths,
         depth=args.depth,
         no_comment=args.no_comment,
+        with_prompt=args.with_prompt,
         max_char=args.max_char,
         max_token=args.max_token
     )
@@ -210,6 +219,14 @@ if __name__ == "__main__":
         else:
             main_args.no_comment = False
 
+    if not main_args.with_prompt:
+        print_colored('\nプロンプトを追加しますか？("y" or "n")', (" default: y", "grey"))
+        input_data = input('with_prompt: ')
+        if input_data == 'n' or input_data == 'no' or input_data == 'N':
+            main_args.with_prompt = False
+        else:
+            main_args.with_prompt = True
+
     if not main_args.max_token:
         print_colored('\n分割するトークン数を入力してください。', (f" default: {format_number(default_max_token)}", "grey"))
         input_data = input('max_token: ')
@@ -232,6 +249,7 @@ if __name__ == "__main__":
         ignore_paths=main_args.ignore_paths,
         depth=main_args.depth if main_args.depth is not None else default_depth,
         no_comment=main_args.no_comment or False,
+        with_prompt=main_args.with_prompt or True,
         max_char=main_args.max_char or default_max_char,
         max_token=main_args.max_token or default_max_token
     )
