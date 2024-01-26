@@ -10,6 +10,7 @@ from apps.lib.utils import (make_absolute_path, make_relative_path,
 
 
 class FileAnalyzerIF(ABC):
+    """ファイル解析クラスのインターフェース"""
     root_path: str
     all_file_paths: list[str]
 
@@ -36,11 +37,11 @@ def extract_module_names_from_imports(file_content: str) -> list[str]:
     Returns:
         list[str]: モジュールパスのリスト
     """
-    # インポート文を検索するための正規表現パターン
-    import_pattern = r"import .* from ['\"](@?[^'\"]+)['\"]"
+    # インポートおよびエクスポート文を検索するための正規表現パターン
+    pattern = r"(?:import .* from|export .* from) ['\"](@?[^'\"]+)['\"]"
 
-    # 正規表現を用いてインポート文を検索
-    matches: list[str] = re.findall(import_pattern, file_content)
+    # 正規表現を用いてインポートおよびエクスポート文を検索
+    matches: list[str] = re.findall(pattern, file_content)
 
     # matchesの中身が全て文字列で無い場合は例外を発生させる
     if not all(isinstance(match, str) for match in matches):
@@ -91,7 +92,7 @@ class FileAnalyzerJs(FileAnalyzerIF):
         return None
 
 
-def is_package(module_name):
+def is_package(module_name: str) -> bool:
     """
     指定されたモジュールがパッケージであるかどうかを返します。
 
@@ -122,6 +123,8 @@ def get_modules_in_package(package_name: str) -> list[str]:
 
 
 class FileAnalyzerPy(FileAnalyzerIF):
+    """Python 用のファイル解析クラス"""
+
     def analyze(self, target_path: str) -> list[str]:
         """
         指定されたPythonファイルのインポートを解析し、インポートされたモジュールのファイルの相対パスのリストを返します。
@@ -199,5 +202,6 @@ class FileAnalyzerPy(FileAnalyzerIF):
 
 
 class FileAnalyzerUnknown(FileAnalyzerIF):
+    """不明なファイル用のファイル解析クラス"""
     def analyze(self, target_path: str) -> list[str]:
         return []
