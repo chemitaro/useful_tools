@@ -74,11 +74,7 @@ def main(
 
     # ファイルの依存関係を解析
     dependency_analyzer = DependencyAnalyzer.factory(
-        root_path=root_path,
-        start_relative_paths=target_paths,
-        scope_relative_paths=scope_paths,
-        ignore_relative_paths=ignore_paths,
-        depth=depth
+        root_path=root_path, start_relative_paths=target_paths, scope_relative_paths=scope_paths, ignore_relative_paths=ignore_paths, depth=depth
     )
     dependency_file_paths: list[str] = dependency_analyzer.analyze()
 
@@ -87,11 +83,7 @@ def main(
     path_tree.print_tree_map()
 
     # ファイルの内容を取得
-    file_content_collector = FileContentCollector(
-        dependency_file_paths,
-        root_path,
-        no_docstring=no_comment
-    )
+    file_content_collector = FileContentCollector(dependency_file_paths, root_path, no_docstring=no_comment)
     contents = file_content_collector.collect()
 
     # ディレクトリ構成図をコンテンツの先頭に追加する
@@ -99,12 +91,7 @@ def main(
     contents.insert(0, path_tree_content)
 
     # 取得したコンテンツをトークン数で調整する
-    optimizer = ContentSizeOptimizer(
-        contents,
-        max_char=max_char,
-        max_token=max_token,
-        with_prompt=with_prompt
-    )
+    optimizer = ContentSizeOptimizer(contents, max_char=max_char, max_token=max_token, with_prompt=with_prompt)
     optimized_contents = optimizer.optimize_contents()
     return optimized_contents
 
@@ -118,59 +105,15 @@ if __name__ == "__main__":
         Assuming a character limit, you can also split the copy to the clipboard by a specified number of characters.
         """
     )
-    parser.add_argument(
-        'target_path',
-        nargs='*',
-        help='Path of the Python file from which to parse dependencies, multiple paths can be specified'
-    )
-    parser.add_argument(
-        '-r',
-        '--root_path',
-        type=str,
-        help='Specify the root path of the project'
-    )
-    parser.add_argument(
-        '-s',
-        '--scope_paths',
-        nargs='*',
-        help='Specify paths of files to scope, multiple files can be specified'
-    )
-    parser.add_argument(
-        '-i',
-        '--ignore_paths',
-        nargs='*',
-        help='Specify paths of files to ignore, multiple files can be specified'
-    )
-    parser.add_argument(
-        '-d',
-        '--depth',
-        type=int,
-        help='Specify depth of dependency analysis'
-    )
-    parser.add_argument(
-        '-nc',
-        '--no_comment',
-        action='store_true',
-        help='Omit document comments'
-    )
-    parser.add_argument(
-        '-p',
-        '--with_prompt',
-        action='store_true',
-        help='Whether to display the prompt'
-    )
-    parser.add_argument(
-        '-mt',
-        '--max_token',
-        type=int,
-        help='Split by a specified number of tokens when copying to the clipboard'
-    )
-    parser.add_argument(
-        '-mc',
-        '--max_char',
-        type=int,
-        help='Split by a specified number of characters when copying to the clipboard'
-    )
+    parser.add_argument("target_path", nargs="*", help="Path of the Python file from which to parse dependencies, multiple paths can be specified")
+    parser.add_argument("-r", "--root_path", type=str, help="Specify the root path of the project")
+    parser.add_argument("-s", "--scope_paths", nargs="*", help="Specify paths of files to scope, multiple files can be specified")
+    parser.add_argument("-i", "--ignore_paths", nargs="*", help="Specify paths of files to ignore, multiple files can be specified")
+    parser.add_argument("-d", "--depth", type=int, help="Specify depth of dependency analysis")
+    parser.add_argument("-nc", "--no_comment", action="store_true", help="Omit document comments")
+    parser.add_argument("-p", "--with_prompt", action="store_true", help="Whether to display the prompt")
+    parser.add_argument("-mt", "--max_token", type=int, help="Split by a specified number of tokens when copying to the clipboard")
+    parser.add_argument("-mc", "--max_char", type=int, help="Split by a specified number of characters when copying to the clipboard")
     args = parser.parse_args()
 
     # コマンドライン引数をMainArgsに変換
@@ -183,59 +126,59 @@ if __name__ == "__main__":
         no_comment=args.no_comment,
         with_prompt=args.with_prompt,
         max_char=args.max_char,
-        max_token=args.max_token
+        max_token=args.max_token,
     )
 
     # 不足している引数がある場合は、input()で入力を求める
     if not main_args.target_paths:
-        print_colored('\n依存関係を解析するファイルのパスを入力してください。', (" default: None", "grey"))
-        input_data = input('target_path: ')
+        print_colored("\n依存関係を解析するファイルのパスを入力してください。", (" default: None", "grey"))
+        input_data = input("target_path: ")
         if input_data:
-            main_args.target_paths = input_data.split(' ')
+            main_args.target_paths = input_data.split(" ")
 
     if not main_args.scope_paths:
-        print_colored('\n探索範囲のファイルのパスを入力してください。', (" default: None", "grey"))
-        input_data = input('scope_paths: ')
+        print_colored("\n探索範囲のファイルのパスを入力してください。", (" default: None", "grey"))
+        input_data = input("scope_paths: ")
         if input_data:
-            main_args.scope_paths = input_data.split(' ')
+            main_args.scope_paths = input_data.split(" ")
 
     if not main_args.ignore_paths:
-        print_colored('\n無視するファイルのパスを入力してください。', (" default: None", "grey"))
-        input_data = input('ignore_paths: ')
+        print_colored("\n無視するファイルのパスを入力してください。", (" default: None", "grey"))
+        input_data = input("ignore_paths: ")
         if input_data:
-            main_args.ignore_paths = input_data.split(' ')
+            main_args.ignore_paths = input_data.split(" ")
 
     if main_args.target_paths and main_args.depth is None:
-        print_colored('\n依存関係を解析する深さを入力してください。', (" default: 999", "grey"))
-        input_data = input('depth: ')
+        print_colored("\n依存関係を解析する深さを入力してください。", (" default: 999", "grey"))
+        input_data = input("depth: ")
         if input_data:
             main_args.depth = int(input_data)
 
     if not main_args.no_comment:
         print_colored('\nコメントを除去しますか？("y" or "n")', (" default: n", "grey"))
-        input_data = input('no_comment: ')
-        if input_data == 'y' or input_data == 'yes' or input_data == 'Y':
+        input_data = input("no_comment: ")
+        if input_data == "y" or input_data == "yes" or input_data == "Y":
             main_args.no_comment = True
         else:
             main_args.no_comment = False
 
     if not main_args.with_prompt:
         print_colored('\nプロンプトを追加しますか？("y" or "n")', (" default: y", "grey"))
-        input_data = input('with_prompt: ')
-        if input_data == 'n' or input_data == 'no' or input_data == 'N':
+        input_data = input("with_prompt: ")
+        if input_data == "n" or input_data == "no" or input_data == "N":
             main_args.with_prompt = False
         else:
             main_args.with_prompt = True
 
     if not main_args.max_token:
-        print_colored('\n分割するトークン数を入力してください。', (f" default: {format_number(default_max_token)}", "grey"))
-        input_data = input('max_token: ')
+        print_colored("\n分割するトークン数を入力してください。", (f" default: {format_number(default_max_token)}", "grey"))
+        input_data = input("max_token: ")
         if input_data:
             main_args.max_token = int(input_data)
 
     if not main_args.max_char:
-        print_colored('\n分割する文字数を入力してください。', (" default: 999,999,999, Gemini: 30,000", "grey"))
-        input_data = input('max_char: ')
+        print_colored("\n分割する文字数を入力してください。", (" default: 999,999,999, Gemini: 30,000", "grey"))
+        input_data = input("max_char: ")
         if input_data:
             main_args.max_char = int(input_data)
 
@@ -251,7 +194,7 @@ if __name__ == "__main__":
         no_comment=main_args.no_comment or False,
         with_prompt=main_args.with_prompt or True,
         max_char=main_args.max_char or default_max_char,
-        max_token=main_args.max_token or default_max_token
+        max_token=main_args.max_token or default_max_token,
     )
 
     # 取得したコードと文字数やトークン数、chunkの数を表示する
