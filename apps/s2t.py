@@ -15,9 +15,9 @@ if root_directory not in sys.path:
     sys.path.append(root_directory)
 
 
+from apps.lib.outputs import print_and_copy  # noqa: E402
 from apps.lib.s2t_whisper.main import convert_speech_to_text, record_audio  # noqa: E402
 from apps.lib.utils import print_colored  # noqa: E402
-from apps.lib.outputs import print_and_copy  # noqa: E402
 
 
 def main(*, model, language, temperature, prompt) -> str:
@@ -38,12 +38,12 @@ def app_run(*, model, language, temperature, prompt):
     """アプリケーションを実行する関数."""
     while True:
         # ユーザー入力を受け取る
-        print('\n')
+        print("\n")
         print_colored(('Press "enter" to start recording, press "q" to exit: ', "grey"))
         user_input = input()
 
         # 'q'または'Q'が入力されたら終了
-        if user_input.lower() == 'q':
+        if user_input.lower() == "q":
             print_colored(("Exit the program.", "grey"))
             break
 
@@ -85,7 +85,7 @@ if __name__ == "__main__":
         "-p",
         "--prompt",
         type=str,
-        default="I am the CEO of a company that plans, develops, and operates web services. My primary focus is on developing web applications and SaaS for the real estate sector. In terms of technology, we first develop locally using Docker and Docker Compose. For our production environment, we deploy and manage our backend APIs on Fly.io and our frontend applications on Vercel. Our source code is managed on GitHub, and we employ GitHub Actions for CI/CD. Regarding frameworks, we use Django and the Django framework for our backend, developed in Python. Internally, we adopt Domain-Driven Design, structuring our data using Pydantic for our domain objects. For the frontend, we use Next.js and TypeScript. Our styles are crafted with Tailwind CSS. Currently, we are utilizing Version 14 of Next.js and developing with AppRouter. ",  # noqa: E501
+        default='私は、Webサービスの企画、開発、運営を行う会社のCEOです。私の主な焦点は、不動産業界向けのWebアプリケーションやSaaSの開発です。技術的には、まずDockerとDocker Composeを使用してローカルで開発を行います。本番環境では、バックエンドAPIをFly.ioにデプロイし管理し、フロントエンドアプリケーションはVercelにデプロイします。ソースコードはGitHubで管理され、CI/CDにはGitHub Actionsを利用しています。フレームワークに関しては、バックエンドにはPythonで開発された"Django"と"Django Rest framework"を使用しています。社内ではドメイン駆動設計を採用し、ドメインオブジェクトには"Pydantic"を使用してデータを構造化しています。フロントエンドには"Next.js"と"TypeScript"を使用しており、スタイルは"Tailwind CSS"で作成されています。現在、"Next.js"のバージョン14を使用し、"AppRouter"で開発を行っています。',  # noqa: E501
         help="Prompt for the speech.",
     )
 
