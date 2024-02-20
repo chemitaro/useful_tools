@@ -4,6 +4,7 @@ import argparse
 import os
 import sys
 from dataclasses import dataclass
+from typing import Literal
 
 # 現在のファイルの絶対パスを取得
 current_file_path = os.path.abspath(__file__)
@@ -22,6 +23,8 @@ from apps.lib.file_content_collector import FileContentCollector  # noqa: E402
 from apps.lib.outputs import copy_to_clipboard, print_result  # noqa: E402
 from apps.lib.path_tree import PathTree  # noqa: E402
 from apps.lib.utils import format_number, print_colored  # noqa: E402
+from apps.lib.file_path_formatter import FilePathFormatter
+
 
 default_depth = 999
 default_max_char = 999_999_999
@@ -35,6 +38,7 @@ class MainArgs:
     scope_paths: list[str] | None
     ignore_paths: list[str] | None
     depth: int | None
+    output: Literal["code", "path"] | None
     no_comment: bool | None
     with_prompt: bool | None
     max_char: int | None
@@ -47,6 +51,7 @@ def main(
     scope_paths: list[str] | None = None,
     ignore_paths: list[str] | None = None,
     depth: int = default_depth,
+    output: Literal["code", "path"] | None = None,
     no_comment: bool = False,
     with_prompt: bool = False,
     max_char: int = default_max_char,
@@ -82,18 +87,30 @@ def main(
     path_tree = PathTree(dependency_file_paths, root_path=root_path)
     path_tree.print_tree_map()
 
-    # ファイルの内容を取得
-    file_content_collector = FileContentCollector(dependency_file_paths, root_path, no_docstring=no_comment)
-    contents = file_content_collector.collect()
+    # 出力形式が"code"の場合の処理
+    if output == "code":
 
-    # ディレクトリ構成図をコンテンツの先頭に追加する
-    path_tree_content = path_tree.get_tree_map()
-    contents.insert(0, path_tree_content)
+        # ファイルの内容を取得
+        file_content_collector = FileContentCollector(dependency_file_paths, root_path, no_docstring=no_comment)
+        contents = file_content_collector.collect()
 
-    # 取得したコンテンツをトークン数で調整する
-    optimizer = ContentSizeOptimizer(contents, max_char=max_char, max_token=max_token, with_prompt=with_prompt)
-    optimized_contents = optimizer.optimize_contents()
-    return optimized_contents
+        # ディレクトリ構成図をコンテンツの先頭に追加する
+        path_tree_content = path_tree.get_tree_map()
+        contents.insert(0, path_tree_content)
+
+        # 取得したコンテンツをトークン数で調整する
+        optimizer = ContentSizeOptimizer(contents, max_char=max_char, max_token=max_token, with_prompt=with_prompt)
+        optimized_contents = optimizer.optimize_contents()
+        return optimized_contents
+
+    # 出力形式が"path"の場合の処理
+    if output == "path":
+        file_path_formatter = FilePathFormatter(dependency_file_paths, root_path)
+        contents = file_path_formatter.execute()
+        return [contents]
+
+    # この行に到達することはない
+    raise ValueError("output must be 'code' or 'path'")
 
 
 if __name__ == "__main__":
@@ -110,6 +127,7 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--scope_paths", nargs="*", help="Specify paths of files to scope, multiple files can be specified")
     parser.add_argument("-i", "--ignore_paths", nargs="*", help="Specify paths of files to ignore, multiple files can be specified")
     parser.add_argument("-d", "--depth", type=int, help="Specify depth of dependency analysis")
+    parser.add_argument("-o", "--output", type=str, choices=["code", "path"], help="Specify the output format")
     parser.add_argument("-nc", "--no_comment", action="store_true", help="Omit document comments")
     parser.add_argument("-p", "--with_prompt", action="store_true", help="Whether to display the prompt")
     parser.add_argument("-mt", "--max_token", type=int, help="Split by a specified number of tokens when copying to the clipboard")
@@ -123,6 +141,7 @@ if __name__ == "__main__":
         scope_paths=args.scope_paths,
         ignore_paths=args.ignore_paths,
         depth=args.depth,
+        output=args.output,
         no_comment=args.no_comment,
         with_prompt=args.with_prompt,
         max_char=args.max_char,
@@ -153,6 +172,19 @@ if __name__ == "__main__":
         input_data = input("depth: ")
         if input_data:
             main_args.depth = int(input_data)
+
+    # 出力形式を指定する
+    if not main_args.output:
+        print_colored('\n出力形式を指定してください("code" or "path")', (" default: code", "grey"))
+        input_data = input("output: ")
+        if input_data == "path":
+            main_args.output = "path"
+            main_args.no_comment = True
+            main_args.with_prompt = True
+            main_args.max_char = default_max_char
+            main_args.max_token = default_max_token
+        else:
+            main_args.output = "code"
 
     if not main_args.no_comment:
         print_colored('\nコメントを除去しますか？("y" or "n")', (" default: n", "grey"))
@@ -191,6 +223,7 @@ if __name__ == "__main__":
         scope_paths=main_args.scope_paths,
         ignore_paths=main_args.ignore_paths,
         depth=main_args.depth if main_args.depth is not None else default_depth,
+        output=main_args.output or "code",
         no_comment=main_args.no_comment or False,
         with_prompt=main_args.with_prompt or True,
         max_char=main_args.max_char or default_max_char,
