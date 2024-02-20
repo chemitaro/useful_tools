@@ -29,6 +29,7 @@ from apps.lib.file_path_formatter import FilePathFormatter
 default_depth = 999
 default_max_char = 999_999_999
 default_max_token = 23_000
+default_output = "path"
 
 
 @dataclass
@@ -51,7 +52,7 @@ def main(
     scope_paths: list[str] | None = None,
     ignore_paths: list[str] | None = None,
     depth: int = default_depth,
-    output: Literal["code", "path"] | None = None,
+    output: Literal["code", "path"] = default_output,
     no_comment: bool = False,
     with_prompt: bool = False,
     max_char: int = default_max_char,
@@ -168,35 +169,39 @@ if __name__ == "__main__":
             main_args.ignore_paths = input_data.split(" ")
 
     if main_args.target_paths and main_args.depth is None:
-        print_colored("\n依存関係を解析する深さを入力してください。", (" default: 999", "grey"))
-        input_data = input("depth: ")
+        print_colored("\n依存関係を解析する深さを入力してください。", (f" default: {default_depth}", "grey"))
+        input_data = input("depth: ") or str(default_depth)
         if input_data:
             main_args.depth = int(input_data)
 
     # 出力形式を指定する
     if not main_args.output:
-        print_colored('\n出力形式を指定してください("code" or "path")', (" default: code", "grey"))
-        input_data = input("output: ")
+        print_colored('\n出力形式を指定してください("code" or "path")', (" default: path", "grey"))
+        input_data = input("output: ") or default_output
         if input_data == "path":
             main_args.output = "path"
             main_args.no_comment = True
             main_args.with_prompt = True
             main_args.max_char = default_max_char
             main_args.max_token = default_max_token
-        else:
+        elif input_data == "code":
             main_args.output = "code"
+        else:
+            raise ValueError("output must be 'code' or 'path'")
 
     if not main_args.no_comment:
         print_colored('\nコメントを除去しますか？("y" or "n")', (" default: n", "grey"))
-        input_data = input("no_comment: ")
+        input_data = input("no_comment: ") or "n"
         if input_data == "y" or input_data == "yes" or input_data == "Y":
             main_args.no_comment = True
-        else:
+        elif input_data == "n" or input_data == "no" or input_data == "N":
             main_args.no_comment = False
+        else:
+            raise ValueError("no_comment must be 'y' or 'n'")
 
     if not main_args.with_prompt:
         print_colored('\nプロンプトを追加しますか？("y" or "n")', (" default: y", "grey"))
-        input_data = input("with_prompt: ")
+        input_data = input("with_prompt: ") or "y"
         if input_data == "n" or input_data == "no" or input_data == "N":
             main_args.with_prompt = False
         else:
@@ -204,13 +209,13 @@ if __name__ == "__main__":
 
     if not main_args.max_token:
         print_colored("\n分割するトークン数を入力してください。", (f" default: {format_number(default_max_token)}", "grey"))
-        input_data = input("max_token: ")
+        input_data = input("max_token: ") or default_max_token
         if input_data:
             main_args.max_token = int(input_data)
 
     if not main_args.max_char:
         print_colored("\n分割する文字数を入力してください。", (" default: 999,999,999, Gemini: 30,000", "grey"))
-        input_data = input("max_char: ")
+        input_data = input("max_char: ") or default_max_char
         if input_data:
             main_args.max_char = int(input_data)
 
