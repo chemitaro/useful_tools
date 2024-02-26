@@ -28,7 +28,7 @@ from apps.lib.file_path_formatter import FilePathFormatter
 
 default_depth = 999
 default_max_char = 999_999_999
-default_max_token = 23_000
+default_max_token = 125_000
 default_output = "path"
 
 
@@ -90,28 +90,24 @@ def main(
 
     # 出力形式が"code"の場合の処理
     if output == "code":
-
         # ファイルの内容を取得
         file_content_collector = FileContentCollector(dependency_file_paths, root_path, no_docstring=no_comment)
         contents = file_content_collector.collect()
-
-        # ディレクトリ構成図をコンテンツの先頭に追加する
-        path_tree_content = path_tree.get_tree_map()
-        contents.insert(0, path_tree_content)
-
-        # 取得したコンテンツをトークン数で調整する
-        optimizer = ContentSizeOptimizer(contents, max_char=max_char, max_token=max_token, with_prompt=with_prompt)
-        optimized_contents = optimizer.optimize_contents()
-        return optimized_contents
-
-    # 出力形式が"path"の場合の処理
-    if output == "path":
+    elif output == "path":
+        # 出力形式が"path"の場合の処理
         file_path_formatter = FilePathFormatter(dependency_file_paths, root_path)
-        contents = file_path_formatter.execute()
-        return [contents]
+        contents = file_path_formatter.format()
+    else:
+        raise ValueError("output must be 'code' or 'path'")
 
-    # この行に到達することはない
-    raise ValueError("output must be 'code' or 'path'")
+    # ディレクトリ構成図をコンテンツの先頭に追加する
+    path_tree_content = path_tree.get_tree_map()
+    contents.insert(0, path_tree_content)
+
+    # 取得したコンテンツをトークン数で調整する
+    optimizer = ContentSizeOptimizer(contents, max_char=max_char, max_token=max_token, with_prompt=with_prompt, output=output)
+    optimized_contents = optimizer.optimize_contents()
+    return optimized_contents
 
 
 if __name__ == "__main__":
@@ -181,7 +177,6 @@ if __name__ == "__main__":
         if input_data == "path":
             main_args.output = "path"
             main_args.no_comment = True
-            main_args.with_prompt = True
             main_args.max_char = default_max_char
             main_args.max_token = default_max_token
         elif input_data == "code":
