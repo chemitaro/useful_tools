@@ -4,7 +4,7 @@ from typing import Literal, Tuple
 import tiktoken
 
 
-def count_tokens(text: str, model: str = 'gpt-4') -> int:
+def count_tokens(text: str, model: str = "gpt-4") -> int:
     """
     受け取ったテキストのトークン数を返す
 
@@ -34,7 +34,7 @@ def make_absolute_path(root_path: str, relative_path: str) -> str:
         return relative_path
 
     # 相対パスの先頭にスラッシュがある場合は除去しておく
-    relative_path = relative_path.lstrip('/')
+    relative_path = relative_path.lstrip("/")
     absolute_path = os.path.join(root_path, relative_path)
     return absolute_path
 
@@ -58,7 +58,7 @@ def make_relative_path(root_path: str, absolute_path: str) -> str:
 
 def read_file_content(file_path: str) -> str:
     """指定したファイルの内容を読み込み、文字列として返す"""
-    with open(file_path, 'r') as f:
+    with open(file_path, "r") as f:
         content = f.read()
     return content
 
@@ -78,7 +78,7 @@ def format_content(name: str, content: str, style: Literal["doc", "code"] = "doc
     else:
         boundary = '"""'
 
-    formatted_content = f'\n### {name}\n{boundary}\n{content}\n{boundary}\n'
+    formatted_content = f"\n### {name}\n{boundary}\n{content}\n{boundary}\n"
     return formatted_content
 
 
@@ -119,3 +119,19 @@ def print_colored(*args: object | Tuple[str, Literal["black", "grey", "red", "gr
             colored_text += text
 
     print(colored_text)
+
+
+def truncate_string(text: str, length: int) -> str:
+    """指定した長さに文字列を短縮する。必要に応じて末尾にドットを3つ付ける。
+
+    Args:
+        text (str): 短縮する文字列。
+        length (int): 文字列を短縮する長さ。
+
+    Returns:
+        str: 短縮された文字列。
+    """
+    if len(text) > length:
+        return text[:length] + "..."
+    else:
+        return text
