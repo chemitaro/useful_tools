@@ -30,7 +30,9 @@ def create_commit_message(git_diff: str) -> str:
     """
     # ここでgit_diffを解析し、コミットメッセージを作成するロジックを実装する
     # 例: コミットメッセージのテンプレートを使用する
-    commit_message = f'以下のGitの差分からコミットメッセージを作成してください。\n"""\n{git_diff}\n"""'
+    commit_message = (
+        f'以下のGitの差分からコミットメッセージを作成してください。\n"""\n{git_diff}\n"""\n生成したコミットメッセージは ``` ``` で囲ってください。\n'
+    )
     return commit_message
 
 
@@ -38,8 +40,11 @@ if __name__ == "__main__":
     # Gitの差分を取得
     git_diff = get_git_cached_diff()
 
+    git_diff_lines = git_diff.split("\n")
+    git_diff_preview = "\n".join(git_diff_lines[:10])
+
     # コミットメッセージを作成
-    commit_message = create_commit_message(git_diff)
+    commit_message = create_commit_message(git_diff_preview)
 
     # Gitの差分をターミナルに出力
     print_colored(("\n== Git Diff ==\n", "green"))
