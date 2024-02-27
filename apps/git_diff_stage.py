@@ -17,6 +17,7 @@ if root_directory not in sys.path:
 
 from apps.lib.git_diff import get_git_cached_diff
 from apps.lib.outputs import copy_to_clipboard, print_colored
+from apps.lib.utils import truncate_string
 
 
 def create_commit_message(git_diff: str) -> str:
@@ -40,15 +41,12 @@ if __name__ == "__main__":
     # Gitの差分を取得
     git_diff = get_git_cached_diff()
 
-    git_diff_lines = git_diff.split("\n")
-    git_diff_preview = "\n".join(git_diff_lines[:10])
-
     # コミットメッセージを作成
-    commit_message = create_commit_message(git_diff_preview)
+    commit_message = create_commit_message(git_diff)
 
     # Gitの差分をターミナルに出力
     print_colored(("\n== Git Diff ==\n", "green"))
-    print(git_diff)
+    print(truncate_string(git_diff, 1000))
 
     # コミットメッセージをクリップボードにコピー
     copy_to_clipboard(commit_message)
