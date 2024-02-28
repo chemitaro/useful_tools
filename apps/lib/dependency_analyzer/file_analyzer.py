@@ -60,7 +60,7 @@ class FileAnalyzerJs(FileAnalyzerIF):
         file_paths = []
         for module_name in module_names:
             file_path = self.convert_module_name_to_file_path(module_name)
-            if type(file_path) is str:
+            if isinstance(file_path, str):
                 file_paths.append(file_path)
         return file_paths
 
