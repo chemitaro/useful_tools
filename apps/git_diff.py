@@ -50,6 +50,9 @@ def code_review_prompt_clipboard(branch: str | None = None) -> None:
     # 変更のあったファイルの絶対パスを取得
     changed_file_paths = get_git_path_diff(branch)
 
+    # 現在の作業ディレクトリとマッチするパスのみを保持
+    changed_file_paths = [path for path in changed_file_paths if path.startswith(current_path)]
+
     # ファイルの相対パスをCursor用に整形
     path_formatter = FilePathFormatter(changed_file_paths, current_path, type="cursor")
     formatted_file_paths = path_formatter.format()
@@ -76,17 +79,19 @@ if __name__ == "__main__":
     # argparseのパーサーを作成
     parser = argparse.ArgumentParser(description="Gitの差分をコミットメッセージにコピーまたはコードレビューを依頼します。")
     # 'action'という名前の引数を追加（フラグなしの位置引数）
-    parser.add_argument("action", nargs="?", help="実行するアクションを指定します。('commit_message'または'review')")
+    parser.add_argument("action", nargs="?", help="実行するアクションを指定します。('commit'または'review')")
     # 引数を解析
     args = parser.parse_args()
 
     # 'action'引数が'commit_message'の場合、stage_diff_to_commit_clipboard関数を実行
-    if args.action == "commit_message":
+    if args.action == "commit":
         stage_diff_to_commit_clipboard()
+
     # 'action'引数が'review'の場合、code_review_prompt_clipboard関数を実行
     if args.action == "review":
         code_review_prompt_clipboard()
 
     # argparseのヘルプを表示
-    parser.print_help()
-    sys.exit(1)
+    if args.action not in ["commit", "review"]:
+        parser.print_help()
+        sys.exit(1)
