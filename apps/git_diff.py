@@ -67,12 +67,13 @@ def code_review_prompt_clipboard(branch: str | None = None) -> None:
     for path in formatted_file_paths:
         path_index += 1
         total_files = len(formatted_file_paths)
-        print_colored((f"{path_index}/{total_files}", "grey"), (f" {path}", "cyan"))
+        print_colored((f"{path_index}/{total_files}"), (f" {path}", "cyan"))
         review_prompt = f"以下のファイルに対してコードレビューをお願いします:\n{path}\n"
         # クリップボードにコピー
         pyperclip.copy(review_prompt)
         # エンターキーが押されるまで待機する
-        input("Press Enter to continue...")
+        print_colored(("Press Enter to continue...", "grey"))
+        input()
 
 
 if __name__ == "__main__":
