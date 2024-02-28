@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlparse, urlunparse
 
-import requests  # type: ignore
-from bs4 import BeautifulSoup  # type: ignore
+import requests
+from bs4 import BeautifulSoup
 
-from apps.lib.utils import count_tokens, format_content, print_colored, format_number
+from apps.lib.utils import count_tokens, format_content, format_number, print_colored
 
 
 # リミットを超えたことを知らせる例外
@@ -37,7 +37,7 @@ class WebCrawlerScraper:
         limit_char: int | None = None,
         scraped_data: list[ScrapedData] | None = None,
         found_urls: set[str] | None = None,
-        visited_urls: set[str] | None = None
+        visited_urls: set[str] | None = None,
     ):
         if type(root_urls) is str:
             root_urls = [root_urls]
@@ -86,16 +86,16 @@ class WebCrawlerScraper:
             return
 
         self.visited_urls.add(normalized_url)
-        print_colored(('Exploring: ', 'green'), f'{len(self.visited_urls)} / {len(self.found_urls)}', " ", (normalized_url, 'grey'))
+        print_colored(("Exploring: ", "green"), f"{len(self.visited_urls)} / {len(self.found_urls)}", " ", (normalized_url, "grey"))
 
-        if normalized_url.endswith('.pdf') or normalized_url.endswith('.jpg') or normalized_url.endswith('.jpeg'):
-            print_colored(('Skipping :', "red"), " ", (normalized_url, "grey"))
+        if normalized_url.endswith(".pdf") or normalized_url.endswith(".jpg") or normalized_url.endswith(".jpeg"):
+            print_colored(("Skipping :", "red"), " ", (normalized_url, "grey"))
             return  # PDFや画像ファイルのURLはスキップ
 
         try:
             response = requests.get(normalized_url, stream=True)
             if response.status_code == 200:
-                soup: BeautifulSoup = BeautifulSoup(response.content, 'html.parser')
+                soup: BeautifulSoup = BeautifulSoup(response.content, "html.parser")
                 self.scrape_content(soup, normalized_url)
             else:
                 print_colored((f"Error: {normalized_url} returned status code {response.status_code}", "red"))
@@ -105,42 +105,37 @@ class WebCrawlerScraper:
             return
 
         # HTMLリンク探索
-        for link in soup.find_all('a', href=True):
-            href = link['href']
+        for link in soup.find_all("a", href=True):
+            href = link["href"]
             full_url = self.normalize_url(urljoin(normalized_url, href))
-            if not (full_url.endswith('.pdf') or full_url.endswith('.jpg') or full_url.endswith('.jpeg')):
+            if not (full_url.endswith(".pdf") or full_url.endswith(".jpg") or full_url.endswith(".jpeg")):
                 if full_url not in self.found_urls and self.is_subpath(full_url) and not self.should_ignore(full_url):
                     self.found_urls.add(full_url)
 
     def scrape_content(self, soup: BeautifulSoup, url: str) -> None:
         """スクレイプしてテキストを取得する"""
         # 本文以外の要素を削除する
-        for selector in ['header', 'footer', 'nav', 'aside']:
+        for selector in ["header", "footer", "nav", "aside"]:
             for element in soup.select(selector):
                 element.decompose()
 
         # 本文を取得する
-        text = soup.get_text(separator=' ', strip=True)
-        text = text.replace('\0', '')  # null文字を削除する
+        text = soup.get_text(separator=" ", strip=True)
+        text = text.replace("\0", "")  # null文字を削除する
 
         token_size = count_tokens(text)
         char_size = len(text)
 
         if token_size + self.total_token_size() > self.limit_token:
-            print_colored(('トークン数が上限を超えました。', "red"))
-            raise LimitException('トークン数が上限を超えました。')
+            print_colored(("トークン数が上限を超えました。", "red"))
+            raise LimitException("トークン数が上限を超えました。")
 
         if char_size + self.total_char_size() > self.limit_char:
-            print_colored(('文字数が上限を超えました。', "red"))
-            raise LimitException('文字数が上限を超えました。')
+            print_colored(("文字数が上限を超えました。", "red"))
+            raise LimitException("文字数が上限を超えました。")
 
         # スクレイプデータを追加する
-        scraped_data: ScrapedData = ScrapedData(
-            url=url,
-            content=text,
-            token_size=token_size,
-            char_size=char_size
-        )
+        scraped_data: ScrapedData = ScrapedData(url=url, content=text, token_size=token_size, char_size=char_size)
         self.scraped_data.append(scraped_data)
 
     def run(self) -> None:
@@ -152,9 +147,9 @@ class WebCrawlerScraper:
             try:
                 self.explore_and_scrape(url)
             except LimitException:
-                print_colored(('クローリングを終了します。', "red"))
+                print_colored(("クローリングを終了します。", "red"))
                 break
-        print_colored(('Finished: ', 'green'), f'{len(self.visited_urls)} / {len(self.found_urls)}')
+        print_colored(("Finished: ", "green"), f"{len(self.visited_urls)} / {len(self.found_urls)}")
         print_colored("  total token size: ", format_number(self.total_token_size()))
         print_colored("  total char size: ", format_number(self.total_char_size()))
 

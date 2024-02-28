@@ -5,20 +5,16 @@ import pkgutil
 import re
 from abc import ABC, abstractmethod
 
-from apps.lib.utils import (make_absolute_path, make_relative_path,
-                            read_file_content)
+from apps.lib.utils import make_absolute_path, make_relative_path, read_file_content
 
 
 class FileAnalyzerIF(ABC):
     """ファイル解析クラスのインターフェース"""
+
     root_path: str
     all_file_paths: list[str]
 
-    def __init__(
-        self,
-        root_path: str,
-        all_file_paths: list[str]
-    ):
+    def __init__(self, root_path: str, all_file_paths: list[str]):
         self.root_path = root_path
         self.all_file_paths = all_file_paths
 
@@ -45,10 +41,10 @@ def extract_module_names_from_imports(file_content: str) -> list[str]:
 
     # matchesの中身が全て文字列で無い場合は例外を発生させる
     if not all(isinstance(match, str) for match in matches):
-        raise ValueError('matches の中身が全て文字列である必要があります')
+        raise ValueError("matches の中身が全て文字列である必要があります")
 
     # アットマークを除去してリストに追加
-    paths = [match.lstrip('@/') for match in matches if match.startswith('@/')]
+    paths = [match.lstrip("@/") for match in matches if match.startswith("@/")]
 
     return paths
 
@@ -77,7 +73,7 @@ class FileAnalyzerJs(FileAnalyzerIF):
         Returns:
             str: マッチしたファイルパス
         """
-        extensions = ['.js', '.json', '.jsx', '.ts', '.tsx']
+        extensions = [".js", ".json", ".jsx", ".ts", ".tsx"]
 
         # ルートディレクトリとモジュールのパスを組み合わせて拡張子のないパスを生成
         base_path = make_absolute_path(self.root_path, module_name)
@@ -149,7 +145,7 @@ class FileAnalyzerPy(FileAnalyzerIF):
         # モジュール名を取得する
         for node in imports:
             import_class_and_func_names = []
-            module_name: str = node.module or ''
+            module_name: str = node.module or ""
 
             # インポートされたクラスや関数の名前を取得する
             for alias in node.names:
@@ -163,7 +159,7 @@ class FileAnalyzerPy(FileAnalyzerIF):
 
                 # パッケージ名を取得する
                 package_relative_path = make_relative_path(self.root_path, base_path)
-                package_name = package_relative_path.replace('/', '.')
+                package_name = package_relative_path.replace("/", ".")
                 # モジュール名を結合する
                 module_name = f"{package_name}.{module_name}"
 
@@ -203,5 +199,6 @@ class FileAnalyzerPy(FileAnalyzerIF):
 
 class FileAnalyzerUnknown(FileAnalyzerIF):
     """不明なファイル用のファイル解析クラス"""
+
     def analyze(self, target_path: str) -> list[str]:
         return []

@@ -15,9 +15,9 @@ if root_directory not in sys.path:
     sys.path.append(root_directory)
 
 
-from apps.lib.git_diff import get_git_cached_diff
-from apps.lib.outputs import copy_to_clipboard, print_colored
-from apps.lib.utils import truncate_string
+from apps.lib.git_diff import get_git_cached_diff  # noqa: E402
+from apps.lib.outputs import copy_to_clipboard, print_colored  # noqa: E402
+from apps.lib.utils import truncate_string  # noqa: E402
 
 
 def create_commit_message(git_diff: str) -> str:

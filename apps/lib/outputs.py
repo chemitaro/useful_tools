@@ -1,6 +1,6 @@
 import os
 
-import pyperclip  # type: ignore
+import pyperclip
 
 from apps.lib.utils import count_tokens, format_number, print_colored
 

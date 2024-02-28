@@ -1,7 +1,7 @@
 import re
 
 from apps.lib.enums import ProgramType
-from apps.lib.utils import make_relative_path, read_file_content, format_content
+from apps.lib.utils import format_content, make_relative_path, read_file_content
 
 
 def remove_py_docstring(content):
@@ -15,9 +15,9 @@ def remove_py_docstring(content):
         str: ドキュメントコメントが削除されたPythonコード。
     """
     # ドキュメントコメントを削除する
-    omit_content = re.sub(r'""".*?"""\n', '', content, flags=re.DOTALL)
+    omit_content = re.sub(r'""".*?"""\n', "", content, flags=re.DOTALL)
     # '# 'から始めるコメントを削除する
-    omit_content = re.sub(r'# .*?\n', '', omit_content)
+    omit_content = re.sub(r"# .*?\n", "", omit_content)
     return omit_content
 
 
@@ -32,9 +32,9 @@ def remove_js_docstring(content):
         str: ドキュメントコメントが削除されたJavaScriptコード。
     """
     # ドキュメントコメントを削除する
-    omit_content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
+    omit_content = re.sub(r"/\*.*?\*/", "", content, flags=re.DOTALL)
     # '// 'から始めるコメントを削除する
-    omit_content = re.sub(r'// .*?\n', '', omit_content)
+    omit_content = re.sub(r"// .*?\n", "", omit_content)
     return omit_content
 
 

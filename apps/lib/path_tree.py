@@ -22,7 +22,7 @@ class PathTree:
         # URLのパース処理を変更して、ドメイン名を含める
         parsed_url = urlparse(url)
         domain = parsed_url.netloc
-        path_segments = list(filter(None, parsed_url.path.split('/')))
+        path_segments = list(filter(None, parsed_url.path.split("/")))
         return [domain] + path_segments  # ドメイン名をリストの最初に追加
 
     def parse_directory_path(self, path: str) -> list[str]:
@@ -39,7 +39,7 @@ class PathTree:
 
     def is_url(self) -> bool:
         # すべてのパスがURLかどうかを判定する
-        return all(path.startswith('http://') or path.startswith('https://') for path in self.paths)
+        return all(path.startswith("http://") or path.startswith("https://") for path in self.paths)
 
     # pathsの中の起点となるパスを取得する
     def get_root_path(self) -> str:
@@ -54,7 +54,7 @@ class PathTree:
     def find_common_root(self) -> str | None:
         """与えられたパスまたはURLのリストから共通のルートを見つけ出す"""
         # self.root_pathが定義されていて、値が存在する場合にその値を返す
-        if hasattr(self, 'root_path') and self.root_path:
+        if hasattr(self, "root_path") and self.root_path:
             return self.root_path
 
         if len(self.paths) == 0:
@@ -97,12 +97,12 @@ class PathTree:
     def get_tree_map(self) -> str:
         title: str
         if self.is_url():
-            title = f'Web Site Map: {self.get_root_path()}'
+            title = f"Web Site Map: {self.get_root_path()}"
         else:
-            title = f'Directory Structure Chart: {self.get_root_path()}'
+            title = f"Directory Structure Chart: {self.get_root_path()}"
 
         # titleにpathsを追加
-        return format_content(title, self.get_tree_layout(), style='doc')
+        return format_content(title, self.get_tree_layout(), style="doc")
 
     def print_tree_map(self) -> None:
         print_colored(("\n== Tree Map ==", "green"))
