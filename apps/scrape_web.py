@@ -39,7 +39,7 @@ def main(root_urls: list[str], ignore_urls: list[str] | None = None, limit_token
         ignore_urls = []
 
     # 引数の検証
-    if type(root_urls) is not list:
+    if isinstance(root_urls, list):
         raise TypeError("root_urls must be list")
 
     # Webクローラーを初期化する
