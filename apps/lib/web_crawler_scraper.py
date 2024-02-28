@@ -39,7 +39,7 @@ class WebCrawlerScraper:
         found_urls: set[str] | None = None,
         visited_urls: set[str] | None = None,
     ):
-        if type(root_urls) is str:
+        if isinstance(root_urls, str):
             root_urls = [root_urls]
         # root_urlsを正規化する
         root_urls = [self.normalize_url(url) for url in root_urls]
