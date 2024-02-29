@@ -85,7 +85,7 @@ if __name__ == "__main__":
         "-p",
         "--prompt",
         type=str,
-        default='私は、Webサービスの企画、開発、運営を行う会社のCEOです。私の主な焦点は、不動産業界向けのWebアプリケーションやSaaSの開発です。技術的には、まずDockerとDocker Composeを使用してローカルで開発を行います。本番環境では、バックエンドAPIをFly.ioにデプロイし管理し、フロントエンドアプリケーションはVercelにデプロイします。ソースコードはGitHubで管理され、CI/CDにはGitHub Actionsを利用しています。フレームワークに関しては、バックエンドにはPythonで開発された"Django"と"Django Rest framework"を使用しています。社内ではドメイン駆動設計を採用し、ドメインオブジェクトには"Pydantic"を使用してデータを構造化しています。フロントエンドには"Next.js"と"TypeScript"を使用しており、スタイルは"Tailwind CSS"で作成されています。現在、"Next.js"のバージョン14を使用し、"AppRouter"で開発を行っています。',  # noqa: E501
+        default='私は、Webサービスの企画、開発、運営を行う会社のCEOです。私の主な焦点は、人工知能の開発と応用、WebアプリケーションやSaaSの開発、そして不動産業界の効率化です。技術的には、まずDockerとDocker Composeを使用してローカルで開発を行います。本番環境では、バックエンドAPIをFly.ioにデプロイし管理し、フロントエンドアプリケーションはVercelにデプロイします。ソースコードはGitHubで管理され、CI/CDにはGitHub Actionsを利用しています。フレームワークに関しては、バックエンドにはPythonで開発された"Django"と"Django Rest framework"を使用しています。社内ではドメイン駆動設計を採用し、ドメインオブジェクトには"Pydantic"を使用してデータを構造化しています。フロントエンドには"Next.js"と"TypeScript"を使用しており、スタイルは"Tailwind CSS"で作成されています。現在、"Next.js"のバージョン14を使用し、"AppRouter"で開発を行っています。',  # noqa: E501
         help="Prompt for the speech.",
     )
 
