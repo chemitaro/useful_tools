@@ -29,9 +29,7 @@ def stage_diff_to_commit_clipboard() -> None:
     git_diff = get_git_cached_diff()
 
     # コミットメッセージを作成
-    commit_message = (
-        f'以下のGitの差分からコミットメッセージを作成してください。\n"""\n{git_diff}\n"""\n生成したコミットメッセージは ``` ``` で囲ってください。\n'
-    )
+    commit_message = f'以下のGitの差分からコミットメッセージを作成してください。\n"""\n{git_diff}\n"""\nコミットメッセージは内容の概要と修正点を箇条書きで生成してください。\n生成したコミットメッセージは ``` ``` で囲ってください。\n'
 
     # Gitの差分をターミナルに出力
     print_colored(("\n== Git Diff ==\n", "green"))
