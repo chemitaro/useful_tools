@@ -39,7 +39,6 @@ def stage_diff_to_commit_clipboard() -> None:
     copy_to_clipboard(commit_message)
 
 
-# コードレビューを依頼するプロンプトを作成する関数
 def code_review_prompt_clipboard(branch: str | None = None) -> None:
     """コードレビューを依頼するプロンプトを作成する"""
     # 現在の作業ディレクトリのパスを取得
