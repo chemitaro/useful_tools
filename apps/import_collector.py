@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, cast
 
 # 現在のファイルの絶対パスを取得
 current_file_path = os.path.abspath(__file__)
@@ -28,7 +28,7 @@ from apps.lib.utils import format_number, print_colored  # noqa: E402
 default_depth = 999
 default_max_char = 999_999_999
 default_max_token = 125_000
-default_output = "path"
+default_output = cast(Literal["code", "path"], "path")
 
 
 @dataclass
@@ -45,7 +45,7 @@ class MainArgs:
     max_token: int | None
 
 
-def main(
+def import_collect(
     root_path: str,
     target_paths: list[str] | None = None,
     scope_paths: list[str] | None = None,
@@ -216,7 +216,7 @@ if __name__ == "__main__":
     print("print_depth", main_args.depth)
 
     # メイン処理
-    chunked_content = main(
+    chunked_content = import_collect(
         main_args.root_path,
         target_paths=main_args.target_paths,
         scope_paths=main_args.scope_paths,
