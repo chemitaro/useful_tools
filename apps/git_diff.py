@@ -17,10 +17,10 @@ if root_directory not in sys.path:
     sys.path.append(root_directory)
 
 
-from apps.lib.file_path_formatter import FilePathFormatter  # noqa: E402
+from apps.import_collector import import_collect  # noqa: E402
 from apps.lib.git_operater import get_git_cached_diff, get_git_path_diff  # noqa: E402
 from apps.lib.outputs import copy_to_clipboard, print_colored  # noqa: E402
-from apps.lib.utils import truncate_string  # noqa: E402
+from apps.lib.utils import make_relative_path, truncate_string  # noqa: E402
 
 
 def stage_diff_to_commit_clipboard() -> None:
@@ -51,22 +51,25 @@ def code_review_prompt_clipboard(branch: str | None = None) -> None:
     # 現在の作業ディレクトリとマッチするパスのみを保持
     changed_file_paths = [path for path in changed_file_paths if path.startswith(current_path)]
 
-    # ファイルの相対パスをCursor用に整形
-    path_formatter = FilePathFormatter(changed_file_paths, current_path, type="cursor")
-    formatted_file_paths = path_formatter.format()
-
     # 変更のあったファイルの数をターミナルに出力
-    total_files = len(formatted_file_paths)
+    total_files = len(changed_file_paths)
     print_colored(("\n== Changed Files ==\n", "green"))
     print_colored(f"file count: {total_files}")
 
     # 変更のあったファイルの相対パスをターミナルに出力し、コードレビューを依頼するプロンプトをクリップボードにコピー
     path_index = 0
-    for path in formatted_file_paths:
+    for path in changed_file_paths:
         path_index += 1
-        total_files = len(formatted_file_paths)
-        print_colored((f"{path_index}/{total_files}"), (f" {path}", "cyan"))
-        review_prompt = f"以下のファイルに対してコードレビューをお願いします:\n{path}\n"
+        total_files = len(changed_file_paths)
+        # 絶対パスを相対パスに変換
+        relative_path = make_relative_path(current_path, path)
+
+        import_collection = import_collect(root_path=current_path, target_paths=[relative_path], output="path", with_prompt=True)
+        joined_import_collection = "\n".join(import_collection)
+
+        review_prompt = f"{joined_import_collection}以下のファイルに対してコードレビューをお願いします:\n@{relative_path}\n"
+
+        print_colored((f"{path_index}/{total_files}"), (f" {relative_path}", "cyan"))
         # クリップボードにコピー
         pyperclip.copy(review_prompt)
         # エンターキーが押されるまで待機する
