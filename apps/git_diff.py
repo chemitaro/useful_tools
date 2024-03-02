@@ -18,7 +18,11 @@ if root_directory not in sys.path:
 
 
 from apps.import_collector import import_collect  # noqa: E402
-from apps.lib.git_operater import get_git_cached_diff, get_git_path_diff  # noqa: E402
+from apps.lib.git_operater import (  # noqa: E402
+    get_file_diff_with_main_branch,
+    get_git_cached_diff,
+    get_git_path_diff,
+)
 from apps.lib.outputs import copy_to_clipboard, print_colored  # noqa: E402
 from apps.lib.utils import make_relative_path, truncate_string  # noqa: E402
 
@@ -66,7 +70,10 @@ def code_review_prompt_clipboard(branch: str | None = None) -> None:
         import_collection = import_collect(root_path=current_path, target_paths=[relative_path], output="path", with_prompt=True)
         joined_import_collection = "\n".join(import_collection)
 
-        review_prompt = f"{joined_import_collection}以下のファイルに対してコードレビューをお願いします:\n@{relative_path}\n"
+        # ファイルのメインブランチとの差分を取得
+        file_diff = get_file_diff_with_main_branch(path)
+
+        review_prompt = f'{joined_import_collection}\n\n### レビュー対象のコードの差分\n"""\n{file_diff}\n"""\n\n##指示:\n 以下のファイルに対してコードレビューをお願いします: \n- 変更点の内容と評価を簡潔に箇条書きで報告してください\n- 問題点や改善すると良い点やについて詳細に詳しく解説してください。 \n\n### レビュー対象のファイルのパス\n@{relative_path}\n'
 
         print_colored((f"{path_index}/{total_files}"), (f" {relative_path}", "cyan"))
         # クリップボードにコピー
