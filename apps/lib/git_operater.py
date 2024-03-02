@@ -63,3 +63,17 @@ def get_main_branch_name() -> str:
         # メインブランチの名称が見つからない場合は例外を発生させる
         raise Exception("メインブランチの名称が見つかりませんでした。")
     return main_branch_name
+
+
+def get_file_diff_with_main_branch(file_path: str) -> str:
+    """メインブランチと指定したファイルの差分を取得する
+
+    Args:
+        file_path (str): 差分を取得するファイルの絶対パス
+
+    Returns:
+        str: 指定したファイルの差分
+    """
+    main_branch_name = get_main_branch_name()
+    result = subprocess.run(["git", "diff", main_branch_name, "--", file_path], capture_output=True, text=True)
+    return result.stdout
