@@ -176,6 +176,11 @@ if __name__ == "__main__":
         mode=args.mode,
     )
 
+    if main_args.mode is None:
+        print_colored("\nモードを入力してください。('cursor', 'chatgpt', 'claude' のいずれか、または空白でNone)", (" default: None", "grey"))
+        input_data = input("mode: ") or None
+        main_args.mode = input_data
+
     # モードに応じたデフォルト値の設定
     if main_args.mode and main_args.mode in default_configs:
         mode_config = default_configs[main_args.mode]
