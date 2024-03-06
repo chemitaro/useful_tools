@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 from dataclasses import dataclass
-from typing import Literal, cast
+from typing import Literal, TypedDict, cast
 
 # 現在のファイルの絶対パスを取得
 current_file_path = os.path.abspath(__file__)
@@ -31,6 +31,41 @@ default_max_token = 125_000
 default_output = cast(Literal["code", "path"], "path")
 
 
+class ModeConfig(TypedDict):
+    output: Literal["code", "path"]
+    no_comment: bool
+    with_prompt: bool
+    max_char: int
+    max_token: int
+
+
+default_configs: dict[Literal["cursor", "chatgpt", "claude"], ModeConfig] = {
+    "cursor": {
+        "output": cast(Literal["code", "path"], "path"),
+        "no_comment": False,
+        "with_prompt": True,
+        "max_char": 999_999_999,
+        "max_token": 125_000,
+    },
+    "chatgpt": {
+        "output": cast(Literal["code", "path"], "code"),
+        "no_comment": False,
+        "with_prompt": True,
+        "max_char": 999_999_999,
+        "max_token": 125_000,
+    },
+    "claude": {
+        "output": cast(Literal["code", "path"], "code"),
+        "no_comment": False,
+        "with_prompt": False,
+        "max_char": 999_999_999,
+        "max_token": 200_000,
+    },
+}
+
+default_config: ModeConfig = default_configs["cursor"]
+
+
 @dataclass
 class MainArgs:
     root_path: str
@@ -43,6 +78,7 @@ class MainArgs:
     with_prompt: bool | None
     max_char: int | None
     max_token: int | None
+    mode: Literal["cursor", "chatgpt", "claude", None] | None
 
 
 def import_collect(
@@ -57,19 +93,6 @@ def import_collect(
     max_char: int = default_max_char,
     max_token: int = default_max_token,
 ) -> list[str]:
-    """指定されたファイルのパスのファイルの内容を取得する
-
-    Args:
-        root_path (str): 起点となるファイルのパス
-        module_paths (List[str], optional): 起点となるファイルのパスからの相対パスのリスト. Defaults to [].
-        depth (int, optional): 起点となるファイルのパスからの相対パスのリスト. Defaults to sys.maxsize.
-        no_comment (bool, optional): コメントを除去するかどうか. Defaults to False.
-        max_chara (int, optional): ファイルの内容を取得する際のチャンクサイズ. Defaults to sys.maxsize.
-        ignores (List[str], optional): 除外するファイルのパスのリスト. Defaults to [].
-
-    Returns:
-        List[str]: 指定されたファイルのパスのファイルの内容のリスト
-    """
     if target_paths is None:
         target_paths = []
     if scope_paths is None:
@@ -128,6 +151,14 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--with_prompt", action="store_true", help="Whether to display the prompt")
     parser.add_argument("-mt", "--max_token", type=int, help="Split by a specified number of tokens when copying to the clipboard")
     parser.add_argument("-mc", "--max_char", type=int, help="Split by a specified number of characters when copying to the clipboard")
+    parser.add_argument(
+        "-m",
+        "--mode",
+        type=str,
+        choices=["cursor", "chatgpt", "claude"],
+        default=None,
+        help="Select the mode of operation: 'cursor', 'chatgpt', or 'claude'. Leave empty for no specific mode.",
+    )
     args = parser.parse_args()
 
     # コマンドライン引数をMainArgsに変換
@@ -142,10 +173,20 @@ if __name__ == "__main__":
         with_prompt=args.with_prompt,
         max_char=args.max_char,
         max_token=args.max_token,
+        mode=args.mode,
     )
 
+    # モードに応じたデフォルト値の設定
+    if main_args.mode and main_args.mode in default_configs:
+        mode_config = default_configs[main_args.mode]
+        main_args.output = main_args.output or mode_config["output"]
+        main_args.no_comment = main_args.no_comment if main_args.no_comment is not None else mode_config["no_comment"]
+        main_args.with_prompt = main_args.with_prompt if main_args.with_prompt is not None else mode_config["with_prompt"]
+        main_args.max_char = main_args.max_char or mode_config["max_char"]
+        main_args.max_token = main_args.max_token or mode_config["max_token"]
+
     # 不足している引数がある場合は、input()で入力を求める
-    if not main_args.target_paths:
+    if main_args.target_paths is None:
         print_colored("\n依存関係を解析するファイルのパスを入力してください。", (" default: None", "grey"))
         input_data = input("target_path: ")
         if input_data:
@@ -170,7 +211,7 @@ if __name__ == "__main__":
             main_args.depth = int(input_data)
 
     # 出力形式を指定する
-    if not main_args.output:
+    if main_args.output is None:
         print_colored('\n出力形式を指定してください("code" or "path")', (" default: path", "grey"))
         input_data = input("output: ") or default_output
         if input_data == "path":
@@ -183,7 +224,7 @@ if __name__ == "__main__":
         else:
             raise ValueError("output must be 'code' or 'path'")
 
-    if not main_args.no_comment:
+    if main_args.no_comment is None:
         print_colored('\nコメントを除去しますか？("y" or "n")', (" default: n", "grey"))
         input_data = input("no_comment: ") or "n"
         if input_data == "y" or input_data == "yes" or input_data == "Y":
@@ -193,7 +234,7 @@ if __name__ == "__main__":
         else:
             raise ValueError("no_comment must be 'y' or 'n'")
 
-    if not main_args.with_prompt:
+    if main_args.with_prompt is None:
         print_colored('\nプロンプトを追加しますか？("y" or "n")', (" default: y", "grey"))
         input_data = input("with_prompt: ") or "y"
         if input_data == "n" or input_data == "no" or input_data == "N":
@@ -201,13 +242,13 @@ if __name__ == "__main__":
         else:
             main_args.with_prompt = True
 
-    if not main_args.max_token:
+    if main_args.max_token is None:
         print_colored("\n分割するトークン数を入力してください。", (f" default: {format_number(default_max_token)}", "grey"))
         input_data = input("max_token: ") or default_max_token
         if input_data:
             main_args.max_token = int(input_data)
 
-    if not main_args.max_char:
+    if main_args.max_char is None:
         print_colored("\n分割する文字数を入力してください。", (" default: 999,999,999, Gemini: 30,000", "grey"))
         input_data = input("max_char: ") or default_max_char
         if input_data:
