@@ -191,7 +191,7 @@ if __name__ == "__main__":
         main_args.max_token = main_args.max_token or mode_config["max_token"]
 
     # 不足している引数がある場合は、input()で入力を求める
-    if main_args.target_paths is None:
+    if not main_args.target_paths:
         print_colored("\n依存関係を解析するファイルのパスを入力してください。", (" default: None", "grey"))
         input_data = input("target_path: ")
         if input_data:
@@ -269,8 +269,8 @@ if __name__ == "__main__":
         ignore_paths=main_args.ignore_paths,
         depth=main_args.depth if main_args.depth is not None else default_depth,
         output=main_args.output or "code",
-        no_comment=main_args.no_comment or False,
-        with_prompt=main_args.with_prompt or True,
+        no_comment=main_args.no_comment,
+        with_prompt=main_args.with_prompt,
         max_char=main_args.max_char or default_max_char,
         max_token=main_args.max_token or default_max_token,
     )
