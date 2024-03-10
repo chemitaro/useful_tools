@@ -31,9 +31,12 @@ def stage_diff_to_commit_clipboard() -> None:
     """ステージングされた変更をコミットメッセージにコピーする"""
     # Gitの差分を取得
     git_diff = get_git_cached_diff()
-
-    # コミットメッセージを作成
-    commit_message = f'以下のGitの差分からコミットメッセージを作成してください。\n"""\n{git_diff}\n"""\nコミットメッセージは内容の概要と修正点を箇条書きで生成してください。\n生成したコミットメッセージは ``` ``` で囲ってください。\n言語は日本語です。\n\n記入例\n```\n｛修正点の概要｝\n\n- ｛修正内容の詳細 1つ目｝\n- ｛修正内容の詳細 2つ目｝\n- ｛修正内容の詳細 nつ目｝\n```\n\nそれではGitコミットメッセージを作成してください。\n'
+    # メッセージの接頭部
+    commit_message_prefix = '以下のGitの差分からコミットメッセージを作成してください。\n"""\n'
+    # メッセージの接尾部
+    commit_message_suffix = '\n"""\nコミットメッセージは内容の概要と修正点を箇条書きで生成してください。\n生成したコミットメッセージは ``` ``` で囲ってください。\n言語は日本語です。\n\n記入例\n```\n{修正点の概要}\n\n- {修正内容の詳細 1つ目}\n- {修正内容の詳細 2つ目}\n- {修正内容の詳細 nつ目}\n```\n\nそれではGitコミットメッセージを作成してください。\n'
+    # コミットメッセージを結合する
+    commit_message = commit_message_prefix + git_diff + commit_message_suffix
 
     # Gitの差分をターミナルに出力
     print_colored(("\n== Git Diff ==\n", "green"))
