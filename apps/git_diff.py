@@ -19,10 +19,10 @@ if root_directory not in sys.path:
 
 from apps.import_collector import import_collect  # noqa: E402
 from apps.lib.git_operater import (  # noqa: E402
+    get_diff_with_commit,  # 追加されたインポート
     get_file_diff_with_main_branch,
     get_git_cached_diff,
     get_git_path_diff,
-    get_diff_with_commit,  # 追加されたインポート
 )
 from apps.lib.outputs import copy_to_clipboard, print_colored  # noqa: E402
 from apps.lib.utils import make_relative_path, truncate_string  # noqa: E402
@@ -104,6 +104,7 @@ def code_review_prompt_clipboard(branch: str | None = None) -> None:
         print_colored(("Press Enter to continue...", "grey"))
         input()
 
+
 def diff_with_commit(commit_hash: str) -> None:
     """指定したコミットハッシュと現在の状態との差分を表示しクリップボードにコピーする"""
     # 指定したコミットハッシュと現在の状態との差分を取得
@@ -116,12 +117,13 @@ def diff_with_commit(commit_hash: str) -> None:
     # Gitの差分をクリップボードにコピー
     copy_to_clipboard(git_diff)
 
+
 if __name__ == "__main__":
     # argparseのパーサーを作成
     parser = argparse.ArgumentParser(description="Gitの差分を表示、コミットメッセージ作成、コードレビュー依頼を行います。")
     # サブコマンドを追加
     subparsers = parser.add_subparsers(dest="command")
-    
+
     # 'diff'サブコマンドを追加
     diff_parser = subparsers.add_parser("diff", help="指定したコミットと現在の状態との差分を表示します。")
     diff_parser.add_argument("commit_hash", type=str, help="差分を取得するコミットのハッシュ値を指定します。")
