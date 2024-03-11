@@ -22,6 +22,7 @@ from apps.lib.git_operater import (  # noqa: E402
     get_file_diff_with_main_branch,
     get_git_cached_diff,
     get_git_path_diff,
+    get_diff_with_commit,  # 追加されたインポート
 )
 from apps.lib.outputs import copy_to_clipboard, print_colored  # noqa: E402
 from apps.lib.utils import make_relative_path, truncate_string  # noqa: E402
@@ -103,24 +104,49 @@ def code_review_prompt_clipboard(branch: str | None = None) -> None:
         print_colored(("Press Enter to continue...", "grey"))
         input()
 
+def diff_with_commit(commit_hash: str) -> None:
+    """指定したコミットハッシュと現在の状態との差分を表示しクリップボードにコピーする"""
+    # 指定したコミットハッシュと現在の状態との差分を取得
+    git_diff = get_diff_with_commit(commit_hash)
+
+    # Gitの差分をターミナルに出力
+    print_colored(("\n== Git Diff ==\n", "green"))
+    print(truncate_string(git_diff, 1000))
+
+    # Gitの差分をクリップボードにコピー
+    copy_to_clipboard(git_diff)
 
 if __name__ == "__main__":
     # argparseのパーサーを作成
-    parser = argparse.ArgumentParser(description="Gitの差分をコミットメッセージにコピーまたはコードレビューを依頼します。")
-    # 'action'という名前の引数を追加（フラグなしの位置引数）
-    parser.add_argument("action", nargs="?", help="実行するアクションを指定します。('commit'または'review')")
+    parser = argparse.ArgumentParser(description="Gitの差分を表示、コミットメッセージ作成、コードレビュー依頼を行います。")
+    # サブコマンドを追加
+    subparsers = parser.add_subparsers(dest="command")
+    
+    # 'diff'サブコマンドを追加
+    diff_parser = subparsers.add_parser("diff", help="指定したコミットと現在の状態との差分を表示します。")
+    diff_parser.add_argument("commit_hash", type=str, help="差分を取得するコミットのハッシュ値を指定します。")
+
+    # 'commit'サブコマンドを追加
+    commit_parser = subparsers.add_parser("commit", help="ステージングされた変更をコミットメッセージにコピーします。")
+
+    # 'review'サブコマンドを追加
+    review_parser = subparsers.add_parser("review", help="コードレビューを依頼するプロンプトを作成します。")
+
     # 引数を解析
     args = parser.parse_args()
 
-    # 'action'引数が'commit_message'の場合、stage_diff_to_commit_clipboard関数を実行
-    if args.action == "commit":
+    # 'diff'サブコマンドが指定された場合、diff_with_commit関数を実行
+    if args.command == "diff":
+        diff_with_commit(args.commit_hash)
+
+    # 'commit'サブコマンドが指定された場合、stage_diff_to_commit_clipboard関数を実行
+    elif args.command == "commit":
         stage_diff_to_commit_clipboard()
 
-    # 'action'引数が'review'の場合、code_review_prompt_clipboard関数を実行
-    if args.action == "review":
+    # 'review'サブコマンドが指定された場合、code_review_prompt_clipboard関数を実行
+    elif args.command == "review":
         code_review_prompt_clipboard()
 
-    # argparseのヘルプを表示
-    if args.action not in ["commit", "review"]:
+    # サブコマンドが指定されていない場合、ヘルプを表示
+    else:
         parser.print_help()
-        sys.exit(1)

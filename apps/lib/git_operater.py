@@ -77,3 +77,16 @@ def get_file_diff_with_main_branch(file_path: str) -> str:
     main_branch_name = get_main_branch_name()
     result = subprocess.run(["git", "diff", main_branch_name, "--", file_path], capture_output=True, text=True)
     return result.stdout
+
+
+def get_diff_with_commit(commit_hash: str) -> str:
+    """指定したコミットハッシュと現在の状態との差分を取得する
+
+    Args:
+        commit_hash (str): コミットのハッシュ値
+
+    Returns:
+        str: 指定したコミットと現在の状態との差分
+    """
+    result = subprocess.run(["git", "diff", commit_hash], capture_output=True, text=True)
+    return result.stdout
