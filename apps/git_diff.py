@@ -32,9 +32,27 @@ def stage_diff_to_commit_clipboard() -> None:
     # Gitの差分を取得
     git_diff = get_git_cached_diff()
     # メッセージの接頭部
-    commit_message_prefix = '以下のGitの差分からコミットメッセージを作成してください。\n"""\n'
+    commit_message_prefix = '''以下のGitの差分からコミットメッセージを作成してください。
+    """
+    '''
     # メッセージの接尾部
-    commit_message_suffix = '\n"""\nコミットメッセージは内容の概要と修正点を箇条書きで生成してください。\n生成したコミットメッセージは ``` ``` で囲ってください。\n言語は日本語です。\n\n記入例\n```\n{修正点の概要}\n\n- {修正内容の詳細 1つ目}\n- {修正内容の詳細 2つ目}\n- {修正内容の詳細 nつ目}\n```\n\nそれではGitコミットメッセージを作成してください。\n'
+    commit_message_suffix = '''
+    """
+    コミットメッセージは内容の概要と修正点を箇条書きで生成してください。
+    生成したコミットメッセージは ``` ``` で囲ってください。
+    言語は日本語です。
+
+    記入例
+    ```
+    {修正点の説明}
+
+    - {修正内容の詳細 1つ目}
+    - {修正内容の詳細 2つ目}
+    - {修正内容の詳細 nつ目}
+    ```
+
+    それではGitコミットメッセージを作成してください。
+    '''
     # コミットメッセージを結合する
     commit_message = commit_message_prefix + git_diff + commit_message_suffix
 
