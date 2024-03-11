@@ -112,10 +112,12 @@ def diff_with_commit(commit_hash: str) -> None:
 
     # Gitの差分をターミナルに出力
     print_colored(("\n== Git Diff ==\n", "green"))
-    print(truncate_string(git_diff, 1000))
+    print_colored((truncate_string(git_diff, 1000)))
 
     # Gitの差分をクリップボードにコピー
-    copy_to_clipboard(git_diff)
+    prefix = f'以下のコミットハッシュと現在の状態との差分を表示します。\nコミットハッシュ: {commit_hash}\n"""\n'
+    suffix = '\n"""\n'
+    copy_to_clipboard(prefix + git_diff + suffix)
 
 
 if __name__ == "__main__":
