@@ -70,6 +70,8 @@ class ContentSizeOptimizer:
             print_colored(
                 (f"コンテンツのサイズが最大文字数および最大トークン数を超えています。: token_size={token_size}, char_size={char_size}", "red")
             )
+            # ファイルのパスを表示する
+            print_colored((content.split("\n")[1], "gray"))
         calc_sized_content = CalcSizedContent(content=content, token=token_size, char=char_size)
         return calc_sized_content
 
