@@ -110,7 +110,7 @@ class DependencyAnalyzer:
         start_relative_paths: list[str] | None = None,
         scope_relative_paths: list[str] | None = None,
         ignore_relative_paths: list[str] | None = None,
-        depth: int = 9999,
+        depth: int | None = None,
     ) -> "DependencyAnalyzer":
         if start_relative_paths is None:
             start_relative_paths = []
@@ -118,6 +118,8 @@ class DependencyAnalyzer:
             scope_relative_paths = []
         if ignore_relative_paths is None:
             ignore_relative_paths = []
+        if depth is None:
+            depth = 9999
 
         # 相対パスを絶対パスに変換
         start_paths = [make_absolute_path(root_path, p) for p in start_relative_paths]

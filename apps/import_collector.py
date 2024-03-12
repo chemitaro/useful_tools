@@ -209,7 +209,7 @@ if __name__ == "__main__":
         if input_data:
             main_args.ignore_paths = input_data.split(" ")
 
-    if main_args.target_paths and main_args.depth is None:
+    if isinstance(main_args.target_paths, list) and len(main_args.target_paths) > 0 and main_args.depth is None:
         print_colored("\n依存関係を解析する深さを入力してください。", (f" default: {default_depth}", "grey"))
         input_data = input("depth: ") or str(default_depth)
         if input_data:
