@@ -105,7 +105,7 @@ def code_review_prompt_clipboard(branch: str | None = None) -> None:
         input()
 
 
-def diff_with_commit(commit_hash: str) -> None:
+def diff_with_commit(commit_hash: str | None = None) -> None:
     """指定したコミットハッシュと現在の状態との差分を表示しクリップボードにコピーする"""
     # 指定したコミットハッシュと現在の状態との差分を取得
     git_diff = get_diff_with_commit(commit_hash)
@@ -128,7 +128,7 @@ if __name__ == "__main__":
 
     # 'diff'サブコマンドを追加
     diff_parser = subparsers.add_parser("diff", help="指定したコミットと現在の状態との差分を表示します。")
-    diff_parser.add_argument("commit_hash", type=str, help="差分を取得するコミットのハッシュ値を指定します。")
+    diff_parser.add_argument("commit_hash", type=str, help="差分を取得するコミットのハッシュ値を指定します。", nargs='?', default=None)
 
     # 'commit'サブコマンドを追加
     commit_parser = subparsers.add_parser("commit", help="ステージングされた変更をコミットメッセージにコピーします。")

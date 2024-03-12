@@ -79,14 +79,17 @@ def get_file_diff_with_main_branch(file_path: str) -> str:
     return result.stdout
 
 
-def get_diff_with_commit(commit_hash: str) -> str:
-    """指定したコミットハッシュと現在の状態との差分を取得する
+def get_diff_with_commit(commit_hash: str | None = None) -> str:
+    """指定したコミットハッシュと現在の状態との差分を取得する。commit_hashがNoneの場合はワーキングステージ（最新のコミット）との差分を取得する。
 
     Args:
-        commit_hash (str): コミットのハッシュ値
+        commit_hash (str | None): コミットのハッシュ値。Noneの場合はワーキングステージとの差分を取得。
 
     Returns:
         str: 指定したコミットと現在の状態との差分
     """
-    result = subprocess.run(["git", "diff", commit_hash], capture_output=True, text=True)
+    command = ["git", "diff"]
+    if commit_hash is not None:
+        command.append(commit_hash)
+    result = subprocess.run(command, capture_output=True, text=True)
     return result.stdout
