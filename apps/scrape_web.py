@@ -1,23 +1,35 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
+import sys
 from dataclasses import dataclass
 from typing import Literal
 
-from apps.lib.content_size_optimizer import ContentSizeOptimizer
-from apps.lib.outputs import FileWriter, copy_to_clipboard, print_result
-from apps.lib.path_tree import PathTree
-from apps.lib.utils import format_number, print_colored
-from apps.lib.web_crawler_scraper import WebCrawlerScraper
+# 現在のファイルの絶対パスを取得
+current_file_path = os.path.abspath(__file__)
+
+# ルートディレクトリまでのパスを取得（例：2階層上がルートディレクトリの場合）
+root_directory = os.path.dirname(os.path.dirname(current_file_path))
+
+# Pythonの実行パスにルートディレクトリを追加
+if root_directory not in sys.path:
+    sys.path.append(root_directory)
+
+from apps.lib.content_size_optimizer import ContentSizeOptimizer  # noqa: E402
+from apps.lib.outputs import FileWriter, copy_to_clipboard, print_result  # noqa: E402
+from apps.lib.path_tree import PathTree  # noqa: E402
+from apps.lib.utils import format_number, print_colored  # noqa: E402
+from apps.lib.web_crawler_scraper import WebCrawlerScraper  # noqa: E402
 
 default_root_urls: list[str] = [""]
 default_ignore_urls: list[str] = []
 default_file_dir: str = "~/Desktop"
 default_file_name: str = "page-content"
 default_output_type: Literal["copy", "file"] = "copy"
-default_limit_token: int = 999_999_999
+default_limit_token: int = 100_000
 default_limit_char: int = 999_999_999
-default_max_token: int = 23_000
+default_max_token: int = 100_000
 default_max_char: int = 999_999_999
 
 
@@ -39,7 +51,7 @@ def main(root_urls: list[str], ignore_urls: list[str] | None = None, limit_token
         ignore_urls = []
 
     # 引数の検証
-    if isinstance(root_urls, list):
+    if isinstance(root_urls, list) is False:
         raise TypeError("root_urls must be list")
 
     # Webクローラーを初期化する
@@ -156,7 +168,7 @@ if __name__ == "__main__":
             else:
                 scrape_web_args.max_char = default_max_char
 
-        limit_token_on_copy = 120_000
+        limit_token_on_copy = scrape_web_args.limit_token
         if scrape_web_args.limit_token > limit_token_on_copy:
             print_colored((f"\nlimit_token を{format_number(limit_token_on_copy)}に設定しました。\n", "red"))
             scrape_web_args.limit_token = limit_token_on_copy
