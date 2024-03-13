@@ -147,8 +147,8 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--ignore_paths", nargs="*", help="Specify paths of files to ignore, multiple files can be specified")
     parser.add_argument("-d", "--depth", type=int, help="Specify depth of dependency analysis")
     parser.add_argument("-o", "--output", type=str, choices=["code", "path"], help="Specify the output format")
-    parser.add_argument("-nc", "--no_comment", action="store_true", help="Omit document comments")
-    parser.add_argument("-p", "--with_prompt", action="store_true", help="Whether to display the prompt")
+    parser.add_argument("-nc", "--no_comment", action="store_const", const=True, default=None, help="Omit document comments")
+    parser.add_argument("-p", "--with_prompt", action="store_const", const=True, default=None, help="Whether to display the prompt")
     parser.add_argument("-mt", "--max_token", type=int, help="Split by a specified number of tokens when copying to the clipboard")
     parser.add_argument("-mc", "--max_char", type=int, help="Split by a specified number of characters when copying to the clipboard")
     parser.add_argument(
@@ -178,8 +178,11 @@ if __name__ == "__main__":
 
     if main_args.mode is None:
         print_colored("\nモードを入力してください。('cursor', 'chatgpt', 'claude' のいずれか、または空白でNone)", (" default: None", "grey"))
-        input_data = input("mode: ") or None
-        main_args.mode = input_data
+        input_data = input("mode: ")
+        if input_data in ["cursor", "chatgpt", "claude"]:
+            main_args.mode = cast(Literal["cursor", "chatgpt", "claude"], input_data)
+        else:
+            main_args.mode = None
 
     # モードに応じたデフォルト値の設定
     if main_args.mode and main_args.mode in default_configs:
