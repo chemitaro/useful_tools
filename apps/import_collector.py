@@ -28,7 +28,7 @@ from apps.lib.utils import format_number, print_colored  # noqa: E402
 default_depth = 999
 default_max_char = 999_999_999
 default_max_token = 125_000
-default_output = cast(Literal["code", "path"], "path")
+default_output = cast(Literal["code", "path"], "code")
 
 
 class ModeConfig(TypedDict):
@@ -122,9 +122,9 @@ def import_collect(
     else:
         raise ValueError("output must be 'code' or 'path'")
 
-    # ディレクトリ構成図をコンテンツの先頭に追加する
-    path_tree_content = path_tree.get_tree_map()
-    contents.insert(0, path_tree_content)
+    # ディレクトリ構成図と依存解析のログをコンテンツの先頭に追加する
+    contents.insert(0, path_tree.get_tree_map())
+    contents.insert(1, dependency_analyzer.get_log())
 
     # 取得したコンテンツをトークン数で調整する
     optimizer = ContentSizeOptimizer(contents, max_char=max_char, max_token=max_token, with_prompt=with_prompt, output=output)
@@ -220,7 +220,7 @@ if __name__ == "__main__":
 
     # 出力形式を指定する
     if main_args.output is None:
-        print_colored('\n出力形式を指定してください("code" or "path")', (" default: path", "grey"))
+        print_colored('\n出力形式を指定してください("code" or "path")', (f" default: {default_output}", "grey"))
         input_data = input("output: ") or default_output
         if input_data == "path":
             main_args.output = "path"
