@@ -93,6 +93,7 @@ class DependencyAnalyzer:
     current_depth: int = 0
     search_paths: list[list[str]]
     result_paths: list[str] = []
+    log: list[str] = []
 
     def __init__(
         self,
@@ -142,6 +143,8 @@ class DependencyAnalyzer:
     # 引数にファイルのパスを渡すことで、ファイルのプログラミング言語を判定し、適したファイル解析クラスを生成する
     def analyze(self) -> list[str]:
         """指定したファイルの依存関係を解析する"""
+        self.log = []  # ログを初期化する
+
         # start_pathsが空の場合、全てのファイルのパスを返す
         if len(self.start_paths) == 0:
             return self.all_file_paths
@@ -155,16 +158,25 @@ class DependencyAnalyzer:
         self.search_paths: list[list[str]] = [self.start_paths]
         self.result_paths = []
         self.current_depth: int = 0  # 探索中の階層の深さを0で初期化
-        print_colored(("\n== Parsing module dependencies ==", "green"))
+
+        message = "\n== Parsing module dependencies =="
+        print_colored((message, "green"))
+
         # 指定された深さまで依存関係を解析する
         for _ in range(0, self.depth + 1):
             # 次に探索するファイルのパスを格納するリスト追加する
             self.search_paths.append([])
             # 現在の階層のログを出力する
-            print_colored(f"\nDepth: {self.current_depth}")
+            message = f"\nDepth: {self.current_depth}"
+            print_colored((message, "cyan"))
+            self.log.append(message)
+
             # 現在の階層のファイルのパスを取得する
             for path in self.search_paths[self.current_depth]:
-                print_colored(f"  {make_relative_path(self.root_path, path)}")
+                message = f"  {make_relative_path(self.root_path, path)}"
+                print_colored(message)
+                self.log.append(message)
+
                 # 現在のファイルのパスが探索済みのパスに含まれている場合、次のファイルのパスを探索する
                 if path in self.result_paths:
                     continue
@@ -172,7 +184,10 @@ class DependencyAnalyzer:
                 # 現在のファイルのパスと接頭部が一致して、かつ完全一致ではないパスのうち、未探索のファイルのパスがある場合、次の階層のファイルパスに追加する
                 matched_paths = [p for p in self.all_file_paths if p.startswith(path) and p != path and p not in self.result_paths]
                 for matched_path in matched_paths:
-                    print_colored((f"   + Contains: {make_relative_path(self.root_path, matched_path)}", "grey"))
+                    message = f"    + Contains: {make_relative_path(self.root_path, matched_path)}"
+                    print_colored((message, "grey"))
+                    self.log.append(message)
+
                     self.search_paths[self.current_depth + 1].append(matched_path)
 
                 # 現在のファイルのパスが全てのファイルのパスに含まれていない場合、次のファイルのパスを探索する
@@ -186,7 +201,10 @@ class DependencyAnalyzer:
                 dependencies: list[str] = file_analyzer.analyze(path)
                 # 現在の階層のファイルのパスの依存関係のうち、探索済みのファイルのパスに含まれていない、かつ、探索候補のファイルのパスに含まれている場合は、次の階層のファイルのパスに追加する
                 for dependency in dependencies:
-                    print_colored((f"   + Depends on: {make_relative_path(self.root_path, dependency)}", "grey"))
+                    message = f"    + Depends: {make_relative_path(self.root_path, dependency)}"
+                    print_colored((message, "grey"))
+                    self.log.append(message)
+
                     self.search_paths[self.current_depth + 1].append(dependency)
             self.current_depth += 1  # 次の階層に移動する
             # 次の階層のファイルのパスが存在しない場合、探索を終了する
@@ -195,19 +213,32 @@ class DependencyAnalyzer:
 
         return self.result_paths
 
-    def _get_file_analyzer_py(self):
+    def get_log(self) -> str:
+        """ログを改行で接合して文字列にして返す"""
+        # もしlogが空の場合、空文字""を返す
+        if not self.log:
+            return ""
+
+        # logを改行で接合して文字列にして返す
+        log = "\n".join(self.log)
+        prefix = '\n### Parsing module dependencies\n"""'
+        suffix = '\n"""\n'
+
+        return prefix + log + suffix
+
+    def _get_file_analyzer_py(self) -> FileAnalyzerPy:
         """FileAnalyzerPyクラスのインスタンスを返す"""
         if not hasattr(self, "_file_analyzer_py_instance"):
             self._file_analyzer_py_instance = FileAnalyzerPy(self.root_path, self.all_file_paths)
         return self._file_analyzer_py_instance
 
-    def _get_file_analyzer_js(self):
+    def _get_file_analyzer_js(self) -> FileAnalyzerJs:
         """FileAnalyzerJsクラスのインスタンスを返す"""
         if not hasattr(self, "_file_analyzer_js_instance"):
             self._file_analyzer_js_instance = FileAnalyzerJs(self.root_path, self.all_file_paths)
         return self._file_analyzer_js_instance
 
-    def _get_file_analyzer_unknown(self):
+    def _get_file_analyzer_unknown(self) -> FileAnalyzerUnknown:
         """FileAnalyzerUnknownクラスのインスタンスを返す"""
         if not hasattr(self, "_file_analyzer_unknown_instance"):
             self._file_analyzer_unknown_instance = FileAnalyzerUnknown(self.root_path, self.all_file_paths)
