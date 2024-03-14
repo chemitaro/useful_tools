@@ -111,6 +111,7 @@ class WebCrawlerScraper:
             if not (full_url.endswith(".pdf") or full_url.endswith(".jpg") or full_url.endswith(".jpeg")):
                 if full_url not in self.found_urls and self.is_subpath(full_url) and not self.should_ignore(full_url):
                     self.found_urls.add(full_url)
+                    print_colored(("  + Found: ", "cyan"), (full_url, "grey"))
 
     def scrape_content(self, soup: BeautifulSoup, url: str) -> None:
         """スクレイプしてテキストを取得する"""
