@@ -102,7 +102,11 @@ def import_collect(
 
     # ファイルの依存関係を解析
     dependency_analyzer = DependencyAnalyzer.factory(
-        root_path=root_path, start_relative_paths=target_paths, scope_relative_paths=scope_paths, ignore_relative_paths=ignore_paths, depth=depth
+        root_path=root_path,
+        start_relative_paths=target_paths,
+        scope_relative_paths=scope_paths,
+        ignore_relative_paths=ignore_paths,
+        depth=depth,
     )
     dependency_file_paths: list[str] = dependency_analyzer.analyze()
 
@@ -127,7 +131,9 @@ def import_collect(
     contents.insert(1, dependency_analyzer.get_log())
 
     # 取得したコンテンツをトークン数で調整する
-    optimizer = ContentSizeOptimizer(contents, max_char=max_char, max_token=max_token, with_prompt=with_prompt, output=output)
+    optimizer = ContentSizeOptimizer(
+        contents, max_char=max_char, max_token=max_token, with_prompt=with_prompt, output=output
+    )
     optimized_contents = optimizer.optimize_contents()
     return optimized_contents
 
@@ -141,16 +147,32 @@ if __name__ == "__main__":
         Assuming a character limit, you can also split the copy to the clipboard by a specified number of characters.
         """
     )
-    parser.add_argument("target_path", nargs="*", help="Path of the Python file from which to parse dependencies, multiple paths can be specified")
+    parser.add_argument(
+        "target_path",
+        nargs="*",
+        help="Path of the Python file from which to parse dependencies, multiple paths can be specified",
+    )
     parser.add_argument("-r", "--root_path", type=str, help="Specify the root path of the project")
-    parser.add_argument("-s", "--scope_paths", nargs="*", help="Specify paths of files to scope, multiple files can be specified")
-    parser.add_argument("-i", "--ignore_paths", nargs="*", help="Specify paths of files to ignore, multiple files can be specified")
+    parser.add_argument(
+        "-s", "--scope_paths", nargs="*", help="Specify paths of files to scope, multiple files can be specified"
+    )
+    parser.add_argument(
+        "-i", "--ignore_paths", nargs="*", help="Specify paths of files to ignore, multiple files can be specified"
+    )
     parser.add_argument("-d", "--depth", type=int, help="Specify depth of dependency analysis")
     parser.add_argument("-o", "--output", type=str, choices=["code", "path"], help="Specify the output format")
-    parser.add_argument("-nc", "--no_comment", action="store_const", const=True, default=None, help="Omit document comments")
-    parser.add_argument("-p", "--with_prompt", action="store_const", const=True, default=None, help="Whether to display the prompt")
-    parser.add_argument("-mt", "--max_token", type=int, help="Split by a specified number of tokens when copying to the clipboard")
-    parser.add_argument("-mc", "--max_char", type=int, help="Split by a specified number of characters when copying to the clipboard")
+    parser.add_argument(
+        "-nc", "--no_comment", action="store_const", const=True, default=None, help="Omit document comments"
+    )
+    parser.add_argument(
+        "-p", "--with_prompt", action="store_const", const=True, default=None, help="Whether to display the prompt"
+    )
+    parser.add_argument(
+        "-mt", "--max_token", type=int, help="Split by a specified number of tokens when copying to the clipboard"
+    )
+    parser.add_argument(
+        "-mc", "--max_char", type=int, help="Split by a specified number of characters when copying to the clipboard"
+    )
     parser.add_argument(
         "-m",
         "--mode",
@@ -177,7 +199,10 @@ if __name__ == "__main__":
     )
 
     if main_args.mode is None:
-        print_colored("\nモードを入力してください。('cursor', 'chatgpt', 'claude' のいずれか、または空白でNone)", (" default: None", "grey"))
+        print_colored(
+            "\nモードを入力してください。('cursor', 'chatgpt', 'claude' のいずれか、または空白でNone)",
+            (" default: None", "grey"),
+        )
         input_data = input("mode: ")
         if input_data in ["cursor", "chatgpt", "claude"]:
             main_args.mode = cast(Literal["cursor", "chatgpt", "claude"], input_data)
@@ -189,25 +214,29 @@ if __name__ == "__main__":
         mode_config = default_configs[main_args.mode]
         main_args.output = main_args.output or mode_config["output"]
         main_args.no_comment = main_args.no_comment if main_args.no_comment is not None else mode_config["no_comment"]
-        main_args.with_prompt = main_args.with_prompt if main_args.with_prompt is not None else mode_config["with_prompt"]
+        main_args.with_prompt = (
+            main_args.with_prompt if main_args.with_prompt is not None else mode_config["with_prompt"]
+        )
         main_args.max_char = main_args.max_char or mode_config["max_char"]
         main_args.max_token = main_args.max_token or mode_config["max_token"]
 
     # 不足している引数がある場合は、input()で入力を求める
     if not main_args.target_paths:
-        print_colored("\n依存関係を解析するファイルのパスを入力してください。", (" default: None", "grey"))
+        print_colored(
+            "\n依存関係の解析を開始するファイルやディレクトリのパスを入力してください。", (" default: None", "grey")
+        )
         input_data = input("target_path: ")
         if input_data:
             main_args.target_paths = input_data.split(" ")
 
     if not main_args.scope_paths:
-        print_colored("\n探索範囲のファイルのパスを入力してください。", (" default: None", "grey"))
+        print_colored("\n探索範囲のディレクトリやファイルのパスを入力してください。", (" default: None", "grey"))
         input_data = input("scope_paths: ")
         if input_data:
             main_args.scope_paths = input_data.split(" ")
 
     if not main_args.ignore_paths:
-        print_colored("\n無視するファイルのパスを入力してください。", (" default: None", "grey"))
+        print_colored("\n無視するディレクトリやファイルのパスを入力してください。", (" default: None", "grey"))
         input_data = input("ignore_paths: ")
         if input_data:
             main_args.ignore_paths = input_data.split(" ")
@@ -251,7 +280,9 @@ if __name__ == "__main__":
             main_args.with_prompt = True
 
     if main_args.max_token is None:
-        print_colored("\n分割するトークン数を入力してください。", (f" default: {format_number(default_max_token)}", "grey"))
+        print_colored(
+            "\n分割するトークン数を入力してください。", (f" default: {format_number(default_max_token)}", "grey")
+        )
         input_data = input("max_token: ") or default_max_token
         if input_data:
             main_args.max_token = int(input_data)
