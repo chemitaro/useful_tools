@@ -25,7 +25,11 @@ from apps.lib.git_operater import (  # noqa: E402
     get_git_path_diff,
 )
 from apps.lib.outputs import copy_to_clipboard, print_colored  # noqa: E402
-from apps.lib.utils import make_relative_path, truncate_string  # noqa: E402
+from apps.lib.utils import (  # noqa: E402
+    make_absolute_path,
+    make_relative_path,
+    truncate_string,
+)
 
 
 def stage_diff_to_commit_clipboard() -> None:
@@ -89,7 +93,9 @@ def code_review_prompt_clipboard(branch: str | None = None) -> None:
         # 絶対パスを相対パスに変換
         relative_path = make_relative_path(current_path, path)
 
-        import_collection = import_collect(root_path=current_path, target_paths=[relative_path], output="path", with_prompt=True)
+        import_collection = import_collect(
+            root_path=current_path, target_paths=[relative_path], output="path", with_prompt=True
+        )
         joined_import_collection = "\n".join(import_collection)
 
         # ファイルのメインブランチとの差分を取得
@@ -105,10 +111,24 @@ def code_review_prompt_clipboard(branch: str | None = None) -> None:
         input()
 
 
-def diff_with_commit(commit_hash: str | None = None) -> None:
+def diff_with_commit(
+    commit_hash: str | None = None, current_path: str | None = None, paths: list[str] | None = None
+) -> None:
     """指定したコミットハッシュと現在の状態との差分を表示しクリップボードにコピーする"""
+    # pathsが相対パスの場合は絶対パスに変換する処理
+    if paths is not None:
+        absolute_paths = []
+        for path in paths:
+            if not os.path.isabs(path):
+                absolute_path = make_absolute_path(current_path, path)
+                absolute_paths.append(absolute_path)
+            else:
+                absolute_paths.append(path)
+    else:
+        absolute_paths = None
+
     # 指定したコミットハッシュと現在の状態との差分を取得
-    git_diff = get_diff_with_commit(commit_hash)
+    git_diff = get_diff_with_commit(commit_hash=commit_hash, paths=absolute_paths)
 
     # Gitの差分をターミナルに出力
     print_colored(("\n== Git Diff ==\n", "green"))
@@ -122,13 +142,20 @@ def diff_with_commit(commit_hash: str | None = None) -> None:
 
 if __name__ == "__main__":
     # argparseのパーサーを作成
-    parser = argparse.ArgumentParser(description="Gitの差分を表示、コミットメッセージ作成、コードレビュー依頼を行います。")
+    parser = argparse.ArgumentParser(
+        description="Gitの差分を表示、コミットメッセージ作成、コードレビュー依頼を行います。"
+    )
     # サブコマンドを追加
     subparsers = parser.add_subparsers(dest="command")
 
     # 'diff'サブコマンドを追加
     diff_parser = subparsers.add_parser("diff", help="指定したコミットと現在の状態との差分を表示します。")
-    diff_parser.add_argument("commit_hash", type=str, help="差分を取得するコミットのハッシュ値を指定します。", nargs='?', default=None)
+    diff_parser.add_argument(
+        "commit_hash", type=str, help="差分を取得するコミットのハッシュ値を指定します。", nargs="?", default=None
+    )
+    diff_parser.add_argument(
+        "-p", "--paths", type=str, help="差分を取得するファイルやディレクトリのパスを指定します。", nargs="*"
+    )
 
     # 'commit'サブコマンドを追加
     commit_parser = subparsers.add_parser("commit", help="ステージングされた変更をコミットメッセージにコピーします。")
@@ -139,9 +166,12 @@ if __name__ == "__main__":
     # 引数を解析
     args = parser.parse_args()
 
+    # 現在のワーキングディレクトリのパスを取得
+    current_path = os.getcwd()
+
     # 'diff'サブコマンドが指定された場合、diff_with_commit関数を実行
     if args.command == "diff":
-        diff_with_commit(args.commit_hash)
+        diff_with_commit(commit_hash=args.commit_hash, current_path=current_path, paths=args.paths)
 
     # 'commit'サブコマンドが指定された場合、stage_diff_to_commit_clipboard関数を実行
     elif args.command == "commit":
