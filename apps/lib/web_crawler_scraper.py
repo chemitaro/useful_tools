@@ -82,11 +82,20 @@ class WebCrawlerScraper:
     def explore_and_scrape(self, url: str) -> None:
         """URLを探索し、スクレイプする"""
         normalized_url = self.normalize_url(url)
-        if normalized_url in self.visited_urls or not self.is_subpath(normalized_url) or self.should_ignore(normalized_url):
+        if (
+            normalized_url in self.visited_urls
+            or not self.is_subpath(normalized_url)
+            or self.should_ignore(normalized_url)
+        ):
             return
 
         self.visited_urls.add(normalized_url)
-        print_colored(("Exploring: ", "green"), f"{len(self.visited_urls)} / {len(self.found_urls)}", " ", (normalized_url, "grey"))
+        print_colored(
+            ("Exploring: ", "green"),
+            f"{len(self.visited_urls)} / {len(self.found_urls)}",
+            " ",
+            (normalized_url, "grey"),
+        )
 
         if normalized_url.endswith(".pdf") or normalized_url.endswith(".jpg") or normalized_url.endswith(".jpeg"):
             print_colored(("Skipping :", "red"), " ", (normalized_url, "grey"))
