@@ -111,9 +111,7 @@ def code_review_prompt_clipboard(branch: str | None = None) -> None:
         input()
 
 
-def diff_with_commit(
-    commit_hash: str | None = None, current_path: str | None = None, paths: list[str] | None = None
-) -> None:
+def diff_with_commit(*, commit_hash: str | None = None, current_path: str, paths: list[str] | None = None) -> None:
     """指定したコミットハッシュと現在の状態との差分を表示しクリップボードにコピーする"""
     # pathsが相対パスの場合は絶対パスに変換する処理
     if paths is not None:
