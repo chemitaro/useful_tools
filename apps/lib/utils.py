@@ -1,6 +1,7 @@
 import os
 from typing import Literal, Tuple
 
+import pyperclip
 import tiktoken
 
 
@@ -82,7 +83,9 @@ def format_content(name: str, content: str, style: Literal["doc", "code"] = "doc
     return formatted_content
 
 
-def print_colored(*args: object | Tuple[str, Literal["black", "grey", "red", "green", "yellow", "blue", "magenta", "cyan", "white"]]) -> None:
+def print_colored(
+    *args: object | Tuple[str, Literal["black", "grey", "red", "green", "yellow", "blue", "magenta", "cyan", "white"]]
+) -> None:
     """指定されたテキストと色の組み合わせを連結して表示する関数.
 
     Args:
@@ -135,3 +138,12 @@ def truncate_string(text: str, length: int) -> str:
         return text[:length] + "..."
     else:
         return text
+
+
+def get_clipboard_content() -> str:
+    try:
+        content = pyperclip.paste()
+        return content
+    except pyperclip.PyperclipException as e:
+        print(f"クリップボードにアクセスできません: {str(e)}")
+        return ""
