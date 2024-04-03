@@ -18,11 +18,13 @@ if root_directory not in sys.path:
 
 
 from apps.import_collector import import_collect  # noqa: E402
+from apps.lib.file_content_collector import FileContentCollector  # noqa: E402
 from apps.lib.git_operater import (  # noqa: E402
     get_diff_with_commit,  # 追加されたインポート
     get_file_diff_with_main_branch,
     get_git_cached_diff,
     get_git_path_diff,
+    get_git_staged_paths,
 )
 from apps.lib.outputs import copy_to_clipboard, print_colored  # noqa: E402
 from apps.lib.utils import (  # noqa: E402
@@ -32,34 +34,33 @@ from apps.lib.utils import (  # noqa: E402
 )
 
 
-def stage_diff_to_commit_clipboard() -> None:
+def stage_diff_to_commit_clipboard(*, current_path: str) -> None:
     """ステージングされた変更をコミットメッセージにコピーする"""
     # Gitの差分を取得
     git_diff = get_git_cached_diff()
+
+    # 変更のあったファイルの絶対パスを取得
+    staged_paths = get_git_staged_paths()
+    file_content_collector = FileContentCollector(root_path=current_path, file_paths=staged_paths)
+    file_contents = file_content_collector.collect()
+    output_content = "\n".join(file_contents)
+
+    # ファイルの内容のメッセージの接頭部
+    file_contents_prefix = '以下のファイルのに変更がありました。理解してください.\n"""\n'
+
+    # ファイルの内容のメッセージの接尾部
+    file_contents_suffix = '\n"""\n\n'
+
     # メッセージの接頭部
-    commit_message_prefix = '''以下のGitの差分からコミットメッセージを作成してください。
-    """
-    '''
+    git_diff_prefix = '以下のGitの差分からコミットメッセージを作成してください。\n"""\n'
+
     # メッセージの接尾部
-    commit_message_suffix = '''
-    """
-    コミットメッセージは内容の概要と修正点を箇条書きで生成してください。
-    生成したコミットメッセージは ``` ``` で囲ってください。
-    言語は日本語です。
+    git_diff_suffix = '\n"""\nコミットメッセージは内容の概要と修正点を箇条書きで生成してください。\n生成したコミットメッセージは ``` ``` で囲ってください。\n言語は日本語です。\n\n記入例\n```\n{修正点の説明}\n\n- {修正内容の詳細 1つ目}\n- {修正内容の詳細 2つ目}\n- {修正内容の詳細 nつ目}\n```\n\nそれではGitコミットメッセージを作成してください。'
 
-    記入例
-    ```
-    {修正点の説明}
-
-    - {修正内容の詳細 1つ目}
-    - {修正内容の詳細 2つ目}
-    - {修正内容の詳細 nつ目}
-    ```
-
-    それではGitコミットメッセージを作成してください。
-    '''
     # コミットメッセージを結合する
-    commit_message = commit_message_prefix + git_diff + commit_message_suffix
+    commit_message = (
+        file_contents_prefix + output_content + file_contents_suffix + git_diff_prefix + git_diff + git_diff_suffix
+    )
 
     # Gitの差分をターミナルに出力
     print_colored(("\n== Git Diff ==\n", "green"))
@@ -173,7 +174,7 @@ if __name__ == "__main__":
 
     # 'commit'サブコマンドが指定された場合、stage_diff_to_commit_clipboard関数を実行
     elif args.command == "commit":
-        stage_diff_to_commit_clipboard()
+        stage_diff_to_commit_clipboard(current_path=current_path)
 
     # 'review'サブコマンドが指定された場合、code_review_prompt_clipboard関数を実行
     elif args.command == "review":

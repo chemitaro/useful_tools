@@ -1,3 +1,4 @@
+import os
 import subprocess
 
 from apps.lib.utils import make_absolute_path
@@ -20,7 +21,7 @@ def get_git_path_diff(branch_name: str | None = None) -> list[str]:
         branch_name (str): 比較するブランチ名
 
     Returns:
-        list[str]: ファイルの絶対パスのリスト
+        list[str]: 変更のあったファイルの絶対パスのリスト
     """
     if branch_name is None:
         branch_name = get_main_branch_name()
@@ -32,6 +33,24 @@ def get_git_path_diff(branch_name: str | None = None) -> list[str]:
     for relative_path in relative_paths:
         absolute_path = make_absolute_path(get_git_root_path(), relative_path)
         paths.append(absolute_path)
+
+    return paths
+
+
+def get_git_staged_paths() -> list[str]:
+    """ステージングされた変更のあるファイルの絶対パスをリストで取得する
+    Returns:
+        list[str]: ステージングされた変更のあるファイルの絶対パスのリスト
+    """
+
+    result = subprocess.run(["git", "diff", "--name-only", "--cached"], capture_output=True, text=True)
+    relative_paths = result.stdout.split("\n")
+    paths = []
+    for relative_path in relative_paths:
+        if relative_path:  # 空のパスを無視
+            absolute_path = make_absolute_path(get_git_root_path(), relative_path)
+            if os.path.isfile(absolute_path):  # パスがファイルを指している場合のみリストに追加
+                paths.append(absolute_path)
 
     return paths
 
