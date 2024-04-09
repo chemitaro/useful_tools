@@ -4,7 +4,7 @@ from apps.lib.enums import ProgramType
 from apps.lib.utils import format_content, make_relative_path, read_file_content
 
 
-def remove_py_docstring(content):
+def remove_py_docstring(content: str) -> str:
     """
     指定されたPythonコードからドキュメントコメントを削除します。
 
@@ -21,7 +21,7 @@ def remove_py_docstring(content):
     return omit_content
 
 
-def remove_js_docstring(content):
+def remove_js_docstring(content: str) -> str:
     """
     指定されたJavaScriptコードからドキュメントコメントを削除します。
 
@@ -65,7 +65,7 @@ class FileContentCollector:
             contents.append(content)
         return contents
 
-    def format_content(self, file_path, content) -> str:
+    def format_content(self, file_path: str, content: str) -> str:
         """
         受け取ったコンテントを相対パス名```コンテントの内容```の形式に整形します。
 
@@ -80,7 +80,7 @@ class FileContentCollector:
         return formatted_content
 
     # ドキュメントコメントを削除する
-    def without_docstring(self, file_path, content):
+    def without_docstring(self, file_path: str, content: str) -> str:
         if self.no_docstring:
             program_type = ProgramType.get_program_type(file_path)
             if program_type == ProgramType.PYTHON:
