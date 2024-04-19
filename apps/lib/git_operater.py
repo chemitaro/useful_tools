@@ -118,3 +118,15 @@ def get_diff_with_commit(commit_hash: str | None = None, paths: list[str] | None
 
     result = subprocess.run(command, capture_output=True, text=True)
     return result.stdout
+
+def get_git_commit_logs(count: int) -> str:
+    """指定された件数のgitコミットログを取得するが、コミットメッセージのみを含むようにする
+
+    Args:
+        count (int): 取得するコミットの件数
+
+    Returns:
+        str: コミットログの出力
+    """
+    result = subprocess.run(["git", "log", f"--max-count={count}"], capture_output=True, text=True)
+    return result.stdout
