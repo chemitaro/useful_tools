@@ -67,7 +67,9 @@ def get_all_file_paths(
         ignore_paths = [make_absolute_path(root_path, p) for p in ignore_paths]
 
         # 収集したファイルパスから無視するパスを除外する。
-        all_file_paths = [p for p in all_file_paths if not any([p.startswith(ignore_path) for ignore_path in ignore_paths])]
+        all_file_paths = [
+            p for p in all_file_paths if not any([p.startswith(ignore_path) for ignore_path in ignore_paths])
+        ]
 
     return all_file_paths
 
@@ -181,17 +183,12 @@ class DependencyAnalyzer:
                 if path in self.result_paths:
                     continue
 
-                # 現在のファイルのパスと接頭部が一致して、かつ完全一致ではないパスのうち、未探索のファイルのパスがある場合、次の階層のファイルパスに追加する
-                matched_paths = [p for p in self.all_file_paths if p.startswith(path) and p != path and p not in self.result_paths]
-                for matched_path in matched_paths:
-                    message = f"    + Contains: {make_relative_path(self.root_path, matched_path)}"
-                    print_colored((message, "grey"))
-                    self.log.append(message)
-
-                    self.search_paths[self.current_depth + 1].append(matched_path)
+                self.analyse_module(path)
 
                 # 現在のファイルのパスが全てのファイルのパスに含まれていない場合、次のファイルのパスを探索する
                 if path not in self.all_file_paths:
+                    # 想定外のパスの場合、エラーメッセージを出力し、次のファイルのパスを探索する
+                    print_colored(("    - NotFound: ", "red"), (make_relative_path(self.root_path, path), "grey"))
                     continue
 
                 # 現在の階層のファイルのパスを探索済みのパスの先頭に追加する
@@ -201,9 +198,18 @@ class DependencyAnalyzer:
                 dependencies: list[str] = file_analyzer.analyze(path)
                 # 現在の階層のファイルのパスの依存関係のうち、探索済みのファイルのパスに含まれていない、かつ、探索候補のファイルのパスに含まれている場合は、次の階層のファイルのパスに追加する
                 for dependency in dependencies:
-                    message = f"    + Depends: {make_relative_path(self.root_path, dependency)}"
-                    print_colored((message, "grey"))
-                    self.log.append(message)
+                    # 既に探索済みのファイルパスの場合、もしくは、次のファイルパスとして取得している場合、探索候補に追加しない
+                    if dependency in self.result_paths or dependency in self.search_paths[self.current_depth + 1]:
+                        message_status = "    - Covered: "
+                        message_path = make_relative_path(self.root_path, dependency)
+                        print_colored((message_status, "grey"), (message_path, "grey"))
+                        continue
+
+                    # 次の階層のファイルパスに追加する
+                    message_status = "    + Depends: "
+                    message_path = make_relative_path(self.root_path, dependency)
+                    print_colored((message_status, "blue"), (message_path, "grey"))
+                    self.log.append(str(message_status + message_path))
 
                     self.search_paths[self.current_depth + 1].append(dependency)
             self.current_depth += 1  # 次の階層に移動する
@@ -212,6 +218,19 @@ class DependencyAnalyzer:
                 break
 
         return self.result_paths
+
+    def analyse_module(self, path):
+        """モジュールとして適切であるかを判定し、適切であれば依存関係を解析する"""
+        matched_paths = [
+            p for p in self.all_file_paths if p.startswith(path) and p != path and p not in self.result_paths
+        ]
+        for matched_path in matched_paths:
+            message_status = "    + Contains: "
+            message_path = make_relative_path(self.root_path, matched_path)
+            print_colored((message_status, "yellow"), (message_path, "grey"))
+            self.log.append(str(message_status + message_path))
+
+            self.search_paths[self.current_depth + 1].append(matched_path)
 
     def get_log(self) -> str:
         """ログを改行で接合して文字列にして返す"""
