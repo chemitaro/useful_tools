@@ -57,9 +57,9 @@ default_configs: dict[Literal["cursor", "chatgpt", "claude"], ModeConfig] = {
     "claude": {
         "output": cast(Literal["code", "path"], "code"),
         "no_comment": False,
-        "with_prompt": False,
+        "with_prompt": True,
         "max_char": 999_999_999,
-        "max_token": 200_000,
+        "max_token": 100_000,
     },
 }
 
