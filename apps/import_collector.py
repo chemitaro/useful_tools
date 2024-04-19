@@ -128,7 +128,6 @@ def import_collect(
 
     # ディレクトリ構成図と依存解析のログをコンテンツの先頭に追加する
     contents.insert(0, path_tree.get_tree_map())
-    contents.insert(1, dependency_analyzer.get_log())
 
     # 取得したコンテンツをトークン数で調整する
     optimizer = ContentSizeOptimizer(
