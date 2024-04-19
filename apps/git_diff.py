@@ -23,6 +23,7 @@ from apps.lib.git_operater import (  # noqa: E402
     get_diff_with_commit,  # 追加されたインポート
     get_file_diff_with_main_branch,
     get_git_cached_diff,
+    get_git_commit_logs,
     get_git_path_diff,
     get_git_staged_paths,
 )
@@ -45,21 +46,24 @@ def stage_diff_to_commit_clipboard(*, current_path: str) -> None:
     file_contents = file_content_collector.collect()
     output_content = "\n".join(file_contents)
 
-    # ファイルの内容のメッセージの接頭部
-    file_contents_prefix = '以下のファイルのに変更がありました。理解してください.\n"""\n'
+    # 直近のGitコミットログを取得
+    git_commit_log = get_git_commit_logs(5)
 
-    # ファイルの内容のメッセージの接尾部
+    # コミットログの前後のメッセージのプロンプト
+    git_commit_log_prefix = '直近のGitコミットログです。参考にしてください。\n"""\n'
+    git_commit_log_suffix = '\n"""\n\n'
+
+    # ファイルの内容の前後のメッセージのプロンプト
+    file_contents_prefix = '以下のファイルのに変更がありました。理解してください。\n"""\n'
     file_contents_suffix = '\n"""\n\n'
 
-    # メッセージの接頭部
+    # メッセージの前後のプロンプト
     git_diff_prefix = '以下のGitの差分からコミットメッセージを作成してください。\n"""\n'
-
-    # メッセージの接尾部
     git_diff_suffix = '\n"""\nタイトル行に変更のあったクラス(もしくはファイル)に対してどのような変更を行ったか概要をまとめてください。\n具体的な修正内容は箇条書きで列挙してください。\n生成したコミットメッセージは ``` ``` で囲ってください。\n言語は日本語です。\n\n記入例\n```\n{変更したクラス(もしくはファイル)に対する変更内容の概要}\n\n- {修正内容の詳細 1つ目}\n- {修正内容の詳細 2つ目}\n- {修正内容の詳細 nつ目}\n```\n\nそれではGitコミットメッセージを作成してください。'
 
     # コミットメッセージを結合する
     commit_message = (
-        file_contents_prefix + output_content + file_contents_suffix + git_diff_prefix + git_diff + git_diff_suffix
+        git_commit_log_prefix + git_commit_log + git_commit_log_suffix + file_contents_prefix + output_content + file_contents_suffix + git_diff_prefix + git_diff + git_diff_suffix
     )
 
     # Gitの差分をターミナルに出力
