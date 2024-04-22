@@ -128,7 +128,7 @@ class ContentSizeOptimizer:
                 prompt_end = "\n# Prompt: Document transmission of the single segment is complete. Please respond to the questions now."  # noqa: E501
                 self.optimized_contents[i] = prompt_start + content + prompt_end
 
-            if segment_count == 1 and self.output == "path":
+            elif segment_count == 1 and self.output == "path":
                 prompt_start = "# Prompt: Below are the paths to the files related to the question and their dependent files.\n"
                 prompt_end = "\n# Prompt: Please answer the questions with an understanding of the above files.\n@Codebase\n"
                 self.optimized_contents[i] = prompt_start + content + prompt_end
