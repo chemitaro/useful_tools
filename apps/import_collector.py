@@ -45,14 +45,28 @@ default_configs: dict[Literal["cursor", "chatgpt", "claude"], ModeConfig] = {
         "no_comment": False,
         "with_prompt": True,
         "max_char": 999_999_999,
-        "max_token": 125_000,
+        "max_token": 128_000,
     },
     "chatgpt": {
         "output": cast(Literal["code", "path"], "code"),
         "no_comment": False,
         "with_prompt": True,
         "max_char": 999_999_999,
-        "max_token": 125_000,
+        "max_token": 20_000,
+    },
+    "gpt4t": {
+        "output": cast(Literal["code", "path"], "code"),
+        "no_comment": False,
+        "with_prompt": True,
+        "max_char": 999_999_999,
+        "max_token": 128_000,
+    },
+    "gemini1.5pro": {
+        "output": cast(Literal["code", "path"], "code"),
+        "no_comment": False,
+        "with_prompt": True,
+        "max_char": 999_999_999,
+        "max_token": 1_000_000,
     },
     "claude": {
         "output": cast(Literal["code", "path"], "code"),
@@ -78,7 +92,7 @@ class MainArgs:
     with_prompt: bool | None
     max_char: int | None
     max_token: int | None
-    mode: Literal["cursor", "chatgpt", "claude", None] | None
+    mode: Literal["cursor", "chatgpt", "gpt4t", "gemini1.5pro", "claude", None] | None
 
 
 def import_collect(
@@ -176,7 +190,7 @@ if __name__ == "__main__":
         "-m",
         "--mode",
         type=str,
-        choices=["cursor", "chatgpt", "claude"],
+        choices=["cursor", "chatgpt", "gpt4t", "gemini1.5pro", "claude"],
         default=None,
         help="Select the mode of operation: 'cursor', 'chatgpt', or 'claude'. Leave empty for no specific mode.",
     )
@@ -203,8 +217,8 @@ if __name__ == "__main__":
             (" default: None", "grey"),
         )
         input_data = input("mode: ")
-        if input_data in ["cursor", "chatgpt", "claude"]:
-            main_args.mode = cast(Literal["cursor", "chatgpt", "claude"], input_data)
+        if input_data in ["cursor", "chatgpt", "gpt4t", "gemini1.5pro", "claude"]:
+            main_args.mode = cast(Literal["cursor", "chatgpt", "gpt4t", "gemini1.5pro", "claude"], input_data)
         else:
             main_args.mode = None
 
