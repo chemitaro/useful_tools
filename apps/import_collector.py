@@ -25,51 +25,58 @@ from apps.lib.outputs import copy_to_clipboard, print_result  # noqa: E402
 from apps.lib.path_tree import PathTree  # noqa: E402
 from apps.lib.utils import format_number, print_colored  # noqa: E402
 
+OutputType = Literal["code", "path"]
+
 default_depth = 999
 default_max_char = 999_999_999
 default_max_token = 125_000
-default_output = cast(Literal["code", "path"], "code")
+default_output = cast(OutputType, "code")
+
+
+ModeType = Literal["cursor", "chatgpt", "gpt4t", "gemini1.5pro", "claude"]
+
+mode_types = cast(list[str], ModeType.__args__)
 
 
 class ModeConfig(TypedDict):
-    output: Literal["code", "path"]
+    output: OutputType
     no_comment: bool
     with_prompt: bool
     max_char: int
     max_token: int
 
 
-default_configs: dict[Literal["cursor", "chatgpt", "claude"], ModeConfig] = {
+default_configs: dict[ModeType, ModeConfig] = {
     "cursor": {
-        "output": cast(Literal["code", "path"], "path"),
+        "output": cast(OutputType, "path"),
         "no_comment": False,
         "with_prompt": True,
         "max_char": 999_999_999,
         "max_token": 128_000,
     },
     "chatgpt": {
-        "output": cast(Literal["code", "path"], "code"),
+        "output": cast(OutputType, "code"),
         "no_comment": False,
         "with_prompt": True,
         "max_char": 999_999_999,
         "max_token": 20_000,
     },
     "gpt4t": {
-        "output": cast(Literal["code", "path"], "code"),
+        "output": cast(OutputType, "code"),
         "no_comment": False,
         "with_prompt": True,
         "max_char": 999_999_999,
         "max_token": 128_000,
     },
     "gemini1.5pro": {
-        "output": cast(Literal["code", "path"], "code"),
+        "output": cast(OutputType, "code"),
         "no_comment": False,
         "with_prompt": True,
         "max_char": 999_999_999,
         "max_token": 1_000_000,
     },
     "claude": {
-        "output": cast(Literal["code", "path"], "code"),
+        "output": cast(OutputType, "code"),
         "no_comment": False,
         "with_prompt": True,
         "max_char": 999_999_999,
@@ -87,12 +94,12 @@ class MainArgs:
     scope_paths: list[str] | None
     ignore_paths: list[str] | None
     depth: int | None
-    output: Literal["code", "path"] | None
+    output: OutputType | None
     no_comment: bool | None
     with_prompt: bool | None
     max_char: int | None
     max_token: int | None
-    mode: Literal["cursor", "chatgpt", "gpt4t", "gemini1.5pro", "claude", None] | None
+    mode: ModeType | None
 
 
 def import_collect(
@@ -101,7 +108,7 @@ def import_collect(
     scope_paths: list[str] | None = None,
     ignore_paths: list[str] | None = None,
     depth: int = default_depth,
-    output: Literal["code", "path"] = default_output,
+    output: OutputType = default_output,
     no_comment: bool = False,
     with_prompt: bool = False,
     max_char: int = default_max_char,
@@ -190,7 +197,7 @@ if __name__ == "__main__":
         "-m",
         "--mode",
         type=str,
-        choices=["cursor", "chatgpt", "gpt4t", "gemini1.5pro", "claude"],
+        choices=mode_types,
         default=None,
         help="Select the mode of operation: 'cursor', 'chatgpt', or 'claude'. Leave empty for no specific mode.",
     )
@@ -213,12 +220,12 @@ if __name__ == "__main__":
 
     if main_args.mode is None:
         print_colored(
-            "\nモードを入力してください。('cursor', 'chatgpt', 'claude' のいずれか、または空白でNone)",
+            f"\nモードを入力してください。({', '.join(mode_types)} のいずれか、または空白でNone)",
             (" default: None", "grey"),
         )
         input_data = input("mode: ")
-        if input_data in ["cursor", "chatgpt", "gpt4t", "gemini1.5pro", "claude"]:
-            main_args.mode = cast(Literal["cursor", "chatgpt", "gpt4t", "gemini1.5pro", "claude"], input_data)
+        if input_data in mode_types:
+            main_args.mode = cast(ModeType, input_data)
         else:
             main_args.mode = None
 
@@ -262,7 +269,10 @@ if __name__ == "__main__":
 
     # 出力形式を指定する
     if main_args.output is None:
-        print_colored('\n出力形式を指定してください("code" or "path")', (f" default: {default_output}", "grey"))
+        print_colored(
+            f'\n出力形式を指定してください({", ".join(["code", "path"])})',
+            (f" default: {default_output}", "grey"),
+        )
         input_data = input("output: ") or default_output
         if input_data == "path":
             main_args.output = "path"
