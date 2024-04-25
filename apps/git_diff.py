@@ -31,6 +31,7 @@ from apps.lib.outputs import copy_to_clipboard, print_colored  # noqa: E402
 from apps.lib.utils import (  # noqa: E402
     make_absolute_path,
     make_relative_path,
+    read_file_content,
     truncate_string,
 )
 
@@ -46,6 +47,11 @@ def stage_diff_to_commit_clipboard(*, current_path: str) -> None:
     file_contents = file_content_collector.collect()
     output_content = "\n".join(file_contents)
 
+    # Commitメッセージの仕様を取得
+    commit_message_spec = read_file_content(
+        "/Users/iwasawayuuta/workspace/python/useful_tools/apps/lib/doc/conventionalcommits.txt"
+    )
+
     # 直近のGitコミットログを取得
     git_commit_log = get_git_commit_logs(5)
 
@@ -59,11 +65,20 @@ def stage_diff_to_commit_clipboard(*, current_path: str) -> None:
 
     # メッセージの前後のプロンプト
     git_diff_prefix = '以下のGitの差分からコミットメッセージを作成してください。\n"""\n'
-    git_diff_suffix = '\n"""\nタイトル行に変更のあったクラス(もしくはファイル)に対してどのような変更を行ったか概要をまとめてください。\n具体的な修正内容は箇条書きで列挙してください。\n生成したコミットメッセージは ``` ``` で囲ってください。\n言語は日本語です。\n\n記入例\n```\n{変更したクラス(もしくはファイル)に対する変更内容の概要}\n\n- {修正内容の詳細 1つ目}\n- {修正内容の詳細 2つ目}\n- {修正内容の詳細 nつ目}\n```\n\nそれではGitコミットメッセージを作成してください。'
+    git_diff_suffix = '\n"""\n生成したコミットメッセージは ``` ``` で囲ってください。\n言語は日本語です。\nそれではGitコミットメッセージを作成してください。'
 
     # コミットメッセージを結合する
     commit_message = (
-        git_commit_log_prefix + git_commit_log + git_commit_log_suffix + file_contents_prefix + output_content + file_contents_suffix + git_diff_prefix + git_diff + git_diff_suffix
+        commit_message_spec
+        + git_commit_log_prefix
+        + git_commit_log
+        + git_commit_log_suffix
+        + file_contents_prefix
+        + output_content
+        + file_contents_suffix
+        + git_diff_prefix
+        + git_diff
+        + git_diff_suffix
     )
 
     # Gitの差分をターミナルに出力
