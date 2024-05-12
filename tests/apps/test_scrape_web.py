@@ -13,9 +13,9 @@ class TestScrapeWeb:
             limit_token=120000,
         )
 
-        assert type(contents) is list
+        assert isinstance(contents, list)
         assert len(contents) > 0
-        assert all([type(content) is str for content in contents])
+        assert all([isinstance(content, str) for content in contents])
         assert all([len(content) > 0 for content in contents])
         assert sum(count_tokens(content) for content in contents[1:]) < 130000
         assert contents[0].startswith('\nWeb Site Map: nextjs.org\n')
