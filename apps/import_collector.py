@@ -158,7 +158,7 @@ def import_collect(
     return optimized_contents
 
 
-if __name__ == "__main__":
+def main():
     # コマンドライン引数の解析
     parser = argparse.ArgumentParser(
         description="""
@@ -337,3 +337,7 @@ if __name__ == "__main__":
 
     # chunked_content を順番にクリップボードにコピーする
     copy_to_clipboard(chunked_content)
+
+
+if __name__ == "__main__":
+    main()
