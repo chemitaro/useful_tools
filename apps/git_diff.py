@@ -158,7 +158,7 @@ def diff_with_commit(*, commit_hash: str | None = None, current_path: str, paths
     copy_to_clipboard(prefix + git_diff + suffix)
 
 
-if __name__ == "__main__":
+def main():
     # argparseのパーサーを作成
     parser = argparse.ArgumentParser(
         description="Gitの差分を表示、コミットメッセージ作成、コードレビュー依頼を行います。"
@@ -176,10 +176,10 @@ if __name__ == "__main__":
     )
 
     # 'commit'サブコマンドを追加
-    commit_parser = subparsers.add_parser("commit", help="ステージングされた変更をコミットメッセージにコピーします。")
+    subparsers.add_parser("commit", help="ステージングされた変更をコミットメッセージにコピーします。")
 
     # 'review'サブコマンドを追加
-    review_parser = subparsers.add_parser("review", help="コードレビューを依頼するプロンプトを作成します。")
+    subparsers.add_parser("review", help="コードレビューを依頼するプロンプトを作成します。")
 
     # 引数を解析
     args = parser.parse_args()
@@ -202,3 +202,7 @@ if __name__ == "__main__":
     # サブコマンドが指定されていない場合、ヘルプを表示
     else:
         parser.print_help()
+
+
+if __name__ == "__main__":
+    main()
