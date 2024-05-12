@@ -34,26 +34,8 @@ def main(*, model, language, temperature, prompt) -> str:
     return text
 
 
-def app_run(*, model, language, temperature, prompt):
-    """アプリケーションを実行する関数."""
-    while True:
-        # ユーザー入力を受け取る
-        print("\n")
-        print_colored(('Press "enter" to start recording, press "q" to exit: ', "grey"))
-        user_input = input()
-
-        # 'q'または'Q'が入力されたら終了
-        if user_input.lower() == "q":
-            print_colored(("Exit the program.", "grey"))
-            break
-
-        text = main(**vars(parser.parse_args()))
-
-        # 認識結果を表示
-        print_and_copy(text)
-
-
-if __name__ == "__main__":
+def app_run():
+    """コマンドライン引数を受け取って実行する."""
     parser = argparse.ArgumentParser(
         description="""
         This program records audio from the microphone and saves it to a file.
@@ -89,4 +71,22 @@ if __name__ == "__main__":
         help="Prompt for the speech.",
     )
 
-    app_run(**vars(parser.parse_args()))
+    while True:
+        # ユーザー入力を受け取る
+        print("\n")
+        print_colored(('Press "enter" to start recording, press "q" to exit: ', "grey"))
+        user_input = input()
+
+        # 'q'または'Q'が入力されたら終了
+        if user_input.lower() == "q":
+            print_colored(("Exit the program.", "grey"))
+            break
+
+        text = main(**vars(parser.parse_args()))
+
+        # 認識結果を表示
+        print_and_copy(text)
+
+
+if __name__ == "__main__":
+    app_run()
