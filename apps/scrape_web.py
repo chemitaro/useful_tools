@@ -45,7 +45,12 @@ class ScrapeWebArgs:
     file_name: str | None
 
 
-def main(root_urls: list[str], ignore_urls: list[str] | None = None, limit_token: int | None = None, limit_char: int | None = None) -> list[str]:
+def main(
+    root_urls: list[str],
+    ignore_urls: list[str] | None = None,
+    limit_token: int | None = None,
+    limit_char: int | None = None,
+) -> list[str]:
     """指定したURLからサイトマップを作成します。"""
     if ignore_urls is None:
         ignore_urls = []
@@ -55,7 +60,9 @@ def main(root_urls: list[str], ignore_urls: list[str] | None = None, limit_token
         raise TypeError("root_urls must be list")
 
     # Webクローラーを初期化する
-    web_crawler_scraper = WebCrawlerScraper(root_urls=root_urls, ignore_urls=ignore_urls, limit_token=limit_token, limit_char=limit_char)
+    web_crawler_scraper = WebCrawlerScraper(
+        root_urls=root_urls, ignore_urls=ignore_urls, limit_token=limit_token, limit_char=limit_char
+    )
 
     # Webクローラーを実行して、スクレイピングする
     web_crawler_scraper.run()
@@ -75,7 +82,8 @@ def main(root_urls: list[str], ignore_urls: list[str] | None = None, limit_token
     return contents
 
 
-if __name__ == "__main__":
+def run_from_cli():
+    """CLIから実行するための関数."""
     parser = argparse.ArgumentParser(description="指定したURLからサイトマップを作成します。")
     parser.add_argument(
         "root_urls",
@@ -96,10 +104,18 @@ if __name__ == "__main__":
         type=str,
         choices=["copy", "file"],
     )
-    parser.add_argument("-lt", "--limit_token", type=int, default=999_999_999, help="Limit the number of tokens when scraping")
-    parser.add_argument("-lc", "--limit_char", type=int, default=999_999_999, help="Limit the number of characters when scraping")
-    parser.add_argument("-mt", "--max_token", type=int, help="Split by a specified number of tokens when copying to the clipboard")
-    parser.add_argument("-mc", "--max_char", type=int, help="Split by a specified number of characters when copying to the clipboard")
+    parser.add_argument(
+        "-lt", "--limit_token", type=int, default=999_999_999, help="Limit the number of tokens when scraping"
+    )
+    parser.add_argument(
+        "-lc", "--limit_char", type=int, default=999_999_999, help="Limit the number of characters when scraping"
+    )
+    parser.add_argument(
+        "-mt", "--max_token", type=int, help="Split by a specified number of tokens when copying to the clipboard"
+    )
+    parser.add_argument(
+        "-mc", "--max_char", type=int, help="Split by a specified number of characters when copying to the clipboard"
+    )
     parser.add_argument("-f", "--file_name", metavar="output_file_name", type=str)
     args = parser.parse_args()
     scrape_web_args = ScrapeWebArgs(
@@ -128,7 +144,9 @@ if __name__ == "__main__":
             scrape_web_args.ignore_urls = ignore_urls.split(" ")
 
     if scrape_web_args.output_type is None:
-        print_colored('\n出力先方法を入力してください。("copy" or "file")', (f" default: {default_output_type}", "grey"))
+        print_colored(
+            '\n出力先方法を入力してください。("copy" or "file")', (f" default: {default_output_type}", "grey")
+        )
         output_type: str = input("output_type: ")
         if output_type == "file":
             scrape_web_args.output_type = "file"
@@ -136,7 +154,10 @@ if __name__ == "__main__":
             scrape_web_args.output_type = default_output_type
 
     if scrape_web_args.limit_token is None:
-        print_colored("\nクローリングを行うトークン数の上限を入力してください。", (f" default: {format_number(default_max_token)}", "grey"))
+        print_colored(
+            "\nクローリングを行うトークン数の上限を入力してください。",
+            (f" default: {format_number(default_max_token)}", "grey"),
+        )
         limit_token: str = input("limit_token: ")
         if limit_token:
             scrape_web_args.limit_token = int(limit_token)
@@ -144,7 +165,10 @@ if __name__ == "__main__":
             scrape_web_args.limit_token = default_limit_token
 
     if scrape_web_args.limit_char is None:
-        print_colored("\nクローリングを行う文字数の上限を入力してください。", (f" default: {format_number(default_limit_char)}", "grey"))
+        print_colored(
+            "\nクローリングを行う文字数の上限を入力してください。",
+            (f" default: {format_number(default_limit_char)}", "grey"),
+        )
         limit_char: str = input("limit_char: ")
         if limit_char:
             scrape_web_args.limit_char = int(limit_char)
@@ -153,14 +177,18 @@ if __name__ == "__main__":
 
     if scrape_web_args.output_type == "copy":
         if scrape_web_args.max_token is None:
-            print_colored("\n分割するトークン数を入力してください。", (f" default: {format_number(default_max_token)}", "grey"))
+            print_colored(
+                "\n分割するトークン数を入力してください。", (f" default: {format_number(default_max_token)}", "grey")
+            )
             max_token: str = input("max_token: ")
             if max_token:
                 scrape_web_args.max_token = int(max_token)
             else:
                 scrape_web_args.max_token = default_max_token
         if scrape_web_args.max_char is None:
-            print_colored("\n分割する文字数を入力してください。", (f" default: {format_number(default_max_char)}", "grey"))
+            print_colored(
+                "\n分割する文字数を入力してください。", (f" default: {format_number(default_max_char)}", "grey")
+            )
             print_colored("                                  ", (" *Bard: 30,000", "grey"))
             max_char: str = input("max_char: ")
             if max_char:
@@ -193,7 +221,9 @@ if __name__ == "__main__":
     # 出力方法がcopyの場合
     if scrape_web_args.output_type == "copy":
         # データをトークン数に合わせて調整する.
-        optimizer = ContentSizeOptimizer(contents=contents, max_token=scrape_web_args.max_token, max_char=scrape_web_args.max_char, with_prompt=True)
+        optimizer = ContentSizeOptimizer(
+            contents=contents, max_token=scrape_web_args.max_token, max_char=scrape_web_args.max_char, with_prompt=True
+        )
         optimized_contents = optimizer.optimize_contents()
 
         print_result(contents, max_char=scrape_web_args.max_char, max_token=scrape_web_args.max_token)
@@ -207,3 +237,7 @@ if __name__ == "__main__":
         # ファイルに書き込む
         file_writer = FileWriter(file_name=scrape_web_args.file_name or default_file_name, file_dir=default_file_dir)
         file_writer.write(contents)
+
+
+if __name__ == "__main__":
+    run_from_cli()
