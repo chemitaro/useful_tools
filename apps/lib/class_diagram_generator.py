@@ -1,5 +1,6 @@
 import inspect
 from dataclasses import dataclass
+from types import GenericAlias
 from typing import get_type_hints
 
 
@@ -9,16 +10,33 @@ class BaseClassInfo:
     module_name: str
 
 
-@dataclass(frozen=True)
-class TypeInfo:
+@dataclass
+class FieldTypeInfoIf:
     name: str
     module_name: str
+
+
+class OriginalTypeInfo(FieldTypeInfoIf):
+    pass
+
+
+class OtherTypeInfo(FieldTypeInfoIf):
+    pass
+
+
+class ListInfo(FieldTypeInfoIf):
+    element_type: FieldTypeInfoIf
+
+    def __init__(self, name: str, module_name: str, element_type: FieldTypeInfoIf):
+        self.name = name
+        self.module_name = module_name
+        self.element_type = element_type
 
 
 @dataclass(frozen=True)
 class FieldInfo:
     name: str
-    type: TypeInfo
+    type: FieldTypeInfoIf
     is_public: bool = True
 
 
@@ -89,12 +107,28 @@ class ClassDiagramGenerator:
         # FieldInfoのリストに変換
         fields = []
         for name, type_ in fields_dict.items():
-            type_name = type_.__name__
-            module_name = self._get_module_name(type_)
-            field_info = FieldInfo(name, TypeInfo(type_name, module_name))
+
+            field_type_info = self._type_to_field_type_info(type_)
+            field_info = FieldInfo(name, field_type_info)
             fields.append(field_info)
 
         return fields
+
+    def _type_to_field_type_info(self, type_: type) -> FieldTypeInfoIf:
+        # オリジナルの型の場合
+        if type_ in self.classes:
+            module_name = self._get_module_name(type_)
+            return OriginalTypeInfo(type_.__name__, module_name)
+
+        # リストの場合
+        if isinstance(type_, GenericAlias) and type_.__origin__ == list:
+            element_type = self._type_to_field_type_info(type_.__args__[0])
+            list_name = type_.__name__
+            list_module_name = self._get_module_name(type_)
+            return ListInfo(name=list_name, module_name=list_module_name, element_type=element_type)
+
+        # その他の型の場合
+        return OtherTypeInfo(type_.__name__, self._get_module_name(type_))
 
     def _analyze_methods(self, cls: type) -> list[MethodInfo]:
         methods = []
@@ -125,15 +159,22 @@ class ClassDiagramGenerator:
         puml += "\n"
 
         # コンポジットの関係を追加
-
-        # 集約の関係を追加
+        for class_info in self.class_info:
+            puml += self._generate_composition_puml(class_info)
+        puml += "\n"
 
         puml += "@enduml"
         return puml
 
     # クラス定義のpumlを文字列として返す
     def _generate_class_puml(self, class_info: ClassInfo) -> str:
-        puml = f'class "{class_info.name}" as {class_info.module_name}.{class_info.name} {{\n'
+        puml = ""
+        class_type = "class"
+        if class_info.name.endswith("If") or class_info.name.endswith("Mixin"):
+            class_type = "interface"
+        if class_info.name.startswith("Abstract"):
+            class_type = "abstract"
+        puml += f'{class_type} "{class_info.name}" as {class_info.module_name}.{class_info.name} {{\n'
 
         # フィールドを定義を追加
         for field in class_info.fields:
@@ -176,13 +217,12 @@ class ClassDiagramGenerator:
     def _generate_composition_puml(self, class_info: ClassInfo) -> str:
         puml = ""
         for field_info in class_info.fields:
-            if field_info.type in [info.module_name for info in self.class_info]:
-                puml += f"{class_info.module_name} *-- {field_info.type}\n"
+            field_type = field_info.type
+            if isinstance(field_type, OriginalTypeInfo):
+                puml += f"{class_info.module_name}.{class_info.name} *-- {field_type.module_name}.{field_type.name}\n"
+            elif isinstance(field_type, ListInfo) and isinstance(field_type.element_type, OriginalTypeInfo):
+                puml += f"{class_info.module_name}.{class_info.name} o-- {field_type.element_type.module_name}.{field_type.element_type.name}\n"
         return puml
-
-    # 集約の関係をpumlとして文字列として返す
-    def _generate_aggregation_puml(self, class_info: ClassInfo) -> str:
-        pass
 
     def _get_module_name(self, class_type: type) -> str:
         return class_type.__module__
