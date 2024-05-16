@@ -25,6 +25,7 @@ class MainArgs:
     scope_paths: list[str] | None
     ignore_paths: list[str] | None
     depth: int | None
+    output: str
 
 
 def create_class_diagram(
@@ -53,9 +54,8 @@ def create_class_diagram(
     class_diagram_generator = ClassDiagramGenerator(classes=classes)
     class_diagram_generator.analyze()
     class_diagram = class_diagram_generator.generate_puml()
-    import pdb
 
-    pdb.set_trace()
+    return class_diagram
 
 
 def main(main_args: MainArgs) -> None:
@@ -83,20 +83,28 @@ def run_from_cli():
     # 出力先のパスを指定するオプションを追加
     parser.add_argument("-o", "--output", type=str, help="Specify the output destination")
 
+    root_path = parser.parse_args().root_path or os.getcwd()
     main_args: MainArgs = MainArgs(
-        root_path=parser.parse_args().root_path or os.getcwd(),
+        root_path=root_path,
         target_paths=parser.parse_args().target_paths,
         scope_paths=parser.parse_args().scope_paths,
         ignore_paths=parser.parse_args().ignore_paths,
         depth=parser.parse_args().depth,
+        output=parser.parse_args().output or root_path + "/" + parser.parse_args().target_paths[0] + ".puml",
     )
-    create_class_diagram(
+
+    # クラス図を作成
+    class_diagram = create_class_diagram(
         root_path=main_args.root_path,
         target_paths=main_args.target_paths,
         scope_paths=main_args.scope_paths,
         ignore_paths=main_args.ignore_paths,
         depth=main_args.depth,
     )
+
+    # クラス図をファイルに出力
+    with open(main_args.output, "w") as f:
+        f.write(class_diagram)
 
 
 if __name__ == "__main__":
