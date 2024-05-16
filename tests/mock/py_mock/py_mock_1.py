@@ -15,92 +15,48 @@ if root_directory not in sys.path:
 from py_mock.py_mock_a.py_mock_a_1 import py_mock_a_1  # noqa: E402
 from py_mock.py_mock_b.py_mock_b_1 import py_mock_b_1  # noqa: E402
 
-py_mock_1 = 'py_mock_1'
+py_mock_1 = "py_mock_1"
 print(py_mock_a_1)
 print(py_mock_b_1)
 
-# Define variables
-variable1 = "This"
-variable2 = "is"
-variable3 = "a"
-variable4 = "dummy"
-variable5 = "code"
 
-# Combine variables
-combined_text = " ".join([variable1, variable2, variable3, variable4, variable5])
+class Mock0:
+    str_field: str
 
-# Print the combined text
-print(combined_text)
+    def __init__(self, str_field: str):
+        self.field = str_field
 
-# Reverse the combined text
-reversed_text = combined_text[::-1]
+    def get_field(self) -> str:
+        return self.str_field
 
-# Print the reversed text
-print(reversed_text)
 
-# Loop through each character in the combined text
-for character in combined_text:
-    print(character)
+class Mock1(Mock0):
+    pass
 
-# Convert the combined text to uppercase and print it
-print(combined_text.upper())
 
-# Check if "code" is in the combined text
-is_code = "code" in combined_text
+class Mock2:
+    num_field: int
+    mock_object: Mock1
 
-# Print the result
-print(f"Is 'code' in the text: {is_code}")
+    def __init__(self, num_field: int, mock_object: Mock1):
+        self.num_field = num_field
+        self.mock_object = mock_object
 
-# Define lists
-list1 = ["This", "is", "a", "dummy", "code"]
-list2 = [1, 2, 3, 4, 5]
+    def get_field(self) -> str:
+        return self.field
 
-# Combine the lists
-combined_list = list1 + list2
+    def get_mock_field(self) -> str:
+        return self.mock_object.get_field()
 
-# Print the combined list
-print(combined_list)
 
-# Loop through the combined list and print its elements
-for element in combined_list:
-    print(element)
+class Mock2Collection:
+    mock_objects: list[Mock2]
 
-# Sort the combined list and print it
-sorted_list = sorted(combined_list)
-print(sorted_list)
+    def __init__(self, mock_objects: list[Mock2]):
+        self.mock_objects = mock_objects
 
-# Reverse the sorted list and print it
-reversed_list = sorted_list[::-1]
-print(reversed_list)
+    def get_mock_fields(self) -> list[str]:
+        return [mock.get_mock_field() for mock in self.mock_objects]
 
-# Define strings
-string1 = "This is a dummy string."
-string2 = "This is another dummy string."
-
-# Concatenate the strings
-combined_string = string1 + " " + string2
-
-# Print the combined string
-print(combined_string)
-
-# Split the combined string into words and print them
-words = combined_string.split()
-print(words)
-
-# Count the number of words in the combined string
-word_count = len(words)
-
-# Print the word count
-print(f"Number of words: {word_count}")
-
-# Check if "dummy" is in the combined string
-is_dummy = "dummy" in combined_string
-
-# Print the result
-print(f"Is 'dummy' in the string: {is_dummy}")
-
-# Check if the two strings are equal
-strings_equal = string1 == string2
-
-# Print the result
-print(f"Are the strings equal: {strings_equal}")
+    def get_num_fields(self) -> list[int]:
+        return [mock.num_field for mock in self.mock_objects]
