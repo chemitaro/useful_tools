@@ -13,9 +13,9 @@ root_directory = os.path.dirname(os.path.dirname(current_file_path))
 if root_directory not in sys.path:
     sys.path.append(root_directory)
 
-from apps.lib.class_collector import ClassCollector  # noqa: E402
-from apps.lib.class_diagram_generator import ClassDiagramGenerator  # noqa: E402
-from apps.lib.dependency_analyzer.main import DependencyAnalyzer  # noqa: E402
+from lib.class_collector import ClassCollector  # noqa: E402
+from lib.class_diagram_generator import ClassDiagramGenerator  # noqa: E402
+from lib.dependency_analyzer.main import DependencyAnalyzer  # noqa: E402
 
 
 @dataclass
