@@ -35,4 +35,4 @@ class TestFileContentCollector:
 
         # ファイルの内容が収集できていることを確認
         assert len(contents) == 7
-        assert all([type(content) is str for content in contents])
+        assert all([isinstance(content, str) for content in contents])

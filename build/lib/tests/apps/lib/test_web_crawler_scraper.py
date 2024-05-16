@@ -108,11 +108,11 @@ class TestWebCrawlerScraper:
         web_crawler_scraper.run()
 
         assert len(web_crawler_scraper.scraped_data) == 7
-        assert all([type(scraped_data) is ScrapedData for scraped_data in web_crawler_scraper.scraped_data])
+        assert all([isinstance(scraped_data, ScrapedData) for scraped_data in web_crawler_scraper.scraped_data])
         assert all([scraped_data.url.startswith('https://www.nintendo.co.jp') for scraped_data in web_crawler_scraper.scraped_data])
         assert all([scraped_data.token_size > 0 for scraped_data in web_crawler_scraper.scraped_data])
         assert all([scraped_data.char_size > 0 for scraped_data in web_crawler_scraper.scraped_data])
-        assert all([type(scraped_data.content) is str for scraped_data in web_crawler_scraper.scraped_data])
+        assert all([isinstance(scraped_data.content, str) for scraped_data in web_crawler_scraper.scraped_data])
         assert all([len(scraped_data.content) > 0 for scraped_data in web_crawler_scraper.scraped_data])
 
     def test_run_scraping_with_two_urls(self):
@@ -123,11 +123,11 @@ class TestWebCrawlerScraper:
         web_crawler_scraper.run()
 
         assert len(web_crawler_scraper.scraped_data) == 12
-        assert all([type(scraped_data) is ScrapedData for scraped_data in web_crawler_scraper.scraped_data])
+        assert all([isinstance(scraped_data, ScrapedData) for scraped_data in web_crawler_scraper.scraped_data])
         assert all([scraped_data.url.startswith('https://www.nintendo.co.jp') for scraped_data in web_crawler_scraper.scraped_data])
         assert all([scraped_data.token_size > 0 for scraped_data in web_crawler_scraper.scraped_data])
         assert all([scraped_data.char_size > 0 for scraped_data in web_crawler_scraper.scraped_data])
-        assert all([type(scraped_data.content) is str for scraped_data in web_crawler_scraper.scraped_data])
+        assert all([isinstance(scraped_data.content, str) for scraped_data in web_crawler_scraper.scraped_data])
         assert all([len(scraped_data.content) > 0 for scraped_data in web_crawler_scraper.scraped_data])
 
     # トークン数のリミットでスクレイピングが停止することを確認する

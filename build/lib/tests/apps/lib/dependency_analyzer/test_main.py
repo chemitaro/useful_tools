@@ -80,7 +80,7 @@ class TestDependencyAnalyzer:
         result_paths = analyzer.analyze()
 
         # 解析結果を確認
-        assert type(result_paths) is list
+        assert isinstance(result_paths, list)
         assert len(result_paths) == 7
         assert os.path.join(mock_path, 'py_mock/py_mock_1.py') in result_paths
         assert os.path.join(mock_path, 'py_mock/py_mock_a/py_mock_a_1.py') in result_paths
@@ -100,7 +100,7 @@ class TestDependencyAnalyzer:
         result_paths = analyzer.analyze()
 
         # 解析結果を確認
-        assert type(result_paths) is list
+        assert isinstance(result_paths, list)
         assert len(result_paths) == 3
         assert os.path.join(mock_path, 'py_mock/py_mock_a/py_mock_a_2.py') in result_paths
         assert os.path.join(mock_path, 'py_mock/py_mock_a/py_mock_a_a/py_mock_a_a_2.py') in result_paths
@@ -118,6 +118,6 @@ class TestDependencyAnalyzer:
         result_paths = analyzer.analyze()
 
         # 解析結果を確認
-        assert type(result_paths) is list
+        assert isinstance(result_paths, list)
         assert len(result_paths) == 1
         assert os.path.join(mock_path, 'py_mock/py_mock_1.py') in result_paths

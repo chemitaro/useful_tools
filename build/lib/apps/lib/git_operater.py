@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-from apps.lib.utils import make_absolute_path, read_file_content
+from apps.lib.utils import make_absolute_path
 
 
 def get_git_cached_diff() -> str:

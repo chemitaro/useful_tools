@@ -1,11 +1,14 @@
 README.md
 setup.py
 apps/__init__.py
+apps/class_diagram.py
 apps/git_diff.py
 apps/import_collector.py
 apps/s2t.py
 apps/scrape_web.py
 apps/lib/__init__.py
+apps/lib/class_collector.py
+apps/lib/class_diagram_generator.py
 apps/lib/content_size_optimizer.py
 apps/lib/enums.py
 apps/lib/file_content_collector.py

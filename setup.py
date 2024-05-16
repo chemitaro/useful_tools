@@ -10,6 +10,7 @@ setup(
             "s2t=apps.s2t:app_run",
             "scrape_web=apps.scrape_web:run_from_cli",
             "git_diff=apps.git_diff:main",
+            "class_diagram=apps.class_diagram:run_from_cli",
         ]
     },
     install_requires=[

@@ -1,4 +1,5 @@
 [console_scripts]
+class_diagram = apps.class_diagram:run_from_cli
 git_diff = apps.git_diff:main
 import_collector = apps.import_collector:main
 s2t = apps.s2t:app_run
