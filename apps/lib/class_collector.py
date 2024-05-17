@@ -2,7 +2,7 @@ import importlib
 import importlib.util  # 追加
 import inspect
 
-from apps.lib.utils import print_colored
+from apps.lib.utils import path_to_module, print_colored
 
 
 class ClassCollector:
@@ -29,7 +29,7 @@ class ClassCollector:
         :return: 収集されたクラスのリスト。
         """
         for file_path in self.file_paths:
-            module_name = self._get_module_name(file_path)
+            module_name = path_to_module(file_path)
             module = self._import_module(module_name, file_path)
             self._extract_classes(module)
         return self.classes
@@ -42,15 +42,6 @@ class ClassCollector:
         print_colored(("\n== Class List ==\n", "green"))
         for cls in self.classes:
             print_colored(f"{cls}")
-
-    def _get_module_name(self, file_path: str) -> str:
-        """
-        ファイルパスからモジュール名を生成する。
-
-        :param file_path: Pythonファイルのパス。
-        :return: 生成されたモジュール名。
-        """
-        return file_path.replace("/", ".").replace(".py", "")
 
     def _import_module(self, module_name: str, file_path: str):
         """
