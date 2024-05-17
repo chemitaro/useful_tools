@@ -54,9 +54,6 @@ def create_class_diagram(
 
     # クラス図を作成
     class_diagram_generator = ClassDiagramGenerator.create(classes=classes, root_path=root_path)
-    import pdb
-
-    pdb.set_trace()
     class_diagram_generator.analyze()
     class_diagram = class_diagram_generator.generate_puml()
 
