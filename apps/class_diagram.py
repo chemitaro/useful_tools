@@ -50,6 +50,7 @@ def create_class_diagram(
     # ファイルのパスからクラスを取得
     class_collector = ClassCollector(file_paths=dependency_file_paths)
     classes = class_collector.execute()
+    class_collector.print_classes()
 
     # クラス図を作成
     class_diagram_generator = ClassDiagramGenerator(classes=classes)
@@ -108,8 +109,8 @@ def run_from_cli():
         f.write(class_diagram)
 
     # 出力先のパスを表示
-    print_colored(("\n== Output file ==", "green"))
-    print_colored((f"\n{main_args.output}", "cyan"))
+    print_colored(("\n== Output file ==\n", "green"))
+    print_colored((f"{main_args.output}", "cyan"))
 
 
 if __name__ == "__main__":
