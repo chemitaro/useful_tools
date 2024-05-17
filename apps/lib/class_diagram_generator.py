@@ -1,6 +1,6 @@
 import inspect
 from dataclasses import dataclass
-from types import GenericAlias
+from types import GenericAlias, UnionType
 from typing import get_type_hints
 
 
@@ -31,6 +31,15 @@ class ListInfo(FieldTypeInfoIf):
         self.name = name
         self.module_name = module_name
         self.element_type = element_type
+
+
+class UnionInfo(FieldTypeInfoIf):
+    element_types: list[FieldTypeInfoIf]
+
+    def __init__(self, name: str, module_name: str, element_types: list[FieldTypeInfoIf]):
+        self.name = name
+        self.module_name = module_name
+        self.element_types = element_types
 
 
 @dataclass(frozen=True)
@@ -107,7 +116,6 @@ class ClassDiagramGenerator:
         # FieldInfoのリストに変換
         fields = []
         for name, type_ in fields_dict.items():
-
             field_type_info = self._type_to_field_type_info(type_)
             field_info = FieldInfo(name, field_type_info)
             fields.append(field_info)
@@ -115,9 +123,6 @@ class ClassDiagramGenerator:
         return fields
 
     def _type_to_field_type_info(self, type_: type) -> FieldTypeInfoIf:
-        # 引数の型チェック
-        if not isinstance(type_, type):
-            raise ValueError(f"_type_to_field_type_infoメソッドの引数はType型出る必要があります: {type_}")
         # オリジナルの型の場合
         if type_ in self.classes:
             module_name = self._get_module_name(type_)
@@ -130,6 +135,17 @@ class ClassDiagramGenerator:
             list_module_name = self._get_module_name(type_)
             return ListInfo(name=list_name, module_name=list_module_name, element_type=element_type)
 
+        # ユニオンの場合
+        if isinstance(type_, UnionType):
+            element_types: list[FieldTypeInfoIf] = []
+            for element_type in type_.__args__:
+                element_type_info = self._type_to_field_type_info(element_type)
+                element_types.append(element_type_info)
+            # element_types の name を取得して | で結合した文字列を name にする
+            union_name = " | ".join([element_type.name for element_type in element_types])
+            union_module_name = self._get_module_name(type_)
+            return UnionInfo(name=union_name, module_name=union_module_name, element_types=element_types)
+
         # その他の型の場合
         return OtherTypeInfo(type_.__name__, self._get_module_name(type_))
 
@@ -137,8 +153,6 @@ class ClassDiagramGenerator:
         methods = []
         for name, obj in inspect.getmembers(cls):
             if self._is_public_method_name(name) and callable(obj):
-                print(name)
-                print(obj)
                 signature = str(inspect.signature(obj))
                 method_info = MethodInfo(name, signature)
                 methods.append(method_info)
