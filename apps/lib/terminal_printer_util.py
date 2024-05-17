@@ -1,6 +1,3 @@
-import os
-
-
 from apps.lib.utils import count_tokens, format_number, print_colored
 
 
