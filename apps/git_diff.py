@@ -27,12 +27,13 @@ from lib.git_operater import (  # noqa: E402
     get_git_path_diff,
     get_git_staged_paths,
 )
-from lib.outputs import copy_to_clipboard, print_colored  # noqa: E402
+from lib.clipboard_util import copy_to_clipboard  # noqa: E402
 from lib.utils import (  # noqa: E402
     make_absolute_path,
     make_relative_path,
     read_file_content,
     truncate_string,
+    print_colored
 )
 
 

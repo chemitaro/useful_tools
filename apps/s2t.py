@@ -15,7 +15,7 @@ if root_directory not in sys.path:
     sys.path.append(root_directory)
 
 
-from lib.outputs import print_and_copy  # noqa: E402
+from lib.clipboard_util import print_and_copy  # noqa: E402
 from lib.s2t_whisper.main import convert_speech_to_text, record_audio  # noqa: E402
 from lib.utils import print_colored  # noqa: E402
 

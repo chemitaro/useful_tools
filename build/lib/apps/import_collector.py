@@ -21,7 +21,8 @@ from apps.lib.content_size_optimizer import ContentSizeOptimizer  # noqa: E402
 from apps.lib.dependency_analyzer.main import DependencyAnalyzer  # noqa: E402
 from apps.lib.file_content_collector import FileContentCollector  # noqa: E402
 from apps.lib.file_path_formatter import FilePathFormatter  # noqa: E402
-from apps.lib.outputs import copy_to_clipboard, print_result  # noqa: E402
+from apps.lib.clipboard_util import copy_to_clipboard  # noqa: E402
+from apps.lib.terminal_printer_util import print_result  # noqa: E402
 from apps.lib.path_tree import PathTree  # noqa: E402
 from apps.lib.utils import format_number, print_colored  # noqa: E402
 
