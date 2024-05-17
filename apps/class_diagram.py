@@ -16,6 +16,7 @@ if root_directory not in sys.path:
 from lib.class_collector import ClassCollector  # noqa: E402
 from lib.class_diagram_generator import ClassDiagramGenerator  # noqa: E402
 from lib.dependency_analyzer.main import DependencyAnalyzer  # noqa: E402
+from lib.utils import print_colored  # noqa: E402
 
 
 @dataclass
@@ -105,6 +106,10 @@ def run_from_cli():
     # クラス図をファイルに出力
     with open(main_args.output, "w") as f:
         f.write(class_diagram)
+
+    # 出力先のパスを表示
+    print_colored(("\n== Output file ==", "green"))
+    print_colored((f"\n{main_args.output}", "cyan"))
 
 
 if __name__ == "__main__":
