@@ -1,7 +1,8 @@
 import importlib
 import importlib.util  # 追加
 import inspect
-from typing import List, Type
+
+from apps.lib.utils import print_colored
 
 
 class ClassCollector:
@@ -9,7 +10,10 @@ class ClassCollector:
     指定されたファイルパスからクラスを収集するクラス。
     """
 
-    def __init__(self, file_paths: List[str]):
+    file_paths: list[str]
+    classes: list[type]
+
+    def __init__(self, file_paths: list[str]):
         """
         ClassCollectorのコンストラクタ。
 
@@ -18,7 +22,7 @@ class ClassCollector:
         self.file_paths = file_paths
         self.classes = []
 
-    def execute(self) -> List[Type]:
+    def execute(self) -> list[type]:
         """
         指定されたファイルパスからクラスを収集し、リストとして返す。
 
@@ -29,6 +33,15 @@ class ClassCollector:
             module = self._import_module(module_name, file_path)
             self._extract_classes(module)
         return self.classes
+
+    # 取得したクラスの一覧を出力する
+    def print_classes(self):
+        """
+        収集されたクラスの一覧を出力する。
+        """
+        print_colored(("\n== Class List ==\n", "green"))
+        for cls in self.classes:
+            print_colored(f"{cls}")
 
     def _get_module_name(self, file_path: str) -> str:
         """
