@@ -60,3 +60,8 @@ class Mock2Collection:
 
     def get_num_fields(self) -> list[int]:
         return [mock.num_field for mock in self.mock_objects]
+
+
+class MockUnion(Mock0):
+    union_field: str | int
+    original_union_field: Mock2 | None
