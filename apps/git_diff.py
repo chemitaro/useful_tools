@@ -18,6 +18,7 @@ if root_directory not in sys.path:
 
 
 from import_collector import import_collect  # noqa: E402
+from lib.clipboard_util import copy_chunks_to_clipboard, copy_to_clipboard  # noqa: E402
 from lib.file_content_collector import FileContentCollector  # noqa: E402
 from lib.git_operater import (  # noqa: E402
     get_diff_with_commit,  # 追加されたインポート
@@ -27,13 +28,12 @@ from lib.git_operater import (  # noqa: E402
     get_git_path_diff,
     get_git_staged_paths,
 )
-from lib.clipboard_util import copy_to_clipboard  # noqa: E402
 from lib.utils import (  # noqa: E402
     make_absolute_path,
     make_relative_path,
+    print_colored,
     read_file_content,
     truncate_string,
-    print_colored
 )
 
 
@@ -87,7 +87,7 @@ def stage_diff_to_commit_clipboard(*, current_path: str) -> None:
     print(truncate_string(git_diff, 1000))
 
     # コミットメッセージをクリップボードにコピー
-    copy_to_clipboard(commit_message)
+    copy_chunks_to_clipboard(commit_message)
 
 
 def code_review_prompt_clipboard(branch: str | None = None) -> None:
@@ -126,7 +126,7 @@ def code_review_prompt_clipboard(branch: str | None = None) -> None:
 
         print_colored((f"{path_index}/{total_files}"), (f" {relative_path}", "cyan"))
         # クリップボードにコピー
-        pyperclip.copy(review_prompt)
+        copy_to_clipboard(review_prompt)
         # エンターキーが押されるまで待機する
         print_colored(("Press Enter to continue...", "grey"))
         input()
@@ -156,7 +156,7 @@ def diff_with_commit(*, commit_hash: str | None = None, current_path: str, paths
     # Gitの差分をクリップボードにコピー
     prefix = f'以下のコミットハッシュと現在の状態との差分を表示します。\nコミットハッシュ: {commit_hash}\n"""\n'
     suffix = '\n"""\n'
-    copy_to_clipboard(prefix + git_diff + suffix)
+    copy_chunks_to_clipboard(prefix + git_diff + suffix)
 
 
 def main():

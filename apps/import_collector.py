@@ -17,7 +17,7 @@ if root_directory not in sys.path:
     sys.path.append(root_directory)
 
 
-from lib.clipboard_util import copy_to_clipboard  # noqa: E402
+from lib.clipboard_util import copy_chunks_to_clipboard  # noqa: E402
 from lib.content_size_optimizer import ContentSizeOptimizer  # noqa: E402
 from lib.dependency_analyzer.main import DependencyAnalyzer  # noqa: E402
 from lib.file_content_collector import FileContentCollector  # noqa: E402
@@ -337,7 +337,7 @@ def main():
     print_result(chunked_content, max_char=main_args.max_char, max_token=main_args.max_token)
 
     # chunked_content を順番にクリップボードにコピーする
-    copy_to_clipboard(chunked_content)
+    copy_chunks_to_clipboard(chunked_content)
 
 
 if __name__ == "__main__":

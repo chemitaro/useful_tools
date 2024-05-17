@@ -16,7 +16,7 @@ root_directory = os.path.dirname(os.path.dirname(current_file_path))
 if root_directory not in sys.path:
     sys.path.append(root_directory)
 
-from lib.clipboard_util import copy_to_clipboard  # noqa: E402
+from lib.clipboard_util import copy_chunks_to_clipboard  # noqa: E402
 from lib.content_size_optimizer import ContentSizeOptimizer  # noqa: E402
 from lib.file_writer_util import FileWriter  # noqa: E402
 from lib.path_tree import PathTree  # noqa: E402
@@ -231,7 +231,7 @@ def run_from_cli():
         print_result(contents, max_char=scrape_web_args.max_char, max_token=scrape_web_args.max_token)
 
         # クリップボードにコピーする
-        copy_to_clipboard(optimized_contents)
+        copy_chunks_to_clipboard(optimized_contents)
 
     # 出力方法がfileの場合
     if scrape_web_args.output_type == "file":
