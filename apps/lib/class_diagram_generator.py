@@ -115,6 +115,9 @@ class ClassDiagramGenerator:
         return fields
 
     def _type_to_field_type_info(self, type_: type) -> FieldTypeInfoIf:
+        # 引数の型チェック
+        if not isinstance(type_, type):
+            raise ValueError(f"_type_to_field_type_infoメソッドの引数はType型出る必要があります: {type_}")
         # オリジナルの型の場合
         if type_ in self.classes:
             module_name = self._get_module_name(type_)
