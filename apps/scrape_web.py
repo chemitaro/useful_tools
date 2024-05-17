@@ -16,11 +16,11 @@ root_directory = os.path.dirname(os.path.dirname(current_file_path))
 if root_directory not in sys.path:
     sys.path.append(root_directory)
 
-from apps.lib.content_size_optimizer import ContentSizeOptimizer  # noqa: E402
-from apps.lib.outputs import FileWriter, copy_to_clipboard, print_result  # noqa: E402
-from apps.lib.path_tree import PathTree  # noqa: E402
-from apps.lib.utils import format_number, print_colored  # noqa: E402
-from apps.lib.web_crawler_scraper import WebCrawlerScraper  # noqa: E402
+from lib.content_size_optimizer import ContentSizeOptimizer  # noqa: E402
+from lib.outputs import FileWriter, copy_to_clipboard, print_result  # noqa: E402
+from lib.path_tree import PathTree  # noqa: E402
+from lib.utils import format_number, print_colored  # noqa: E402
+from lib.web_crawler_scraper import WebCrawlerScraper  # noqa: E402
 
 default_root_urls: list[str] = [""]
 default_ignore_urls: list[str] = []

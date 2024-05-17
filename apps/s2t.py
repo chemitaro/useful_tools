@@ -15,9 +15,9 @@ if root_directory not in sys.path:
     sys.path.append(root_directory)
 
 
-from apps.lib.outputs import print_and_copy  # noqa: E402
-from apps.lib.s2t_whisper.main import convert_speech_to_text, record_audio  # noqa: E402
-from apps.lib.utils import print_colored  # noqa: E402
+from lib.outputs import print_and_copy  # noqa: E402
+from lib.s2t_whisper.main import convert_speech_to_text, record_audio  # noqa: E402
+from lib.utils import print_colored  # noqa: E402
 
 
 def main(*, model, language, temperature, prompt) -> str:

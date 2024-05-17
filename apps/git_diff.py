@@ -17,9 +17,9 @@ if root_directory not in sys.path:
     sys.path.append(root_directory)
 
 
-from apps.import_collector import import_collect  # noqa: E402
-from apps.lib.file_content_collector import FileContentCollector  # noqa: E402
-from apps.lib.git_operater import (  # noqa: E402
+from import_collector import import_collect  # noqa: E402
+from lib.file_content_collector import FileContentCollector  # noqa: E402
+from lib.git_operater import (  # noqa: E402
     get_diff_with_commit,  # 追加されたインポート
     get_file_diff_with_main_branch,
     get_git_cached_diff,
@@ -27,8 +27,8 @@ from apps.lib.git_operater import (  # noqa: E402
     get_git_path_diff,
     get_git_staged_paths,
 )
-from apps.lib.outputs import copy_to_clipboard, print_colored  # noqa: E402
-from apps.lib.utils import (  # noqa: E402
+from lib.outputs import copy_to_clipboard, print_colored  # noqa: E402
+from lib.utils import (  # noqa: E402
     make_absolute_path,
     make_relative_path,
     read_file_content,
