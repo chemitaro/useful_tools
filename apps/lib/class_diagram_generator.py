@@ -1,7 +1,9 @@
 import inspect
 from dataclasses import dataclass
 from types import GenericAlias, UnionType
-from typing import get_type_hints
+from typing import Any, Self, get_type_hints
+
+from apps.lib.utils import path_to_module
 
 
 @dataclass(frozen=True)
@@ -67,11 +69,18 @@ class ClassInfo:
 
 class ClassDiagramGenerator:
     classes: list[type]
+    root_module_name: str
     class_info: list[ClassInfo]
 
-    def __init__(self, classes: list[type]):
+    def __init__(self, classes: list[type], root_module_name: str):
         self.classes = classes
-        self.class_info: list[ClassInfo] = []
+        self.root_module_name = root_module_name
+
+    @classmethod
+    def create(cls, classes: list[type], root_path: str) -> Self:
+        root_module_name = path_to_module(root_path)
+        generator = cls(classes, root_module_name)
+        return generator
 
     def analyze(self) -> None:
         # リフレッシュ
@@ -105,8 +114,12 @@ class ClassDiagramGenerator:
         # コンストラクタの引数を解析
         init_signature = inspect.signature(cls.__init__)
         for name, param in init_signature.parameters.items():
-            if name != "self":
-                fields_dict[name] = param.annotation
+            # self, cls, 及び、可変長引数は除外
+            if name in ["self", "cls", "*"]:
+                continue
+
+            field_type = param.annotation
+            fields_dict[name] = field_type
 
         # クラスアノテーションを取得
         class_annotations = get_type_hints(cls)
@@ -116,13 +129,16 @@ class ClassDiagramGenerator:
         # FieldInfoのリストに変換
         fields = []
         for name, type_ in fields_dict.items():
-            field_type_info = self._type_to_field_type_info(type_)
-            field_info = FieldInfo(name, field_type_info)
-            fields.append(field_info)
+            try:
+                field_type_info = self._type_to_field_type_info(type_)
+                field_info = FieldInfo(name, field_type_info)
+                fields.append(field_info)
+            except Exception as e:
+                print(f"{e}")
 
         return fields
 
-    def _type_to_field_type_info(self, type_: type) -> FieldTypeInfoIf:
+    def _type_to_field_type_info(self, type_: Any) -> FieldTypeInfoIf:
         # オリジナルの型の場合
         if type_ in self.classes:
             module_name = self._get_module_name(type_)
@@ -147,7 +163,13 @@ class ClassDiagramGenerator:
             return UnionInfo(name=union_name, module_name=union_module_name, element_types=element_types)
 
         # その他の型の場合
-        return OtherTypeInfo(type_.__name__, self._get_module_name(type_))
+        if isinstance(type_, type):
+            other_name = type_.__name__
+            other_module_name = self._get_module_name(type_)
+            return OtherTypeInfo(name=other_name, module_name=other_module_name)
+
+        # そもそも型でない場合は例外を発生させる
+        raise Exception(f"Unexpected type: {type_}")
 
     def _analyze_methods(self, cls: type) -> list[MethodInfo]:
         methods = []
