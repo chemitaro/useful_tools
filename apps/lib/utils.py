@@ -57,6 +57,25 @@ def make_relative_path(root_path: str, absolute_path: str) -> str:
     return os.path.relpath(absolute_path, root_path)
 
 
+def path_to_module(path: str) -> str:
+    """パスをモジュール名に変換する"""
+    # パスの正規化
+    path = os.path.normpath(path)
+
+    # ファイルの拡張子を除去
+    if os.path.isfile(path):
+        path, _ = os.path.splitext(path)
+
+    # パスセパレータをドットに置換
+    module_name = path.replace(os.sep, ".")
+
+    # 先頭のドットを除去
+    if module_name.startswith("."):
+        module_name = module_name[1:]
+
+    return module_name
+
+
 def read_file_content(file_path: str) -> str:
     """指定したファイルの内容を読み込み、文字列として返す"""
     with open(file_path, "r") as f:
