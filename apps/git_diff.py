@@ -4,8 +4,6 @@ import argparse
 import os
 import sys
 
-import pyperclip
-
 # 現在のファイルの絶対パスを取得
 current_file_path = os.path.abspath(__file__)
 
