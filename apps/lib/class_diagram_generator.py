@@ -304,9 +304,9 @@ class ClassDiagramGenerator:
         Returns:
             bool: クラスがルートモジュールに属しているかどうか
         """
-        if self._is_root_module(cls):
+        if isinstance(cls, type) and self._is_root_module(cls):
             if not self._has_classes(cls):
                 self.classes.append(cls)
-                print_colored((f"  +Add Class: {cls.__name__}", "green"))
+            print_colored((f"  +Add Class: {cls.__name__}", "green"))
             return True
         return False
