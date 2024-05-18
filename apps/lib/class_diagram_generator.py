@@ -1,9 +1,9 @@
 import inspect
 from dataclasses import dataclass
 from types import GenericAlias, UnionType
-from typing import Any, Self, get_type_hints
+from typing import Any, get_type_hints
 
-from apps.lib.utils import path_to_module, print_colored
+from apps.lib.utils import module_to_absolute_path, print_colored
 
 
 @dataclass(frozen=True)
@@ -69,20 +69,15 @@ class ClassInfo:
 
 class ClassDiagramGenerator:
     classes: list[type]
-    root_module_name: str
+    root_path: str
     class_info: list[ClassInfo]
 
-    def __init__(self, classes: list[type], root_module_name: str):
+    def __init__(self, classes: list[type], root_path: str):
         self.classes = classes
-        self.root_module_name = root_module_name
-
-    @classmethod
-    def create(cls, classes: list[type], root_path: str) -> Self:
-        root_module_name = path_to_module(root_path)
-        generator = cls(classes, root_module_name)
-        return generator
+        self.root_path = root_path
 
     def analyze(self) -> None:
+        print_colored(("\n== Analyze Classes ==\n", "green"))
         # リフレッシュ
         self.class_info = []
         # クラス情報を取得
@@ -266,6 +261,12 @@ class ClassDiagramGenerator:
     def _get_module_name(self, class_type: type) -> str:
         return class_type.__module__
 
+    def _get_class_file_path(self, class_type: type) -> str:
+        """クラスのファイルパスを取得する"""
+        module_name = class_type.__module__
+        absolute_path = module_to_absolute_path(module_name)
+        return absolute_path
+
     def _is_public_method(self, method: MethodInfo) -> bool:
         # __init__, _  , __  で始まるメソッドは非公開
         if method.__name__ == "__init__":
@@ -280,11 +281,11 @@ class ClassDiagramGenerator:
             return False
         return True
 
-    def _is_root_module(self, cls: Any) -> bool:
+    def _is_root_path(self, cls: Any) -> bool:
         """クラスがルートモジュールに属しているかどうかを返す"""
         try:
-            module_name = cls.__module__
-            return module_name.startswith(self.root_module_name)
+            path = self._get_class_file_path(cls)
+            return path.startswith(self.root_path)
         except Exception as e:
             print(f"{e}")
             return False
@@ -304,7 +305,7 @@ class ClassDiagramGenerator:
         Returns:
             bool: クラスがルートモジュールに属しているかどうか
         """
-        if isinstance(cls, type) and self._is_root_module(cls):
+        if isinstance(cls, type) and self._is_root_path(cls):
             if not self._has_classes(cls):
                 self.classes.append(cls)
             print_colored((f"  +Add Class: {cls.__name__}", "green"))
