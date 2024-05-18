@@ -76,6 +76,24 @@ def path_to_module(path: str) -> str:
     return module_name
 
 
+def module_to_absolute_path(module: str) -> str:
+    """モジュール名を絶対パスに変換する"""
+    # ドットをパスセパレータに置換
+    path = module.replace(".", os.sep)
+
+    # 頭に/がない場合には追加
+    if not path.startswith(os.sep):
+        path = os.sep + path
+
+    # ファイルかディレクトリかを判定し、ファイルの場合は .py を追加
+    if os.path.isdir(path):
+        return path
+    elif os.path.isfile(path + ".py"):
+        return path + ".py"
+    else:
+        return module
+
+
 def read_file_content(file_path: str) -> str:
     """指定したファイルの内容を読み込み、文字列として返す"""
     with open(file_path, "r") as f:
