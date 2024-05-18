@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from types import GenericAlias, UnionType
 from typing import Any, Self, get_type_hints
 
-from apps.lib.utils import path_to_module
+from apps.lib.utils import path_to_module, print_colored
 
 
 @dataclass(frozen=True)
@@ -101,7 +101,7 @@ class ClassDiagramGenerator:
         base_classes = []
         for base_class in cls.__bases__:
             # base_classがclassesに含まれている場合はmodule_nameを取得して追加
-            if base_class in self.classes:
+            if self._add_class_if_root_and_not_exists(base_class):
                 base_class_name = base_class.__name__
                 base_module_name = self._get_module_name(base_class)
                 base_class_info = BaseClassInfo(base_class_name, base_module_name)
@@ -140,7 +140,7 @@ class ClassDiagramGenerator:
 
     def _type_to_field_type_info(self, type_: Any) -> FieldTypeInfoIf:
         # オリジナルの型の場合
-        if type_ in self.classes:
+        if self._add_class_if_root_and_not_exists(type_):
             module_name = self._get_module_name(type_)
             return OriginalTypeInfo(type_.__name__, module_name)
 
@@ -279,3 +279,34 @@ class ClassDiagramGenerator:
         if method_name.startswith("_") or method_name.startswith("__"):
             return False
         return True
+
+    def _is_root_module(self, cls: Any) -> bool:
+        """クラスがルートモジュールに属しているかどうかを返す"""
+        try:
+            module_name = cls.__module__
+            return module_name.startswith(self.root_module_name)
+        except Exception as e:
+            print(f"{e}")
+            return False
+
+    def _has_classes(self, cls: Any) -> bool:
+        """指定したクラスがclassesに含まれているかどうかを返す"""
+        return cls in self.classes
+
+    def _add_class_if_root_and_not_exists(self, cls: Any) -> bool:
+        """
+        クラスがルートモジュールに属しているかどうかをboolで返す。
+        そして、classesに含まれていない場合はclassesに追加する。
+
+        Args:
+            cls (type): チェックするクラス
+
+        Returns:
+            bool: クラスがルートモジュールに属しているかどうか
+        """
+        if self._is_root_module(cls):
+            if not self._has_classes(cls):
+                self.classes.append(cls)
+                print_colored((f"  +Add Class: {cls.__name__}", "green"))
+            return True
+        return False
