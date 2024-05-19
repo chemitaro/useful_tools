@@ -1,4 +1,5 @@
 import inspect
+import os
 from dataclasses import dataclass
 from types import GenericAlias, UnionType
 from typing import Any, get_type_hints
@@ -261,11 +262,26 @@ class ClassDiagramGenerator:
     def _get_module_name(self, class_type: type) -> str:
         return class_type.__module__
 
+    # 外部から動的に取り込んだクラスのファイルパスを取得する
+    def _get_imported_class_file_path(self, class_type: type) -> str:
+        module_name = class_type.__module__
+        file_path = module_to_absolute_path(module_name)
+        return file_path
+
+    # 内部的に取得したクラスのファイルパスを取得する
+    def _get_internal_class_file_path(self, class_type: type) -> str:
+        file_path = inspect.getfile(class_type)
+
+        # 絶対パスに変換
+        absolute_path = os.path.abspath(file_path)
+        return absolute_path
+
     def _get_class_file_path(self, class_type: type) -> str:
         """クラスのファイルパスを取得する"""
-        module_name = class_type.__module__
-        absolute_path = module_to_absolute_path(module_name)
-        return absolute_path
+        try:
+            return self._get_internal_class_file_path(class_type)
+        except Exception:
+            return self._get_imported_class_file_path(class_type)
 
     def _is_public_method(self, method: MethodInfo) -> bool:
         # __init__, _  , __  で始まるメソッドは非公開
@@ -306,8 +322,8 @@ class ClassDiagramGenerator:
             bool: クラスがルートモジュールに属しているかどうか
         """
         if isinstance(cls, type) and self._is_root_path(cls):
-            if not self._has_classes(cls):
-                self.classes.append(cls)
-            print_colored((f"  +Add Class: {cls.__name__}", "green"))
+            # if not self._has_classes(cls):
+            #     self.classes.append(cls)
+            # print_colored((f"  +Add Class: {cls.__name__}", "green"))
             return True
         return False
