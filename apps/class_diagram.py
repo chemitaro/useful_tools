@@ -48,7 +48,7 @@ def create_class_diagram(
     dependency_file_paths: list[str] = dependency_analyzer.analyze()
 
     # ファイルのパスからクラスを取得
-    class_collector = ClassCollector(file_paths=dependency_file_paths)
+    class_collector = ClassCollector(file_paths=dependency_file_paths, root_path=root_path)
     classes = class_collector.execute()
     class_collector.print_classes()
 
@@ -64,7 +64,7 @@ def main(main_args: MainArgs) -> None:
     pass
 
 
-def run_from_cli():
+def run_from_cli() -> None:
     """CLIから実行するための関数."""
     print("Hello, World!")
     parser = argparse.ArgumentParser(description="")
