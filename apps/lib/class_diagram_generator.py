@@ -1,5 +1,6 @@
 import inspect
 import os
+import re
 from dataclasses import dataclass
 from types import GenericAlias, UnionType
 from typing import Any, get_type_hints
@@ -208,11 +209,12 @@ class ClassDiagramGenerator:
     def _generate_class_puml(self, class_info: ClassInfo) -> str:
         puml = ""
         class_type = "class"
-        if class_info.name.endswith("If") or class_info.name.endswith("Mixin"):
+        class_name = self._format_class_name(class_info.name)
+        if class_name.endswith("If") or class_name.endswith("Mixin"):
             class_type = "interface"
-        if class_info.name.startswith("Abstract"):
+        if class_name.startswith("Abstract"):
             class_type = "abstract"
-        puml += f'{class_type} "{class_info.name}" as {class_info.module_name}.{class_info.name} {{\n'
+        puml += f'{class_type} "{class_name}" as {class_info.module_name}.{class_info.name} {{\n'
 
         # フィールドを定義を追加
         for field in class_info.fields:
@@ -245,10 +247,11 @@ class ClassDiagramGenerator:
         puml = ""
         for base_class in class_info.base_classes:
             # インターフェイスの場合は継承関係を点線で表現
-            if base_class.name.endswith("If") or base_class.name.endswith("Mixin"):
-                puml += f"{base_class.module_name}.{base_class.name} <|.. {class_info.module_name}.{class_info.name}\n"
+            base_class_name = self._format_class_name(base_class.name)
+            if base_class_name.endswith("If") or base_class_name.endswith("Mixin"):
+                puml += f"{base_class.module_name}.{base_class_name} <|.. {class_info.module_name}.{class_info.name}\n"
             else:
-                puml += f"{base_class.module_name}.{base_class.name} <|-- {class_info.module_name}.{class_info.name}\n"
+                puml += f"{base_class.module_name}.{base_class_name} <|-- {class_info.module_name}.{class_info.name}\n"
         return puml
 
     # コンポジットの関係をpumlとして文字列として返す
@@ -339,3 +342,10 @@ class ClassDiagramGenerator:
             # print_colored((f"  +Add Class: {cls.__name__}", "green"))
             return True
         return False
+
+    # クラス名をpumlのフォーマットで整形する
+    def _format_class_name(self, class_name: str) -> str:
+        # [] で囲まれた部分を削除
+        class_name = re.sub(r"\[.*?\]", "", class_name)
+
+        return class_name
