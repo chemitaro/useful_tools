@@ -53,7 +53,7 @@ def create_class_diagram(
     class_collector.print_classes()
 
     # クラス図を作成
-    class_diagram_generator = ClassDiagramGenerator(classes=classes, root_path=root_path)
+    class_diagram_generator = ClassDiagramGenerator.create(classes=classes, root_path=root_path)
     class_diagram_generator.analyze()
     class_diagram = class_diagram_generator.generate_puml()
     return class_diagram

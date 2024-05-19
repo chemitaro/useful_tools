@@ -2,10 +2,25 @@ import inspect
 import os
 import re
 from dataclasses import dataclass
+from enum import Enum
 from types import GenericAlias, UnionType
-from typing import Any, get_type_hints
+from typing import Any, Protocol, Self, get_type_hints
 
 from apps.lib.utils import module_to_absolute_path, print_colored
+
+
+class ClassType(Enum):
+    CLASS = "class"
+    INTERFACE = "interface"
+    ABSTRACT = "abstract"
+    ENUM = "enum"
+    EXCEPTION = "exception"
+
+
+class MethodDisplayType(Enum):
+    HIDE = "hide"  # メソッドを非表示
+    DEFINED = "defined"  # 定義されたメソッドのみを表示
+    ALL = "all"  # 全てのメソッドを表示
 
 
 @dataclass(frozen=True)
@@ -64,6 +79,7 @@ class MethodInfo:
 class ClassInfo:
     name: str
     module_name: str
+    class_type: ClassType
     base_classes: list[BaseClassInfo]
     fields: list[FieldInfo]
     methods: list[MethodInfo]
@@ -73,10 +89,20 @@ class ClassDiagramGenerator:
     classes: list[type]
     root_path: str
     class_info: list[ClassInfo]
+    method_display_type: MethodDisplayType
 
-    def __init__(self, classes: list[type], root_path: str):
+    def __init__(self, classes: list[type], root_path: str, method_display_type: MethodDisplayType):
         self.classes = classes
         self.root_path = root_path
+        self.method_display_type = method_display_type
+
+    @classmethod
+    def create(cls, classes: list[type], root_path: str, method_display_type: str | None = None) -> Self:
+        # メソッド表示タイプが指定されていない場合はデフォルト値を設定
+        if method_display_type is None:
+            method_display_type = "defined"
+
+        return cls(classes=classes, root_path=root_path, method_display_type=MethodDisplayType(method_display_type))
 
     def analyze(self) -> None:
         print_colored(("\n== Analyze Classes ==\n", "green"))
@@ -89,10 +115,28 @@ class ClassDiagramGenerator:
     def _analyze_class(self, cls: type) -> ClassInfo:
         class_name = cls.__name__
         module_name = self._get_module_name(cls)
+        class_type = self._analyze_class_type(cls)
         base_classes = self._analyze_base_classes(cls)
         fields = self._analyze_fields(cls)
         methods = self._analyze_methods(cls)
-        return ClassInfo(class_name, module_name, base_classes, fields, methods)
+        return ClassInfo(class_name, module_name, class_type, base_classes, fields, methods)
+
+    def _analyze_class_type(self, cls: type) -> ClassType:
+        class_name = cls.__name__
+        if class_name.endswith("If"):
+            return ClassType.INTERFACE
+        elif class_name.endswith("Mixin"):
+            return ClassType.INTERFACE
+        elif Protocol in cls.__bases__:
+            return ClassType.INTERFACE
+        elif class_name.startswith("Abstract"):
+            return ClassType.ABSTRACT
+        elif issubclass(cls, Enum):
+            return ClassType.ENUM
+        elif issubclass(cls, Exception):
+            return ClassType.EXCEPTION
+        else:
+            return ClassType.CLASS
 
     def _analyze_base_classes(self, cls: type) -> list[BaseClassInfo]:
         base_classes = []
@@ -133,8 +177,8 @@ class ClassDiagramGenerator:
                 field_type_info = self._type_to_field_type_info(type_)
                 field_info = FieldInfo(name, field_type_info)
                 fields.append(field_info)
-            except Exception as e:
-                print(f"{e}")
+            except Exception:
+                continue
 
         return fields
 
@@ -172,9 +216,35 @@ class ClassDiagramGenerator:
         raise Exception(f"Unexpected type: {type_}")
 
     def _analyze_methods(self, cls: type) -> list[MethodInfo]:
+        if self.method_display_type == MethodDisplayType.HIDE:
+            return []
+        elif self.method_display_type == MethodDisplayType.DEFINED:
+            return self._analyze_defined_methods(cls)
+        elif self.method_display_type == MethodDisplayType.ALL:
+            return self._analyze_all_methods(cls)
+        else:
+            return []
+
+    def _analyze_defined_methods(self, cls: type) -> list[MethodInfo]:
         methods = []
         for name, obj in inspect.getmembers(cls):
-            if self._is_public_method_name(name) and callable(obj):
+            if inspect.isfunction(obj) and obj.__qualname__.startswith(cls.__name__):
+                # パブリックメソッド以外はスキップ
+                if not self._is_public_method_name(name):
+                    continue
+                signature = str(inspect.signature(obj))
+                method_info = MethodInfo(name, signature)
+                methods.append(method_info)
+
+        return methods
+
+    def _analyze_all_methods(self, cls: type) -> list[MethodInfo]:
+        methods = []
+        for name, obj in inspect.getmembers(cls):
+            if inspect.isfunction(obj):
+                # パブリックメソッド以外はスキップ
+                if not self._is_public_method_name(name):
+                    continue
                 signature = str(inspect.signature(obj))
                 method_info = MethodInfo(name, signature)
                 methods.append(method_info)
@@ -208,12 +278,9 @@ class ClassDiagramGenerator:
     # クラス定義のpumlを文字列として返す
     def _generate_class_puml(self, class_info: ClassInfo) -> str:
         puml = ""
-        class_type = "class"
+        class_type = class_info.class_type.value
         class_name = self._format_class_name(class_info.name)
-        if class_name.endswith("If") or class_name.endswith("Mixin"):
-            class_type = "interface"
-        if class_name.startswith("Abstract"):
-            class_type = "abstract"
+
         puml += f'{class_type} "{class_name}" as {class_info.module_name}.{class_info.name} {{\n'
 
         # フィールドを定義を追加
