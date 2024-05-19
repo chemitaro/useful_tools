@@ -33,6 +33,7 @@ class BaseClassInfo:
 class FieldTypeInfoIf:
     name: str
     module_name: str
+    class_type: ClassType
 
 
 class OriginalTypeInfo(FieldTypeInfoIf):
@@ -50,6 +51,7 @@ class ListInfo(FieldTypeInfoIf):
         self.name = name
         self.module_name = module_name
         self.element_type = element_type
+        self.class_type = ClassType.CLASS
 
 
 class UnionInfo(FieldTypeInfoIf):
@@ -59,6 +61,7 @@ class UnionInfo(FieldTypeInfoIf):
         self.name = name
         self.module_name = module_name
         self.element_types = element_types
+        self.class_type = ClassType.CLASS
 
 
 @dataclass(frozen=True)
@@ -186,7 +189,8 @@ class ClassDiagramGenerator:
         # オリジナルの型の場合
         if self._add_class_if_root_and_not_exists(type_):
             module_name = self._get_module_name(type_)
-            return OriginalTypeInfo(type_.__name__, module_name)
+            class_type = self._analyze_class_type(type_)
+            return OriginalTypeInfo(type_.__name__, module_name, class_type)
 
         # リストの場合
         if isinstance(type_, GenericAlias) and type_.__origin__ == list:
@@ -210,7 +214,8 @@ class ClassDiagramGenerator:
         if isinstance(type_, type):
             other_name = type_.__name__
             other_module_name = self._get_module_name(type_)
-            return OtherTypeInfo(name=other_name, module_name=other_module_name)
+            other_class_type = self._analyze_class_type(type_)
+            return OtherTypeInfo(name=other_name, module_name=other_module_name, class_type=other_class_type)
 
         # そもそも型でない場合は例外を発生させる
         raise Exception(f"Unexpected type: {type_}")
@@ -327,6 +332,9 @@ class ClassDiagramGenerator:
         for field_info in class_info.fields:
             field_type = field_info.type
             if isinstance(field_type, OriginalTypeInfo):
+                # enumは除外する
+                if field_type.class_type == ClassType.ENUM:
+                    continue
                 puml += f"{class_info.module_name}.{class_info.name} *-- {field_type.module_name}.{field_type.name}\n"
             elif isinstance(field_type, ListInfo) and isinstance(field_type.element_type, OriginalTypeInfo):
                 puml += f"{class_info.module_name}.{class_info.name} o-- {field_type.element_type.module_name}.{field_type.element_type.name}\n"
