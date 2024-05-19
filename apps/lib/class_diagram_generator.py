@@ -108,19 +108,22 @@ class ClassDiagramGenerator:
         fields_dict: dict[str, type] = {}
 
         # コンストラクタの引数を解析
-        init_signature = inspect.signature(cls.__init__)
-        for name, param in init_signature.parameters.items():
-            # self, cls, 及び、可変長引数は除外
-            if name in ["self", "cls", "*"]:
-                continue
+        try:
+            init_signature = inspect.signature(cls.__init__)  # type: ignore
+            for name, param in init_signature.parameters.items():
+                # self, cls, 及び、可変長引数は除外
+                if name in ["self", "cls", "*"]:
+                    continue
 
-            field_type = param.annotation
-            fields_dict[name] = field_type
+                field_type = param.annotation
+                fields_dict[name] = field_type
 
-        # クラスアノテーションを取得
-        class_annotations = get_type_hints(cls)
-        for name, type_ in class_annotations.items():
-            fields_dict[name] = type_
+            # クラスアノテーションを取得
+            class_annotations = get_type_hints(cls)
+            for name, type_ in class_annotations.items():
+                fields_dict[name] = type_
+        except Exception as e:
+            print(f"{e}")
 
         # FieldInfoのリストに変換
         fields = []
@@ -259,8 +262,12 @@ class ClassDiagramGenerator:
                 puml += f"{class_info.module_name}.{class_info.name} o-- {field_type.element_type.module_name}.{field_type.element_type.name}\n"
         return puml
 
-    def _get_module_name(self, class_type: type) -> str:
-        return class_type.__module__
+    def _get_module_name(self, class_type: Any) -> str:
+        try:
+            return class_type.__module__
+        except Exception as e:
+            print(f"{e}")
+            return ""
 
     # 外部から動的に取り込んだクラスのファイルパスを取得する
     def _get_imported_class_file_path(self, class_type: type) -> str:
@@ -285,9 +292,14 @@ class ClassDiagramGenerator:
 
     def _is_public_method(self, method: MethodInfo) -> bool:
         # __init__, _  , __  で始まるメソッドは非公開
-        if method.__name__ == "__init__":
-            return True
-        return not (method.__name__.startswith("_") or method.__name__.startswith("__"))
+        try:
+            method_name = method.name
+            if method_name == "__init__":
+                return True
+            return not (method_name.startswith("_") or method_name.startswith("__"))
+        except Exception as e:
+            print(f"{e}")
+            return False
 
     def _is_public_method_name(self, method_name: str) -> bool:
         # __init__, _  , __  で始まるメソッドは非公開
