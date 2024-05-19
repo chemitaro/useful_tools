@@ -27,6 +27,7 @@ class MethodDisplayType(Enum):
 class BaseClassInfo:
     name: str
     module_name: str
+    class_type: ClassType
 
 
 @dataclass
@@ -148,7 +149,8 @@ class ClassDiagramGenerator:
             if self._add_class_if_root_and_not_exists(base_class):
                 base_class_name = base_class.__name__
                 base_module_name = self._get_module_name(base_class)
-                base_class_info = BaseClassInfo(base_class_name, base_module_name)
+                base_class_type = self._analyze_class_type(base_class)
+                base_class_info = BaseClassInfo(base_class_name, base_module_name, base_class_type)
                 base_classes.append(base_class_info)
         return base_classes
 
@@ -320,8 +322,10 @@ class ClassDiagramGenerator:
         for base_class in class_info.base_classes:
             # インターフェイスの場合は継承関係を点線で表現
             base_class_name = self._format_class_name(base_class.name)
-            if base_class_name.endswith("If") or base_class_name.endswith("Mixin"):
+            if base_class.class_type == ClassType.INTERFACE:
                 puml += f"{base_class.module_name}.{base_class_name} <|.. {class_info.module_name}.{class_info.name}\n"
+            elif base_class.class_type == ClassType.ABSTRACT:
+                puml += f"{base_class.module_name}.{base_class_name} <|.. {class_info.module_name}.{class_info.name} #AAAAAA\n"
             else:
                 puml += f"{base_class.module_name}.{base_class_name} <|-- {class_info.module_name}.{class_info.name}\n"
         return puml
