@@ -130,11 +130,11 @@ class ClassDiagramGenerator:
         class_name = cls.__name__
         if class_name.endswith("If"):
             return ClassType.INTERFACE
-        elif class_name.endswith("Mixin"):
-            return ClassType.INTERFACE
         elif Protocol in cls.__bases__:
             return ClassType.INTERFACE
         elif class_name.startswith("Abstract"):
+            return ClassType.ABSTRACT
+        elif class_name.endswith("Mixin"):
             return ClassType.ABSTRACT
         elif issubclass(cls, Enum):
             return ClassType.ENUM
