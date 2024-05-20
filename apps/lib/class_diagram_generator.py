@@ -11,6 +11,7 @@ from apps.lib.utils import module_to_absolute_path, print_colored
 
 class ClassType(Enum):
     CLASS = "class"
+    ENTITY = "entity"
     INTERFACE = "interface"
     ABSTRACT = "abstract"
     ENUM = "enum"
@@ -139,6 +140,8 @@ class ClassDiagramGenerator:
             return ClassType.ENUM
         elif issubclass(cls, Exception):
             return ClassType.EXCEPTION
+        elif class_name.endswith("Entity"):
+            return ClassType.ENTITY
         else:
             return ClassType.CLASS
 
