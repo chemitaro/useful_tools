@@ -93,21 +93,48 @@ class ClassInfo:
 class ClassDiagramGenerator:
     classes: list[type]
     root_path: str
+    ignore_paths: list[str]
     class_info: list[ClassInfo]
     method_display_type: MethodDisplayType
 
-    def __init__(self, classes: list[type], root_path: str, method_display_type: MethodDisplayType):
+    def __init__(
+        self, classes: list[type], root_path: str, ignore_paths: list[str], method_display_type: MethodDisplayType
+    ):
         self.classes = classes
         self.root_path = root_path
+        self.ignore_paths = ignore_paths
         self.method_display_type = method_display_type
 
     @classmethod
-    def create(cls, classes: list[type], root_path: str, method_display_type: str | None = None) -> Self:
+    def create(
+        cls,
+        classes: list[type],
+        root_path: str,
+        ignore_paths: list[str] | None = None,
+        method_display_type: str | None = None,
+    ) -> Self:
         # メソッド表示タイプが指定されていない場合はデフォルト値を設定
         if method_display_type is None:
             method_display_type = "defined"
 
-        return cls(classes=classes, root_path=root_path, method_display_type=MethodDisplayType(method_display_type))
+        # ignore_pathsが指定されていない場合は空リストを設定
+        if ignore_paths is None:
+            ignore_paths = []
+
+        # ignore_pathsが相対パスの場合は,絶対パスに変換する
+        absolute_ignore_paths = []
+        for ignore_path in ignore_paths:
+            if not os.path.isabs(ignore_path):
+                absolute_ignore_paths.append(os.path.join(root_path, ignore_path))
+            else:
+                absolute_ignore_paths.append(ignore_path)
+
+        return cls(
+            classes=classes,
+            root_path=root_path,
+            ignore_paths=absolute_ignore_paths,
+            method_display_type=MethodDisplayType(method_display_type),
+        )
 
     def analyze(self) -> None:
         print_colored(("\n== Analyze Classes ==\n", "green"))
@@ -405,6 +432,18 @@ class ClassDiagramGenerator:
             print(f"{e}")
             return False
 
+    def _is_ignore_path(self, cls: Any) -> bool:
+        """クラスが無視するパスに属しているかどうかを返す"""
+        try:
+            path = self._get_class_file_path(cls)
+            for ignore_path in self.ignore_paths:
+                if path.startswith(ignore_path):
+                    return True
+            return False
+        except Exception as e:
+            print(f"{e}")
+            return False
+
     def _has_classes(self, cls: Any) -> bool:
         """指定したクラスがclassesに含まれているかどうかを返す"""
         return cls in self.classes
@@ -420,7 +459,7 @@ class ClassDiagramGenerator:
         Returns:
             bool: クラスがルートモジュールに属しているかどうか
         """
-        if isinstance(cls, type) and self._is_root_path(cls):
+        if isinstance(cls, type) and self._is_root_path(cls) and self._is_ignore_path(cls) is False:
             # if not self._has_classes(cls):
             #     self.classes.append(cls)
             # print_colored((f"  +Add Class: {cls.__name__}", "green"))
