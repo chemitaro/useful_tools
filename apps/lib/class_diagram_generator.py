@@ -342,9 +342,11 @@ class ClassDiagramGenerator:
                 # enumは除外する
                 if field_type.class_type == ClassType.ENUM:
                     continue
-                puml += f"{class_info.module_name}.{class_info.name} *-- {field_type.module_name}.{field_type.name}\n"
+                puml += (
+                    f'{class_info.module_name}.{class_info.name} *-- "1" {field_type.module_name}.{field_type.name}\n'
+                )
             elif isinstance(field_type, ListInfo) and isinstance(field_type.element_type, OriginalTypeInfo):
-                puml += f"{class_info.module_name}.{class_info.name} o-- {field_type.element_type.module_name}.{field_type.element_type.name}\n"
+                puml += f'{class_info.module_name}.{class_info.name} o-- "0..*" {field_type.element_type.module_name}.{field_type.element_type.name}\n'
         return puml
 
     def _get_module_name(self, class_type: Any) -> str:
