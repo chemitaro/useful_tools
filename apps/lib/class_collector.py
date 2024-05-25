@@ -33,10 +33,14 @@ class ClassCollector:
         """
         for file_path in self.file_paths:
             # 相対パスに変換
-            relative_path = make_relative_path(self.root_path, file_path)
-            module_name = path_to_module(relative_path)
-            module = self._import_module(module_name, file_path)
-            self._extract_classes(module)
+            try:
+                relative_path = make_relative_path(self.root_path, file_path)
+                module_name = path_to_module(relative_path)
+                module = self._import_module(module_name, file_path)
+                self._extract_classes(module)
+            except Exception as e:
+                print_colored((f"Failed to collect classes from {file_path}: {e}", "red"))
+                continue
         return self.classes
 
     # 取得したクラスの一覧を出力する
