@@ -157,6 +157,21 @@ def diff_with_commit(*, commit_hash: str | None = None, current_path: str, paths
     copy_chunks_to_clipboard(prefix + git_diff + suffix)
 
 
+def stage_diff_to_clipboard(*, current_path: str) -> None:
+    """ステージングされた変更をコミットメッセージにコピーする"""
+    # Gitの差分を取得
+    git_diff = get_git_cached_diff()
+
+    # Gitの差分をターミナルに出力
+    print_colored(("\n== Git Diff ==\n", "green"))
+    print_colored((truncate_string(git_diff, 1000)))
+
+    # Gitの差分をクリップボードにコピー
+    prefix = '以下のステージングされた変更の差分を表示します。\n"""\n'
+    suffix = '\n"""\n'
+    copy_chunks_to_clipboard(prefix + git_diff + suffix)
+
+
 def main():
     # argparseのパーサーを作成
     parser = argparse.ArgumentParser(
@@ -174,6 +189,9 @@ def main():
         "-p", "--paths", type=str, help="差分を取得するファイルやディレクトリのパスを指定します。", nargs="*"
     )
 
+    # 'stage' サブコマンドを追加
+    subparsers.add_parser("stage", help="ステージングされた変更の差分をクリップボードにコピーします。")
+
     # 'commit'サブコマンドを追加
     subparsers.add_parser("commit", help="ステージングされた変更をコミットメッセージにコピーします。")
 
@@ -189,6 +207,10 @@ def main():
     # 'diff'サブコマンドが指定された場合、diff_with_commit関数を実行
     if args.command == "diff":
         diff_with_commit(commit_hash=args.commit_hash, current_path=current_path, paths=args.paths)
+
+    # 'stage' サブコマンドが指定された場合、stage_diff_to_commit_clipboard関数を実行
+    elif args.command == "stage":
+        stage_diff_to_clipboard(current_path=current_path)
 
     # 'commit'サブコマンドが指定された場合、stage_diff_to_commit_clipboard関数を実行
     elif args.command == "commit":
