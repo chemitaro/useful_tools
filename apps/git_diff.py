@@ -113,7 +113,7 @@ def code_review_prompt_clipboard(branch: str | None = None) -> None:
         relative_path = make_relative_path(current_path, path)
 
         import_collection = import_collect(
-            root_path=current_path, target_paths=[relative_path], output="path", with_prompt=True
+            root_path=current_path, target_paths=[relative_path], output="code", with_prompt=True
         )
         joined_import_collection = "\n".join(import_collection)
 
@@ -172,7 +172,7 @@ def stage_diff_to_clipboard(*, current_path: str) -> None:
     copy_chunks_to_clipboard(prefix + git_diff + suffix)
 
 
-def main():
+def main() -> None:
     # argparseのパーサーを作成
     parser = argparse.ArgumentParser(
         description="Gitの差分を表示、コミットメッセージ作成、コードレビュー依頼を行います。"
