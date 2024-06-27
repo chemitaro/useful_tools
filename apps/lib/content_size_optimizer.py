@@ -68,7 +68,10 @@ class ContentSizeOptimizer:
         if self.max_token and self.max_token < token_size or self.max_char and self.max_char < char_size:
             # 未実装: 文字数もしくはトークン数が最大文字数もしくは最大トークン数を超えているコンテンツを抽出して分割する。
             print_colored(
-                (f"コンテンツのサイズが最大文字数および最大トークン数を超えています。: token_size={token_size}, char_size={char_size}", "red")
+                (
+                    f"コンテンツのサイズが最大文字数および最大トークン数を超えています。: token_size={token_size}, char_size={char_size}",
+                    "red",
+                )
             )
             # ファイルのパスを表示する
             print_colored((content.split("\n")[1], "gray"))
@@ -125,12 +128,16 @@ class ContentSizeOptimizer:
             # セグメントが一つだけの場合
             if segment_count == 1 and self.output == "code":
                 prompt_start = "# Prompt: Below is the complete document, consisting of a single segment. Please respond to the questions after reading this document.\n"  # noqa: E501
-                prompt_end = "\n# Prompt: Document transmission of the single segment is complete. Please respond to the questions now."  # noqa: E501
+                prompt_end = "\n# Prompt: Document transmission of the single segment is complete. Please respond to the questions now.\n\n"  # noqa: E501
                 self.optimized_contents[i] = prompt_start + content + prompt_end
 
             elif segment_count == 1 and self.output == "path":
-                prompt_start = "# Prompt: Below are the paths to the files related to the question and their dependent files.\n"
-                prompt_end = "\n# Prompt: Please answer the questions with an understanding of the above files.\n@Codebase\n"
+                prompt_start = (
+                    "# Prompt: Below are the paths to the files related to the question and their dependent files.\n"
+                )
+                prompt_end = (
+                    "\n# Prompt: Please answer the questions with an understanding of the above files.\n@Codebase\n\n"
+                )
                 self.optimized_contents[i] = prompt_start + content + prompt_end
 
             # 複数のセグメントがある場合
@@ -138,7 +145,7 @@ class ContentSizeOptimizer:
                 if i == 0:  # 最初のセグメント
                     prompt_start = f"# Prompt: Beginning the document transmission. This is part {segment_number} of {segment_count} total segments. Please respond with 'OK, waiting' and do not take any action until all segments have been sent.\n"  # noqa: E501
                 elif i == segment_count - 1:  # 最後のセグメント
-                    prompt_start = f"# Prompt: This is the final segment of the document, segment {segment_number} of {segment_count} total segments. After this segment, please respond to the questions.\n"  # noqa: E501
+                    prompt_start = f"# Prompt: This is the final segment of the document, segment {segment_number} of {segment_count} total segments. After this segment, please respond to the questions.\n\n"  # noqa: E501
                 else:  # 中間のセグメント
                     prompt_start = f"# Prompt: Continuing the document transmission. This is segment {segment_number} of {segment_count} total segments. Please respond with 'OK, waiting' and do not take any action until all segments have been sent.\n"  # noqa: E501
                 prompt_end = f"\n# Prompt: End of segment {segment_number} of {segment_count} total segments. Please wait for the next segment to be sent."  # noqa: E501
