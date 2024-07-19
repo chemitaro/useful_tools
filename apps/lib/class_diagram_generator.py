@@ -291,7 +291,9 @@ class ClassDiagramGenerator:
     def generate_puml(self) -> str:
         puml = "@startuml class_diagram\n"
         puml += "set namespaceSeparator none\n"
-        puml += "skinparam linetype polyline\n"
+        puml += "skinparam linetype ortho\n"
+        puml += "' skinparam linetype polyline\n"
+        puml += "' skinparam linetype splines\n"
         puml += "\n"
 
         # クラス定義を追加
