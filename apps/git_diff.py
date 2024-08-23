@@ -19,10 +19,9 @@ from import_collector import import_collect  # noqa: E402
 from lib.clipboard_util import copy_chunks_to_clipboard, copy_to_clipboard  # noqa: E402
 from lib.file_content_collector import FileContentCollector  # noqa: E402
 from lib.git_operater import (  # noqa: E402
-    get_diff_with_commit,  # 追加されたインポート
+    get_diff_with_commit,
     get_file_diff_with_main_branch,
     get_git_cached_diff,
-    get_git_commit_logs,
     get_git_path_diff,
     get_git_staged_paths,
 )
@@ -30,7 +29,6 @@ from lib.utils import (  # noqa: E402
     make_absolute_path,
     make_relative_path,
     print_colored,
-    read_file_content,
     truncate_string,
 )
 
@@ -46,38 +44,17 @@ def stage_diff_to_commit_clipboard(*, current_path: str) -> None:
     file_contents = file_content_collector.collect()
     output_content = "\n".join(file_contents)
 
-    # Commitメッセージの仕様を取得
-    commit_message_spec = read_file_content(
-        "/Users/iwasawayuuta/workspace/python/useful_tools/apps/lib/doc/conventionalcommits.txt"
-    )
-
-    # 直近のGitコミットログを取得
-    git_commit_log = get_git_commit_logs(5)
-
-    # コミットログの前後のメッセージのプロンプト
-    git_commit_log_prefix = '直近のGitコミットログです。参考にしてください。\n"""\n'
-    git_commit_log_suffix = '\n"""\n\n'
-
     # ファイルの内容の前後のメッセージのプロンプト
-    file_contents_prefix = '以下のファイルのに変更がありました。理解してください。\n"""\n'
+    file_contents_prefix = '変更後のファイル\n"""\n'
     file_contents_suffix = '\n"""\n\n'
 
     # メッセージの前後のプロンプト
-    git_diff_prefix = '以下のGitの差分からコミットメッセージを作成してください。\n"""\n'
-    git_diff_suffix = '\n"""\n\n# 指示\n今回のタスクの目的は優れたコミットメッセージの作成です。\nまず、今回変更のあったコードについて十分に理解をしてください。\nそして、どのような変更があったのかを十分に理解してください。\nさらに、開発者がこのコードを変更した目的について深く考察してください。\n\nこれらの考察と分析を踏まえて、自分を信じてコミットメッセージを生成してください。\n生成したコミットメッセージは ``` ``` で囲ってください。\n言語は日本語です。\nそれではGitコミットメッセージを作成してください。'
+    git_diff_prefix = 'Gitの差分\n"""\n'
+    git_diff_suffix = '\n"""\n'
 
     # コミットメッセージを結合する
     commit_message = (
-        commit_message_spec
-        + git_commit_log_prefix
-        + git_commit_log
-        + git_commit_log_suffix
-        + file_contents_prefix
-        + output_content
-        + file_contents_suffix
-        + git_diff_prefix
-        + git_diff
-        + git_diff_suffix
+        file_contents_prefix + output_content + file_contents_suffix + git_diff_prefix + git_diff + git_diff_suffix
     )
 
     # Gitの差分をターミナルに出力
