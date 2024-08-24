@@ -34,7 +34,7 @@ default_max_token = 125_000
 default_output = cast(OutputType, "code")
 
 
-ModeType = Literal["cursor", "chatgpt", "gpt4t", "gemini1.5pro", "claude"]
+ModeType = Literal["cursor", "chatgpt", "gpt4t", "gemini1.5pro", "claude", "dify"]
 
 mode_types = cast(list[str], ModeType.__args__)
 
@@ -74,7 +74,7 @@ default_configs: dict[ModeType, ModeConfig] = {
         "no_comment": False,
         "with_prompt": True,
         "max_char": 999_999_999,
-        "max_token": 1_000_000,
+        "max_token": 2_000_000,
     },
     "claude": {
         "output": cast(OutputType, "code"),
@@ -82,6 +82,13 @@ default_configs: dict[ModeType, ModeConfig] = {
         "with_prompt": True,
         "max_char": 999_999_999,
         "max_token": 100_000,
+    },
+    "dify": {
+        "output": cast(OutputType, "code"),
+        "no_comment": False,
+        "with_prompt": False,
+        "max_char": 999_999_999,
+        "max_token": 2_000_000,
     },
 }
 
