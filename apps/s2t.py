@@ -20,7 +20,7 @@ from lib.s2t_whisper.main import convert_audio_to_text, record_audio  # noqa: E4
 from lib.utils import print_colored  # noqa: E402
 
 
-def speech_and_convert_text(*, model, language, temperature, prompt) -> str:
+def speech_and_convert_text(*, model: str, language: str, temperature: float, prompt: str) -> str:
     """メイン関数."""
     # 録音
     record_audio()
