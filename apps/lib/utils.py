@@ -3,6 +3,10 @@ from typing import Literal, Tuple
 
 import pyperclip
 import tiktoken
+from google.generativeai.types.generation_types import GenerateContentResponse
+from rich.console import Console
+from rich.live import Live
+from rich.markdown import Markdown
 
 
 def count_tokens(text: str, model: str = "gpt-4") -> int:
@@ -186,7 +190,10 @@ def get_clipboard_content() -> str:
         return ""
 
 
-def multiline_input(prompt: str = "複数行の入力を開始します。", color: Literal["black", "grey", "red", "green", "yellow", "blue", "magenta", "cyan", "white"] | None = None) -> str:
+def multiline_input(
+    prompt: str = "複数行の入力を開始します。",
+    color: Literal["black", "grey", "red", "green", "yellow", "blue", "magenta", "cyan", "white"] | None = None,
+) -> str:
     """
     ユーザーから複数行の入力を受け取り、1つの文字列として返す。
     入力終了はCtrl+D（Unix系）またはCtrl+Z（Windows）で判断する。
@@ -207,3 +214,20 @@ def multiline_input(prompt: str = "複数行の入力を開始します。", col
     except EOFError:
         pass
     return "\n".join(lines)
+
+
+def streaming_print_gemini(response: GenerateContentResponse) -> None:
+    # Rich consoleを初期化
+    console = Console()
+    # マークダウンテキストを格納する変数
+    markdown_text = ""
+
+    # Liveコンテキストを使用してストリーミング出力を表示
+    with Live(console=console, refresh_per_second=4) as live:
+        for chunk in response:
+            if chunk.text:
+                markdown_text += chunk.text
+                # 現在のマークダウンテキストをレンダリング
+                live.update(Markdown(markdown_text))
+
+    print()
