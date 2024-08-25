@@ -16,25 +16,25 @@ if root_directory not in sys.path:
 
 
 from lib.clipboard_util import print_and_copy  # noqa: E402
-from lib.s2t_whisper.main import convert_speech_to_text, record_audio  # noqa: E402
+from lib.s2t_whisper.main import convert_audio_to_text, record_audio  # noqa: E402
 from lib.utils import print_colored  # noqa: E402
 
 
-def main(*, model, language, temperature, prompt) -> str:
+def speech_and_convert_text(*, model, language, temperature, prompt) -> str:
     """メイン関数."""
     # 録音
     record_audio()
 
     # 音声認識
     try:
-        text = convert_speech_to_text(model=model, language=language, temperature=temperature, prompt=prompt)
+        text = convert_audio_to_text(model=model, language=language, temperature=temperature, prompt=prompt)
     except Exception:
-        text = convert_speech_to_text(model=model, language=language, temperature=temperature, prompt=prompt)
+        text = convert_audio_to_text(model=model, language=language, temperature=temperature, prompt=prompt)
 
     return text
 
 
-def app_run():
+def main():
     """コマンドライン引数を受け取って実行する."""
     parser = argparse.ArgumentParser(
         description="""
@@ -82,11 +82,11 @@ def app_run():
             print_colored(("Exit the program.", "grey"))
             break
 
-        text = main(**vars(parser.parse_args()))
+        text = speech_and_convert_text(**vars(parser.parse_args()))
 
         # 認識結果を表示
         print_and_copy(text)
 
 
 if __name__ == "__main__":
-    app_run()
+    main()

@@ -86,8 +86,12 @@ def record_audio(file_name: str | None = None, fs: int = 44100, channels: int = 
     convert_to_ogg(file_name)
 
 
-def convert_speech_to_text(
-    file_path: str | None = None, model: str = "whisper-1", language: str = "ja", temperature: float = 0.0, prompt: str = ""
+def convert_audio_to_text(
+    file_path: str | None = None,
+    model: str = "whisper-1",
+    language: str = "ja",
+    temperature: float = 0.0,
+    prompt: str = "",
 ) -> str:
     """Convert an audio file to text using OpenAI's Whisper API."""
     if file_path is None:
