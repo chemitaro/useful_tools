@@ -34,7 +34,7 @@ def speech_and_convert_text(*, model: str, language: str, temperature: float, pr
     return text
 
 
-def main():
+def main() -> None:
     """コマンドライン引数を受け取って実行する."""
     parser = argparse.ArgumentParser(
         description="""
