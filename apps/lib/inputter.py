@@ -54,7 +54,7 @@ def variable_input(message: str | None = None, color: Colors | None = None) -> s
     print_colored((f"\n{message}", color))
     print_colored(('  複数行を入力するには、"ml"と入力してください。', "grey"))
     print_colored(('  音声入力するには、"vo"と入力してください。', "grey"))
-    user_input = input()
+    user_input = input("input: ")
 
     if user_input == "ml":
         return multiline_input()
