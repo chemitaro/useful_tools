@@ -1,4 +1,4 @@
-from typing import Any, Literal, override
+from typing import Any, Literal
 
 import google.generativeai as genai
 from google.generativeai.generative_models import GenerativeModel
@@ -78,7 +78,6 @@ class LlmClientBase(BaseModel):
 class GeminiClient(LlmClientBase):
     """Geminiクライアント"""
 
-    @override
     def generate_text(
         self,
         model_name: str,
