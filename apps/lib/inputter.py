@@ -1,5 +1,4 @@
 from apps.lib.utils import Colors, print_colored
-from apps.s2t import speech_and_convert_text
 
 
 def multiline_input(
@@ -28,21 +27,6 @@ def multiline_input(
     return "\n".join(lines)
 
 
-def voice_input(message: str | None = None, prompt: str | None = None) -> str:
-    """
-    ユーザーからの音声入力を受け取り、テキストとして返す。
-    """
-    if message is None:
-        message = "音声入力を開始します。"
-    if prompt is None:
-        prompt = ""
-
-    print_colored((f"\n{message}", "green"))
-    text = speech_and_convert_text(model="whisper-1", language="ja", temperature=0.2, prompt=prompt)
-    print_colored((f"\n{text}"))
-    return text
-
-
 # 入力方法を後で変更できるinput
 def variable_input(message: str | None = None, color: Colors | None = None) -> str:
     """
@@ -53,12 +37,9 @@ def variable_input(message: str | None = None, color: Colors | None = None) -> s
 
     print_colored((f"\n{message}", color))
     print_colored(('  複数行を入力するには、"ml"と入力してください。', "grey"))
-    print_colored(('  音声入力するには、"vo"と入力してください。', "grey"))
     user_input = input("input: ")
 
     if user_input == "ml":
         return multiline_input()
-    elif user_input == "vo":
-        return voice_input()
     else:
         return user_input

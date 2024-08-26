@@ -20,6 +20,10 @@ from lib.s2t_whisper.main import convert_audio_to_text, record_audio  # noqa: E4
 from lib.utils import print_colored  # noqa: E402
 
 
+default_prompt = '私は、Webサービスの企画、開発、運営を行う会社のCEOです。私の主な焦点は、人工知能の開発と応用、WebアプリケーションやSaaSの開発、そして不動産業界の効率化です。技術的には、まずDockerとDocker Composeを使用してローカルで開発を行います。本番環境では、バックエンドAPIをFly.ioにデプロイし管理し、フロントエンドアプリケーションはVercelにデプロイします。ソースコードはGitHubで管理され、CI/CDにはGitHub Actionsを利用しています。フレームワークに関しては、バックエンドにはPythonで開発された"Django"と"Django Rest framework"を使用しています。社内ではドメイン駆動設計を採用し、ドメインオブジェクトには"Pydantic"を使用してデータを構造化しています。フロントエンドには"Next.js"と"TypeScript"を使用しており、スタイルは"Tailwind CSS"で作成されています。現在、"Next.js"のバージョン14を使用し、"AppRouter"で開発を行っています。'  # noqa: E501
+
+
+
 def speech_and_convert_text(*, model: str, language: str, temperature: float, prompt: str) -> str:
     """メイン関数."""
     # 録音
@@ -31,6 +35,22 @@ def speech_and_convert_text(*, model: str, language: str, temperature: float, pr
     except Exception:
         text = convert_audio_to_text(model=model, language=language, temperature=temperature, prompt=prompt)
 
+    return text
+
+
+def voice_input(message: str | None = None, prompt: str | None = None) -> str:
+    """
+    ユーザーからの音声入力を受け取り、テキストとして返す。
+    """
+    if message is None:
+        message = "音声入力を開始します。"
+
+    if prompt is None:
+        prompt = default_prompt
+
+    print_colored((f"\n{message}", "green"))
+    text = speech_and_convert_text(model="whisper-1", language="ja", temperature=0.2, prompt=prompt)
+    print_colored((f"\n{text}"))
     return text
 
 
