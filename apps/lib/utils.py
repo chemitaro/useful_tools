@@ -3,10 +3,6 @@ from typing import Literal, Tuple, TypeAlias
 
 import pyperclip
 import tiktoken
-from google.generativeai.types.generation_types import GenerateContentResponse
-from rich.console import Console
-from rich.live import Live
-from rich.markdown import Markdown
 
 
 def count_tokens(text: str, model: str = "gpt-4") -> int:
