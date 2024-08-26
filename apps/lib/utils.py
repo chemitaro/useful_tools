@@ -190,20 +190,3 @@ def get_clipboard_content() -> str:
     except pyperclip.PyperclipException as e:
         print(f"クリップボードにアクセスできません: {str(e)}")
         return ""
-
-
-def streaming_print_gemini(response: GenerateContentResponse) -> None:
-    # Rich consoleを初期化
-    console = Console()
-    # マークダウンテキストを格納する変数
-    markdown_text = ""
-
-    # Liveコンテキストを使用してストリーミング出力を表示
-    with Live(console=console, refresh_per_second=4) as live:
-        for chunk in response:
-            if chunk.text:
-                markdown_text += chunk.text
-                # 現在のマークダウンテキストをレンダリング
-                live.update(Markdown(markdown_text))
-
-    print()

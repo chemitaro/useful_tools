@@ -1,12 +1,33 @@
-from typing import Literal
+from typing import Any, Literal, override
 
 import google.generativeai as genai
 from google.generativeai.generative_models import GenerativeModel
 from google.generativeai.types.content_types import ContentDict
-from google.generativeai.types.generation_types import GenerationConfig
+from google.generativeai.types.generation_types import (
+    GenerateContentResponse,
+    GenerationConfig,
+)
 from pydantic import BaseModel, Field
+from rich.console import Console
+from rich.live import Live
+from rich.markdown import Markdown
 
-from apps.lib.utils import streaming_print_gemini
+
+def streaming_print_gemini(response: GenerateContentResponse) -> None:
+    # Rich consoleを初期化
+    console = Console()
+    # マークダウンテキストを格納する変数
+    markdown_text = ""
+
+    # Liveコンテキストを使用してストリーミング出力を表示
+    with Live(console=console, refresh_per_second=4) as live:
+        for chunk in response:
+            if chunk.text:
+                markdown_text += chunk.text
+                # 現在のマークダウンテキストをレンダリング
+                live.update(Markdown(markdown_text))
+
+    print()
 
 
 class LlmMessage(BaseModel):
@@ -37,6 +58,8 @@ class LlmMessages(BaseModel):
 
 
 class LlmClientBase(BaseModel):
+    """LLMクライアントの基底クラス"""
+
     api_key: str | None = Field(default=None)
 
     def generate_text(
@@ -46,12 +69,16 @@ class LlmClientBase(BaseModel):
         temp: float | None = None,
         max_tokens: int | None = None,
         stream: bool = False,
-        **kwargs
+        **kwargs: Any
     ) -> str:
+        """テキストを生成する"""
         raise NotImplementedError
 
 
 class GeminiClient(LlmClientBase):
+    """Geminiクライアント"""
+
+    @override
     def generate_text(
         self,
         model_name: str,
@@ -59,7 +86,7 @@ class GeminiClient(LlmClientBase):
         temp: float | None = None,
         max_tokens: int | None = None,
         stream: bool = False,
-        **kwargs
+        **kwargs: Any
     ) -> str:
         # APIキーの設定
         if self.api_key is not None:
