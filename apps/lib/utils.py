@@ -3,6 +3,8 @@ from typing import Literal, Tuple, TypeAlias
 
 import pyperclip
 import tiktoken
+from rich.console import Console
+from rich.markdown import Markdown
 
 
 def count_tokens(text: str, model: str = "gpt-4") -> int:
@@ -167,6 +169,15 @@ def print_colored(*args: object | Tuple[str, Colors]) -> None:
             colored_text += text
 
     print(colored_text)
+
+
+def print_markdown(text: str) -> None:
+    """受け取ったテキストをMarkdown形式で表示する"""
+
+    md = Markdown(text)
+    console = Console()
+    console.print(md)
+    print()
 
 
 def truncate_string(text: str, length: int) -> str:
