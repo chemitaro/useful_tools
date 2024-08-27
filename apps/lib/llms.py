@@ -1,4 +1,4 @@
-from typing import Any, Literal, TypeVar
+from typing import Any, Literal, TypedDict, TypeVar
 
 import google.generativeai as genai
 import instructor
@@ -8,6 +8,8 @@ from google.generativeai.types.generation_types import (
     GenerateContentResponse,
     GenerationConfig,
 )
+from openai import OpenAI, Stream
+from openai.types.chat import ChatCompletionChunk, ChatCompletionMessageParam
 from pydantic import BaseModel, Field
 from rich.console import Console
 from rich.live import Live
@@ -21,7 +23,7 @@ def streaming_print_gemini(response: GenerateContentResponse) -> None:
     markdown_text = ""
 
     # Liveコンテキストを使用してストリーミング出力を表示
-    with Live(console=console, refresh_per_second=4) as live:
+    with Live(console=console, refresh_per_second=1) as live:
         for chunk in response:
             if chunk.text:
                 markdown_text += chunk.text
@@ -29,6 +31,19 @@ def streaming_print_gemini(response: GenerateContentResponse) -> None:
                 live.update(Markdown(markdown_text))
 
     print()
+
+
+def streaming_print_openai(response: Stream[ChatCompletionChunk]) -> str:
+    full_text = ""
+    for chunk in response:
+        if chunk.choices[0].delta.content is not None:
+            content = chunk.choices[0].delta.content
+            full_text += content
+            print(content, end="")
+
+    print()
+
+    return full_text
 
 
 class LlmMessage(BaseModel):
@@ -48,8 +63,8 @@ class LlmMessage(BaseModel):
 
         return {"role": role, "parts": [{"text": self.content}]}
 
-    def format_openai(self) -> dict[str, str]:
-        return {"role": self.role, "content": self.content}
+    def format_openai(self) -> ChatCompletionMessageParam:
+        return {"role": self.role, "content": self.content}  # type: ignore
 
     def format_instructor(self) -> dict[str, str]:
         return {"role": self.role, "content": self.content}
@@ -61,7 +76,7 @@ class LlmMessages(BaseModel):
     def format_gemini(self) -> list[ContentDict]:
         return [message.format_gemini() for message in self.messages]
 
-    def format_openai(self) -> list[dict[str, str]]:
+    def format_openai(self) -> list[ChatCompletionMessageParam]:
         return [message.format_openai() for message in self.messages]
 
     def format_instructor(self) -> list[dict[str, str]]:
@@ -183,6 +198,60 @@ class GeminiClient(LlmClientBase):
             raise ValueError(f"Invalid response: {resp_data}")
 
         return resp_data
+
+
+class OpenAiClient(LlmClientBase):
+    """OpenAIクライアント"""
+
+    def generate_text(
+        self,
+        model_name: str,
+        messages: LlmMessages | str,
+        temp: float | None = None,
+        max_tokens: int | None = None,
+        stream: bool = False,
+        **kwargs: Any,
+    ) -> str:
+        """テキストを生成する"""
+        # モデルの準備
+        model = OpenAI(api_key=self.api_key)
+
+        # メッセージのフォーマット
+        if isinstance(messages, str):
+            messages = LlmMessages(messages=[LlmMessage(role="user", content=messages)])
+        openai_messages = messages.format_openai()
+
+        output_text = ""
+
+        # レスポンスの生成
+        response = model.chat.completions.create(
+            model=model_name,
+            messages=openai_messages,
+            temperature=temp,
+            max_tokens=max_tokens,
+            stream=stream,
+        )
+
+        # ストリーミングの場合は、ストリーミングを返す. responseの型がStream[ChatCompletionChunk]の場合はこの処理を行う
+        if isinstance(response, Stream):
+            output_text = streaming_print_openai(response)
+            return output_text
+        else:
+            output_text += response.choices[0].message.content or ""
+
+            return output_text
+
+    def generate_pydantic(
+        self,
+        output_type: type[T],
+        model_name: str,
+        messages: LlmMessages | str,
+        temp: float | None = None,
+        max_tokens: int | None = None,
+        **kwargs: Any,
+    ) -> T:
+        """指定したPydanticのモデルに構造化する"""
+        raise NotImplementedError
 
 
 def structured_output(
