@@ -96,8 +96,8 @@ class LlmClientBase(BaseModel):
 
     def generate_text(
         self,
-        model_name: str,
         messages: LlmMessages | str,
+        model_name: str | None = None,
         temp: float | None = None,
         max_tokens: int | None = None,
         stream: bool = False,
@@ -109,8 +109,8 @@ class LlmClientBase(BaseModel):
     def generate_pydantic(
         self,
         output_type: type[T],
-        model_name: str,
         messages: LlmMessages | str,
+        model_name: str | None = None,
         temp: float | None = None,
         max_tokens: int | None = None,
         **kwargs: Any,
@@ -122,10 +122,12 @@ class LlmClientBase(BaseModel):
 class GeminiClient(LlmClientBase):
     """Geminiクライアント"""
 
+    DEFAULT_MODEL: str = "models/gemini-1.5-flash-latest"
+
     def generate_text(
         self,
-        model_name: str,
         messages: LlmMessages | str,
+        model_name: str | None = None,
         temp: float | None = None,
         max_tokens: int | None = None,
         stream: bool = False,
@@ -136,6 +138,8 @@ class GeminiClient(LlmClientBase):
             genai.configure(api_key=self.api_key)
 
         # モデルの準備
+        if model_name is None:
+            model_name = self.DEFAULT_MODEL
         llm = GenerativeModel(model_name)
 
         # 設定の準備
@@ -160,8 +164,8 @@ class GeminiClient(LlmClientBase):
     def generate_pydantic(
         self,
         output_type: type[T],
-        model_name: str,
         messages: LlmMessages | str,
+        model_name: str | None = None,
         temp: float | None = None,
         max_tokens: int | None = None,
         **kwargs: Any,
@@ -182,6 +186,9 @@ class GeminiClient(LlmClientBase):
         )
 
         # モデルの準備
+        if model_name is None:
+            model_name = self.DEFAULT_MODEL
+
         model = GenerativeModel(
             model_name=model_name,
             generation_config=generation_config,
@@ -206,10 +213,12 @@ class GeminiClient(LlmClientBase):
 class OpenAiClient(LlmClientBase):
     """OpenAIクライアント"""
 
+    DEFAULT_MODEL: str = "gpt-4o-mini"
+
     def generate_text(
         self,
-        model_name: str,
         messages: LlmMessages | str,
+        model_name: str | None = None,
         temp: float | None = None,
         max_tokens: int | None = None,
         stream: bool = False,
@@ -227,6 +236,9 @@ class OpenAiClient(LlmClientBase):
         output_text = ""
 
         # レスポンスの生成
+        if model_name is None:
+            model_name = self.DEFAULT_MODEL
+
         response = model.chat.completions.create(
             model=model_name,
             messages=openai_messages,
@@ -247,14 +259,39 @@ class OpenAiClient(LlmClientBase):
     def generate_pydantic(
         self,
         output_type: type[T],
-        model_name: str,
         messages: LlmMessages | str,
+        model_name: str | None = None,
         temp: float | None = None,
         max_tokens: int | None = None,
         **kwargs: Any,
     ) -> T:
         """指定したPydanticのモデルに構造化する"""
-        raise NotImplementedError
+        # モデルの準備
+        model = OpenAI(api_key=self.api_key)
+
+        # メッセージのフォーマット
+        if isinstance(messages, str):
+            messages = LlmMessages(messages=[LlmMessage(role="user", content=messages)])
+        openai_messages = messages.format_openai()
+
+        # レスポンスの生成
+        if model_name is None:
+            model_name = self.DEFAULT_MODEL
+
+        response = model.beta.chat.completions.parse(
+            model=model_name,
+            messages=openai_messages,
+            response_format=output_type,
+            temperature=temp,
+            max_tokens=max_tokens,
+        )
+
+        parsed_data = response.choices[0].message.parsed
+
+        if not isinstance(parsed_data, output_type):
+            raise ValueError(f"Invalid response: {parsed_data}")
+
+        return parsed_data
 
 
 def structured_output(
