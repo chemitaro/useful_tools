@@ -1,4 +1,4 @@
-from typing import Any, Literal, TypedDict, TypeVar
+from typing import Any, Literal, TypeVar
 
 import google.generativeai as genai
 import instructor
@@ -16,33 +16,36 @@ from rich.live import Live
 from rich.markdown import Markdown
 
 
-def streaming_print_gemini(response: GenerateContentResponse) -> None:
+def streaming_print_gemini(response: GenerateContentResponse) -> str:
     # Rich consoleを初期化
     console = Console()
     # マークダウンテキストを格納する変数
-    markdown_text = ""
+    full_text = ""
 
     # Liveコンテキストを使用してストリーミング出力を表示
     with Live(console=console, refresh_per_second=1) as live:
         for chunk in response:
             if chunk.text:
-                markdown_text += chunk.text
+                full_text += chunk.text
                 # 現在のマークダウンテキストをレンダリング
-                live.update(Markdown(markdown_text))
+                live.update(Markdown(full_text))
 
-    print()
+    console.print()
+    return full_text
 
 
 def streaming_print_openai(response: Stream[ChatCompletionChunk]) -> str:
     full_text = ""
-    for chunk in response:
-        if chunk.choices[0].delta.content is not None:
-            content = chunk.choices[0].delta.content
-            full_text += content
-            print(content, end="")
+    console = Console()
 
-    print()
+    with Live(console=console, refresh_per_second=1) as live:
+        for chunk in response:
+            if chunk.choices[0].delta.content is not None:
+                content = chunk.choices[0].delta.content
+                full_text += content
+                live.update(Markdown(full_text))
 
+    console.print()
     return full_text
 
 
