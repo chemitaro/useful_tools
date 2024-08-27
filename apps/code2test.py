@@ -6,6 +6,7 @@ import sys
 import instructor
 from google.generativeai import GenerativeModel
 from pydantic import BaseModel, Field
+from rich.prompt import Prompt
 
 # 現在のファイルの絶対パスを取得
 current_file_path = os.path.abspath(__file__)
@@ -19,6 +20,11 @@ if root_directory not in sys.path:
 
 from apps.lib.inputter import variable_input  # noqa: E402
 from apps.lib.llms import GeminiClient, LlmMessage, LlmMessages  # noqa: E402
+from apps.lib.test_code_generater import (  # noqa: E402
+    TestingFlameworkEnum,
+    TestScopeEnum,
+    call_test_code_generator,
+)
 from apps.lib.utils import print_colored  # noqa: E402
 
 
@@ -41,29 +47,29 @@ class CodeAndScore(BaseModel):
 
 
 def main() -> None:
-    # root_path = os.getcwd()
-    # code_relative_path = Prompt.ask("実装ファイルのパスを入力してください。")
-    # test_relative_path = Prompt.ask("テストファイルのパスを入力してください。")
-    # target_specification = Prompt.ask("テスト対象の仕様を入力してください。", default=None)
-    # supplement = Prompt.ask("補足情報を入力してください。", default=None)
-    # testing_framework_name = Prompt.ask(
-    #     "テストフレームワークを入力してください。", choices=TestingFlameworkEnum.name_list()
-    # )
-    # testing_framework = TestingFlameworkEnum[testing_framework_name]
-    # test_scope_name = Prompt.ask("テストスコープを入力してください。", choices=TestScopeEnum.name_list())
-    # test_scope = TestScopeEnum[test_scope_name]
+    root_path = os.getcwd()
+    code_relative_path = Prompt.ask("実装ファイルのパスを入力してください。")
+    test_relative_path = Prompt.ask("テストファイルのパスを入力してください。")
+    target_specification = Prompt.ask("テスト対象の仕様を入力してください。", default=None)
+    supplement = Prompt.ask("補足情報を入力してください。", default=None)
+    testing_framework_name = Prompt.ask(
+        "テストフレームワークを入力してください。", choices=TestingFlameworkEnum.name_list()
+    )
+    testing_framework = TestingFlameworkEnum[testing_framework_name]
+    test_scope_name = Prompt.ask("テストスコープを入力してください。", choices=TestScopeEnum.name_list())
+    test_scope = TestScopeEnum[test_scope_name]
 
-    # call_test_code_generator(
-    #     root_path=root_path,
-    #     target_relative_path=code_relative_path,
-    #     reference_relative_paths=[],
-    #     test_relative_path=test_relative_path,
-    #     flamework=testing_framework,
-    #     scope=test_scope,
-    #     target_specification=target_specification,
-    #     supplement=supplement,
-    #     user_instruction=None,
-    # )
+    call_test_code_generator(
+        root_path=root_path,
+        target_relative_path=code_relative_path,
+        reference_relative_paths=[],
+        test_relative_path=test_relative_path,
+        flamework=testing_framework,
+        scope=test_scope,
+        target_specification=target_specification,
+        supplement=supplement,
+        user_instruction=None,
+    )
 
     print_colored(("code2test", "green"))
 
