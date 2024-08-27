@@ -101,6 +101,12 @@ def read_file_content(file_path: str) -> str:
     return content
 
 
+def write_file_content(file_path: str, content: str) -> None:
+    """指定したファイルの内容を書き込む"""
+    with open(file_path, "w") as f:
+        f.write(content)
+
+
 def format_number(number: int) -> str:
     """数値を3桁ごとにカンマ区切りにして文字列に変換する"""
     return "{:,}".format(number)
