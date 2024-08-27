@@ -35,7 +35,17 @@ class LlmMessage(BaseModel):
     content: str
 
     def format_gemini(self) -> ContentDict:
-        return {"role": self.role, "parts": [{"text": self.content}]}
+        # roleをgeminiのものに変換
+        if self.role == "system":
+            role = "user"
+        elif self.role == "user":
+            role = "user"
+        elif self.role == "assistant":
+            role = "model"
+        else:
+            raise ValueError(f"Invalid role: {self.role}")
+
+        return {"role": role, "parts": [{"text": self.content}]}
 
     def format_openai(self) -> dict[str, str]:
         return {"role": self.role, "content": self.content}
