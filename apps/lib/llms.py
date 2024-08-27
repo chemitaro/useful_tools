@@ -1,6 +1,7 @@
-from typing import Any, Literal
+from typing import Any, Literal, TypeVar
 
 import google.generativeai as genai
+import instructor
 from google.generativeai.generative_models import GenerativeModel
 from google.generativeai.types.content_types import ContentDict
 from google.generativeai.types.generation_types import (
@@ -79,7 +80,7 @@ class LlmClientBase(BaseModel):
         temp: float | None = None,
         max_tokens: int | None = None,
         stream: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> str:
         """テキストを生成する"""
         raise NotImplementedError
@@ -95,7 +96,7 @@ class GeminiClient(LlmClientBase):
         temp: float | None = None,
         max_tokens: int | None = None,
         stream: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> str:
         # APIキーの設定
         if self.api_key is not None:
@@ -122,3 +123,52 @@ class GeminiClient(LlmClientBase):
             streaming_print_gemini(response)
 
         return response.text
+
+
+T = TypeVar("T", bound=BaseModel)
+
+
+def structured_output(
+    output_type: type[T], text: str, model_name: str = "models/gemini-1.5-flash-latest", **kwargs: Any
+) -> T:
+    """指定したPydanticのモデルに構造化する"""
+    messages = LlmMessages(
+        messages=[
+            LlmMessage(
+                role="system",
+                content=f"""
+                ユーザーの入力したテキストを指定したJSONに構造化する。
+
+                JSONのスキーマは以下の通り。
+                {output_type.model_json_schema()}
+
+                出力はJSONで返すこと。
+                """,
+            ),
+            LlmMessage(
+                role="user",
+                content=f"""
+                {text}
+                """,
+            ),
+        ]
+    )
+
+    model = GenerativeModel(
+        model_name=model_name,
+        generation_config={"temperature": 0.0},
+    )
+    client = instructor.from_gemini(
+        client=model,
+        mode=instructor.Mode.GEMINI_JSON,
+    )
+
+    resp_data = client.messages.create(
+        messages=messages.format_gemini(),
+        response_model=output_type,
+    )
+
+    if not isinstance(resp_data, output_type):
+        raise ValueError(f"Invalid response: {resp_data}")
+
+    return resp_data
