@@ -68,6 +68,9 @@ class LlmMessages(BaseModel):
         return [message.format_instructor() for message in self.messages]
 
 
+T = TypeVar("T", bound=BaseModel)
+
+
 class LlmClientBase(BaseModel):
     """LLMクライアントの基底クラス"""
 
@@ -83,6 +86,18 @@ class LlmClientBase(BaseModel):
         **kwargs: Any,
     ) -> str:
         """テキストを生成する"""
+        raise NotImplementedError
+
+    def generate_pydantic(
+        self,
+        output_type: type[T],
+        model_name: str,
+        messages: LlmMessages | str,
+        temp: float | None = None,
+        max_tokens: int | None = None,
+        **kwargs: Any,
+    ) -> T:
+        """指定したPydanticのモデルに構造化する"""
         raise NotImplementedError
 
 
@@ -124,8 +139,50 @@ class GeminiClient(LlmClientBase):
 
         return response.text
 
+    def generate_pydantic(
+        self,
+        output_type: type[T],
+        model_name: str,
+        messages: LlmMessages | str,
+        temp: float | None = None,
+        max_tokens: int | None = None,
+        **kwargs: Any,
+    ) -> T:
+        # APIキーの設定
+        if self.api_key is not None:
+            genai.configure(api_key=self.api_key)
 
-T = TypeVar("T", bound=BaseModel)
+        # メッセージのフォーマット
+        if isinstance(messages, str):
+            messages = LlmMessages(messages=[LlmMessage(role="user", content=messages)])
+        gemini_messages = messages.format_gemini()
+
+        # 設定の準備
+        generation_config = GenerationConfig(
+            temperature=temp,
+            max_output_tokens=max_tokens,
+        )
+
+        # モデルの準備
+        model = GenerativeModel(
+            model_name=model_name,
+            generation_config=generation_config,
+        )
+
+        client = instructor.from_gemini(
+            client=model,
+            mode=instructor.Mode.GEMINI_JSON,
+        )
+
+        resp_data = client.messages.create(
+            messages=gemini_messages,
+            response_model=output_type,
+        )
+
+        if not isinstance(resp_data, output_type):
+            raise ValueError(f"Invalid response: {resp_data}")
+
+        return resp_data
 
 
 def structured_output(
@@ -136,13 +193,8 @@ def structured_output(
         messages=[
             LlmMessage(
                 role="system",
-                content=f"""
-                ユーザーの入力したテキストを指定したJSONに構造化する。
-
-                JSONのスキーマは以下の通り。
-                {output_type.model_json_schema()}
-
-                出力はJSONで返すこと。
+                content="""
+                ユーザーが入力したテキストを忠実に省略せずに構造化して返してください。
                 """,
             ),
             LlmMessage(
