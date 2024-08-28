@@ -294,16 +294,29 @@ class OpenAiClient(LlmClientBase):
         return parsed_data
 
 
-def structured_output(
-    output_type: type[T], text: str, model_name: str = "models/gemini-1.5-flash-latest", **kwargs: Any
-) -> T:
+def convert_text_to_pydantic(output_type: type[T], text: str) -> T:
     """指定したPydanticのモデルに構造化する"""
     messages = LlmMessages(
         messages=[
             LlmMessage(
                 role="system",
-                content="""
-                ユーザーが入力したテキストを忠実に省略せずに構造化して返してください。
+                content=f"""
+                あなたは、ユーザーが入力したテキスト情報を指定されたPydanticデータ構造に変換する専門家です。
+                以下の指示に従って、入力されたテキストを解析し、適切なデータ構造に変換してください：
+
+                1. 入力されたテキストを注意深く読み、必要な情報を抽出してください。
+                2. 抽出した情報を、指定されたPydanticデータ構造に合わせて整理してください。
+                3. データ構造に合わない情報がある場合は、適切に処理または無視してください。
+                4. 変換されたデータは、Pythonの辞書形式で出力してください。
+                5. データ型は可能な限り適切なものを使用してください（例：整数、浮動小数点数、文字列、ブール値など）。
+                6. 日付や時刻の情報がある場合は、適切な形式に変換してください。
+                7. リストや入れ子構造が必要な場合は、適切に処理してください。
+                8. 必須フィールドに情報がない場合は、Noneまたは適切なデフォルト値を使用してください。
+
+                データ構造は以下の通りです。
+                {output_type.model_json_schema()}
+
+                あなたの役割は、テキストを正確に解析し、指定されたデータ構造に変換することです。
                 """,
             ),
             LlmMessage(
@@ -315,21 +328,12 @@ def structured_output(
         ]
     )
 
-    model = GenerativeModel(
-        model_name=model_name,
-        generation_config={"temperature": 0.0},
+    model = OpenAiClient()
+    resp_data = model.generate_pydantic(
+        output_type=output_type,
+        messages=messages,
+        model_name="gpt-4o-mini",
+        temp=0.0,
     )
-    client = instructor.from_gemini(
-        client=model,
-        mode=instructor.Mode.GEMINI_JSON,
-    )
-
-    resp_data = client.messages.create(
-        messages=messages.format_gemini(),
-        response_model=output_type,
-    )
-
-    if not isinstance(resp_data, output_type):
-        raise ValueError(f"Invalid response: {resp_data}")
 
     return resp_data
