@@ -1,14 +1,16 @@
+import time
 from typing import Any, Literal, TypeVar
 
 import google.generativeai as genai
 import instructor
+from google.api_core import exceptions as google_exceptions
 from google.generativeai.generative_models import GenerativeModel
 from google.generativeai.types.content_types import ContentDict
 from google.generativeai.types.generation_types import (
     GenerateContentResponse,
     GenerationConfig,
 )
-from openai import OpenAI, Stream
+from openai import OpenAI, OpenAIError, Stream
 from openai.types.chat import ChatCompletionChunk, ChatCompletionMessageParam
 from pydantic import BaseModel, Field
 from rich.console import Console
@@ -154,7 +156,19 @@ class GeminiClient(LlmClientBase):
         gemini_messages = messages.format_gemini()
 
         # レスポンスの生成
-        response = llm.generate_content(gemini_messages, generation_config=generation_config, stream=stream)
+        max_retries = 3
+        retry_delay = 1  # 初期遅延（秒）
+
+        for attempt in range(max_retries):
+            try:
+                response = llm.generate_content(gemini_messages, generation_config=generation_config, stream=stream)
+                break  # 成功した場合、ループを抜ける
+            except google_exceptions.GoogleAPIError as e:
+                if attempt == max_retries - 1:  # 最後の試行の場合
+                    raise  # エラーを再発生させる
+                print(f"エラーが発生しました。リトライします（{attempt + 1}/{max_retries}）: {e}")
+                time.sleep(retry_delay)
+                retry_delay *= 2  # 指数バックオフ
 
         if stream is True:
             streaming_print_gemini(response)
@@ -239,22 +253,35 @@ class OpenAiClient(LlmClientBase):
         if model_name is None:
             model_name = self.DEFAULT_MODEL
 
-        response = model.chat.completions.create(
-            model=model_name,
-            messages=openai_messages,
-            temperature=temp,
-            max_tokens=max_tokens,
-            stream=stream,
-        )
+        max_retries = 3
+        retry_delay = 1  # 初期遅延（秒）
+
+        for attempt in range(max_retries):
+            try:
+                response = model.chat.completions.create(
+                    model=model_name,
+                    messages=openai_messages,
+                    temperature=temp,
+                    max_tokens=max_tokens,
+                    stream=stream,
+                )
+                break  # 成功した場合、ループを抜ける
+            except OpenAIError as e:
+                if attempt == max_retries - 1:  # 最後の試行の場合
+                    raise  # エラーを再発生させる
+                print(f"エラーが発生しました。リトライします（{attempt + 1}/{max_retries}）: {e}")
+                time.sleep(retry_delay)
+                retry_delay *= 2  # 指数バックオフ
 
         # ストリーミングの場合は、ストリーミングを返す. responseの型がStream[ChatCompletionChunk]の場合はこの処理を行う
         if isinstance(response, Stream):
-            output_text = streaming_print_openai(response)
-            return output_text
+            generated_text = streaming_print_openai(response)
+            output_text += generated_text
         else:
-            output_text += response.choices[0].message.content or ""
+            generated_text = response.choices[0].message.content or ""
+            output_text += generated_text
 
-            return output_text
+        return output_text
 
     def generate_pydantic(
         self,
@@ -278,13 +305,25 @@ class OpenAiClient(LlmClientBase):
         if model_name is None:
             model_name = self.DEFAULT_MODEL
 
-        response = model.beta.chat.completions.parse(
-            model=model_name,
-            messages=openai_messages,
-            response_format=output_type,
-            temperature=temp,
-            max_tokens=max_tokens,
-        )
+        max_retries = 3
+        retry_delay = 1  # 初期遅延（秒）
+
+        for attempt in range(max_retries):
+            try:
+                response = model.beta.chat.completions.parse(
+                    model=model_name,
+                    messages=openai_messages,
+                    response_format=output_type,
+                    temperature=temp,
+                    max_tokens=max_tokens,
+                )
+                break  # 成功した場合、ループを抜ける
+            except OpenAIError as e:
+                if attempt == max_retries - 1:  # 最後の試行の場合
+                    raise  # エラーを再発生させる
+                print(f"エラーが発生しました。リトライします（{attempt + 1}/{max_retries}）: {e}")
+                time.sleep(retry_delay)
+                retry_delay *= 2  # 指数バックオフ
 
         parsed_data = response.choices[0].message.parsed
 
