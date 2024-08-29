@@ -10,6 +10,7 @@ from google.generativeai.types.generation_types import (
     GenerateContentResponse,
     GenerationConfig,
 )
+from instructor import Mode, from_openai
 from openai import OpenAI, OpenAIError, Stream
 from openai.types.chat import ChatCompletionChunk, ChatCompletionMessageParam
 from pydantic import BaseModel, Field
@@ -71,8 +72,8 @@ class LlmMessage(BaseModel):
     def format_openai(self) -> ChatCompletionMessageParam:
         return {"role": self.role, "content": self.content}  # type: ignore
 
-    def format_instructor(self) -> dict[str, str]:
-        return {"role": self.role, "content": self.content}
+    def format_instructor(self) -> ChatCompletionMessageParam:
+        return {"role": self.role, "content": self.content}  # type: ignore
 
 
 class LlmMessages(BaseModel):
@@ -84,7 +85,7 @@ class LlmMessages(BaseModel):
     def format_openai(self) -> list[ChatCompletionMessageParam]:
         return [message.format_openai() for message in self.messages]
 
-    def format_instructor(self) -> list[dict[str, str]]:
+    def format_instructor(self) -> list[ChatCompletionMessageParam]:
         return [message.format_instructor() for message in self.messages]
 
 
@@ -339,7 +340,7 @@ def convert_text_to_pydantic(output_type: type[T], text: str) -> T:
         messages=[
             LlmMessage(
                 role="system",
-                content=f"""
+                content="""
                 あなたは、ユーザーが入力したテキスト情報を指定されたPydanticデータ構造に変換する専門家です。
                 以下の指示に従って、入力されたテキストを解析し、適切なデータ構造に変換してください：
 
@@ -351,9 +352,6 @@ def convert_text_to_pydantic(output_type: type[T], text: str) -> T:
                 6. 日付や時刻の情報がある場合は、適切な形式に変換してください。
                 7. リストや入れ子構造が必要な場合は、適切に処理してください。
                 8. 必須フィールドに情報がない場合は、Noneまたは適切なデフォルト値を使用してください。
-
-                データ構造は以下の通りです。
-                {output_type.model_json_schema()}
 
                 あなたの役割は、テキストを正確に解析し、指定されたデータ構造に変換することです。
                 """,
@@ -376,3 +374,45 @@ def convert_text_to_pydantic(output_type: type[T], text: str) -> T:
     )
 
     return resp_data
+
+
+def convert_text_to_pydantic_with_instructor(output_type: type[T], text: str) -> T:
+    """指定したPydanticのモデルに構造化する"""
+    messages = LlmMessages(
+        messages=[
+            LlmMessage(
+                role="system",
+                content="""
+                あなたは、ユーザーが入力したテキスト情報を指定されたPydanticデータ構造に変換する専門家です。
+                以下の指示に従って、入力されたテキストを解析し、適切なデータ構造に変換してください：
+
+                1. 入力されたテキストを注意深く読み、必要な情報を抽出してください。
+                2. 抽出した情報を、指定されたPydanticデータ構造に合わせて整理してください。
+                3. データ構造に合わない情報がある場合は、適切に処理または無視してください。
+                4. 変換されたデータは、Pythonの辞書形式で出力してください。
+                5. データ型は可能な限り適切なものを使用してください（例：整数、浮動小数点数、文字列、ブール値など）。
+                6. 日付や時刻の情報がある場合は、適切な形式に変換してください。
+                7. リストや入れ子構造が必要な場合は、適切に処理してください。
+                8. 必須フィールドに情報がない場合は、Noneまたは適切なデフォルト値を使用してください。
+
+                あなたの役割は、テキストを正確に解析し、指定されたデータ構造に変換することです。
+                """,
+            ),
+            LlmMessage(
+                role="user",
+                content=f"""
+                {text}
+                """,
+            ),
+        ]
+    )
+
+    client = from_openai(OpenAI(), mode=Mode.TOOLS_STRICT)
+
+    resp = client.chat.completions.create(
+        response_model=output_type,
+        messages=messages.format_instructor(),
+        model="gpt-4o-mini",
+    )
+
+    return resp
