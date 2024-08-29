@@ -61,10 +61,8 @@ def streaming_print_openai(response: Stream[ChatCompletionChunk], markdown: bool
                 content = chunk.choices[0].delta.content
                 full_text += content
                 print(content, end="")
-            finish_reason = chunk.choices[0].finish_reason
 
-    print("\n\n")
-    print(f"finish_reason: {finish_reason}")
+            finish_reason = chunk.choices[0].finish_reason
 
     return full_text, finish_reason
 
