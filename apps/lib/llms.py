@@ -33,23 +33,34 @@ def streaming_print_gemini(response: GenerateContentResponse) -> str:
                 # 現在のマークダウンテキストをレンダリング
                 live.update(Markdown(full_text))
 
-    console.print()
     return full_text
 
 
-def streaming_print_openai(response: Stream[ChatCompletionChunk]) -> str:
+def streaming_print_openai(response: Stream[ChatCompletionChunk], md: bool = False) -> tuple[str, str | None]:
     full_text = ""
+    finish_reason: str | None = None
     console = Console()
 
-    with Live(console=console, refresh_per_second=1) as live:
+    if md is True:
+        with Live(console=console, refresh_per_second=1) as live:
+            for chunk in response:
+                if chunk.choices[0].delta.content is not None:
+                    content = chunk.choices[0].delta.content
+                    full_text += content
+                    live.update(Markdown(full_text))
+                finish_reason = chunk.choices[0].finish_reason
+    else:
         for chunk in response:
             if chunk.choices[0].delta.content is not None:
                 content = chunk.choices[0].delta.content
                 full_text += content
-                live.update(Markdown(full_text))
+                print(content, end="")
+            finish_reason = chunk.choices[0].finish_reason
 
-    console.print()
-    return full_text
+    print("\n\n")
+    print(f"finish_reason: {finish_reason}")
+
+    return full_text, finish_reason
 
 
 class LlmMessage(BaseModel):
@@ -79,13 +90,20 @@ class LlmMessage(BaseModel):
 class LlmMessages(BaseModel):
     messages: list[LlmMessage] = Field(default=[])
 
+    def append(self, message: LlmMessage) -> None:
+        """メッセージを追加する"""
+        self.messages.append(message)
+
     def format_gemini(self) -> list[ContentDict]:
+        """Geminiのメッセージをフォーマットする"""
         return [message.format_gemini() for message in self.messages]
 
     def format_openai(self) -> list[ChatCompletionMessageParam]:
+        """OpenAIのメッセージをフォーマットする"""
         return [message.format_openai() for message in self.messages]
 
     def format_instructor(self) -> list[ChatCompletionMessageParam]:
+        """Instructorのメッセージをフォーマットする"""
         return [message.format_instructor() for message in self.messages]
 
 
@@ -151,30 +169,51 @@ class GeminiClient(LlmClientBase):
             max_output_tokens=max_tokens,
         )
 
-        # メッセージのフォーマット
+        # 出力する文字列
+        output_text = ""
+
+        # メッセージが文字列の場合は、LlmMessagesに変換
         if isinstance(messages, str):
             messages = LlmMessages(messages=[LlmMessage(role="user", content=messages)])
-        gemini_messages = messages.format_gemini()
 
         # レスポンスの生成
         max_retries = 3
         retry_delay = 1  # 初期遅延（秒）
+        is_finished = False
 
-        for attempt in range(max_retries):
-            try:
-                response = llm.generate_content(gemini_messages, generation_config=generation_config, stream=stream)
-                break  # 成功した場合、ループを抜ける
-            except google_exceptions.GoogleAPIError as e:
-                if attempt == max_retries - 1:  # 最後の試行の場合
-                    raise  # エラーを再発生させる
-                print(f"エラーが発生しました。リトライします（{attempt + 1}/{max_retries}）: {e}")
-                time.sleep(retry_delay)
-                retry_delay *= 2  # 指数バックオフ
+        while not is_finished:
+            for attempt in range(max_retries):
+                try:
+                    response = llm.generate_content(
+                        messages.format_gemini(), generation_config=generation_config, stream=stream
+                    )
+                    break  # 成功した場合、ループを抜ける
+                except google_exceptions.GoogleAPIError as e:
+                    if attempt == max_retries - 1:  # 最後の試行の場合
+                        raise  # エラーを再発生させる
+                    print(f"エラーが発生しました。リトライします（{attempt + 1}/{max_retries}）: {e}")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # 指数バックオフ
 
-        if stream is True:
-            streaming_print_gemini(response)
+            if stream is True:
+                generated_text = streaming_print_gemini(response)
+            else:
+                generated_text = response.text
 
-        return response.text
+            output_text += generated_text
+
+            # 生成が完了したかどうかを確認
+            if max_tokens is None and response.candidates[0].finish_reason == "MAX_TOKENS":
+                # 次の生成のために、これまでの出力を履歴に追加
+                messages.append(LlmMessage(role="assistant", content=generated_text))
+                messages.append(LlmMessage(role="user", content="go on"))
+            else:
+                is_finished = True
+                # ストリーミングの場合は、ターミナルの表示を改行する
+                if stream is True:
+                    print()
+
+        return output_text
 
     def generate_pydantic(
         self,
@@ -256,31 +295,52 @@ class OpenAiClient(LlmClientBase):
 
         max_retries = 3
         retry_delay = 1  # 初期遅延（秒）
+        is_finished = False
 
-        for attempt in range(max_retries):
-            try:
-                response = model.chat.completions.create(
-                    model=model_name,
-                    messages=openai_messages,
-                    temperature=temp,
-                    max_tokens=max_tokens,
-                    stream=stream,
-                )
-                break  # 成功した場合、ループを抜ける
-            except OpenAIError as e:
-                if attempt == max_retries - 1:  # 最後の試行の場合
-                    raise  # エラーを再発生させる
-                print(f"エラーが発生しました。リトライします（{attempt + 1}/{max_retries}）: {e}")
-                time.sleep(retry_delay)
-                retry_delay *= 2  # 指数バックオフ
+        while not is_finished:
+            for attempt in range(max_retries):
+                try:
+                    response = model.chat.completions.create(
+                        model=model_name,
+                        messages=openai_messages,
+                        temperature=temp,
+                        max_tokens=max_tokens,
+                        stream=stream,
+                    )
+                    break  # 成功した場合、ループを抜ける
+                except OpenAIError as e:
+                    if attempt == max_retries - 1:  # 最後の試行の場合
+                        raise  # エラーを再発生させる
+                    print(f"エラーが発生しました。リトライします（{attempt + 1}/{max_retries}）: {e}")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # 指数バックオフ
 
-        # ストリーミングの場合は、ストリーミングを返す. responseの型がStream[ChatCompletionChunk]の場合はこの処理を行う
-        if isinstance(response, Stream):
-            generated_text = streaming_print_openai(response)
-            output_text += generated_text
-        else:
-            generated_text = response.choices[0].message.content or ""
-            output_text += generated_text
+            # ストリーミングの場合は、ストリーミングを返す. responseの型がStream[ChatCompletionChunk]の場合はこの処理を行う
+            if isinstance(response, Stream):
+                generated_text, finish_reason = streaming_print_openai(response)
+                output_text += generated_text
+
+                # 生成が完了したかどうかを確認
+                if finish_reason == "length":
+                    is_finished = False
+                else:
+                    is_finished = True
+
+            else:
+                generated_text = response.choices[0].message.content or ""
+                output_text += generated_text
+
+                # 生成が完了したかどうかを確認
+                if response.choices[0].finish_reason == "length":
+                    is_finished = False
+                else:
+                    is_finished = True
+
+            # 生成が完了していない場合は、次の生成のために、これまでの出力を履歴に追加
+            if is_finished is False and max_tokens is not None:
+                # 次の生成のために、これまでの出力を履歴に追加
+                messages.append(LlmMessage(role="assistant", content=generated_text))
+                messages.append(LlmMessage(role="user", content="go on"))
 
         return output_text
 
