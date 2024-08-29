@@ -1,15 +1,30 @@
+import re
 from enum import Enum
 
 from pydantic import BaseModel, Field
 
 from apps.import_collector import import_collect
-from apps.lib.llms import GeminiClient, LlmMessage, LlmMessages, structured_output
-from apps.lib.utils import make_absolute_path, read_file_content
+from apps.lib.llms import (
+    GeminiClient,
+    LlmMessage,
+    LlmMessages,
+)
+from apps.lib.utils import (
+    make_absolute_path,
+    print_colored,
+    read_file_content,
+    write_file_content,
+)
 
 
 class TestCodeAndScore(BaseModel):
-    test_code: str = Field(..., description="テストコード")
-    score: int = Field(..., ge=0, le=100, description="自信度")
+    """
+    テストコードと自信度
+    """
+
+    file_path: str | None = Field(default=None, description="ファイルのパス")
+    code: str = Field(..., description="コード")
+    score: int = Field(..., description="自信度")
 
 
 class TestingFlamework(BaseModel):
@@ -58,6 +73,30 @@ class TestScopeEnum(Enum):
         return [scope.name for scope in cls]
 
 
+def extract_code_from_output(output: str) -> str:
+    """
+    出力フォーマットからコード部分のみを抽出する関数
+
+    Args:
+        output (str): 出力フォーマットに沿った文字列
+
+    Returns:
+        str: 抽出されたコード部分
+    """
+    # コードブロックを抽出するための正規表現パターン
+    pattern = r"```(?:\w+)?\n(.*?)\n```"
+
+    # 正規表現を使用してコードブロックを検索
+    match = re.search(pattern, output, re.DOTALL)
+
+    if match:
+        # コードブロックが見つかった場合、その内容を返す
+        return match.group(1).strip()
+    else:
+        # コードブロックが見つからなかった場合、空文字列を返す
+        return ""
+
+
 def generate_test_code(
     code: str,
     flamework: TestingFlameworkEnum,
@@ -75,14 +114,14 @@ def generate_test_code(
             LlmMessage(
                 role="system",
                 content="""
-                あなたは高度なコード解析AIアシスタントです。与えられた実装コードを詳細に分析し、その構造と機能を包括的に理解することが求められています。以下の手順に従ってコードを解析してください：
-                1. コードの全体的な構造を把握し、主要な要素（クラス、関数、メソッドなど）を特定します。
-                2. 各要素の役割と目的を分析し、その機能を簡潔に説明します。
-                3. コード内の重要なロジック、アルゴリズム、データ構造を識別し、それらがどのように動作するかを説明します。
-                4. 使用されているライブラリやフレームワーク、および重要な依存関係を特定します。
-                5. コード内のエッジケース、例外処理、エラーハンドリングの方法を分析します。
-                6. コードの潜在的な問題点や改善の余地がある部分を特定します。
-                7. 抽象クラス、基底クラス、ミックスインと具象クラスの関係を明確に識別し、それぞれの役割を説明します。
+                あなたは高度なコード解析AIアシスタントです。与えられた実装コードを詳細に分析し、その構造と機能を包括的に理解することが求められています。以下の手順に従ってコードを解析してください:
+                1. 提供した実装コードの中の、テスト対象となるクラスや関数を特定して列挙してください。
+                2. 各要素の役割と目的を分析し、その機能を説明します。
+                3. テスト対象に抽象クラス(AbstractXxx)、基底クラス(XxxBase)、ミックスイン(XxxMixin)が存在する場合、具象クラスの関係を明確に識別し、それぞれの役割を説明します。
+                4. テスト対象のコードの重要なロジック、アルゴリズム、データ構造を識別し、それらがどのように動作するかを説明します。
+                5. 使用されているライブラリやフレームワーク、および重要な依存関係を特定します。
+                6. テスト対象のエッジケース、例外処理、エラーハンドリングの方法を分析します。
+                7. テスト対象の抽象クラス(AbstractXxx)、基底クラス(XxxBase)、ミックスイン(XxxMixin)は実装クラスではないため、初期化することができません。テストを実行するために、テスト対象に対応し、これらを継承した"テスト用の具象クラス(TestableXxx)"を設計してください。
 
                 出力形式：
                 - 分析結果は構造化された形式で提示してください。各セクションには明確な見出しをつけてください。
@@ -112,9 +151,10 @@ def generate_test_code(
         ]
     )
     step_1_output_message = GeminiClient().generate_text(
-        model_name="models/gemini-1.5-flash-latest",
+        model_name="models/gemini-1.5-flash-exp-0827",
         messages=step_1_messages,
         stream=True,
+        temp=0.0,
     )
 
     # step2: テストケースの列挙
@@ -123,18 +163,19 @@ def generate_test_code(
             LlmMessage(
                 role="system",
                 content="""
-                あなたはテスト設計の専門家AIアシスタントです。前のステップで得られた実装コードの理解と元のコードを基に、包括的なテストケースを抽出し列挙することが求められています。以下の手順と注意事項に従ってテストケースを作成してください：
+                あなたはテスト設計の専門家AIアシスタントです。前のステップで得られた実装コードの理解と元のコードを基に、包括的なテストケースを抽出し列挙することが求められています。以下の手順と注意事項に従ってテストケースを作成してください:
 
-                1. テスト対象の特定：
+                1. テスト対象の特定:
                 - 提供された実装コードの各主要機能に対するテストケースを特定します。
-                - 抽象クラス、基底クラス、またはミックスインで定義されている処理については、テストケースとして抽出しないでください。
+                - テスト対象ではない抽象クラス、基底クラス、ミックスインで定義されている処理については、テストケースとして抽出しないでください。
+                - 抽象クラス、基底クラス、ミックスインは初期化できないので、テスト用の具象クラスに対してテストケースを抽出してください。
                 - テスト対象のクラスで直接定義されている振る舞いや状態のみをテストケースとして考慮してください。
 
-                2. テストケースの種類：
+                2. テストケースの種類:
                 - 正常系（期待される通常の動作）と異常系（エラーケース、境界値、エッジケース）の両方のテストケースを考慮します。
                 - テストの範囲（単体テスト、インテグレーションテストなど）に応じたテストケースを作成します。
 
-                3. テストケースの詳細：
+                3. テストケースの詳細:
                 各テストケースに対して、以下の情報を含めてください：
                 - テストケースの簡潔な説明
                 - テストの前提条件（必要な場合）
@@ -142,11 +183,11 @@ def generate_test_code(
                 - 期待される出力または結果
                 - テストの種類（正常系、異常系、境界値テストなど）
 
-                4. コードカバレッジ：
+                4. コードカバレッジ:
                 - 可能な限り多くのコードパスをカバーするテストケースを作成します。
                 - ただし、抽象クラスや基底クラスの実装に依存するテストは避けてください。
 
-                5. フレームワーク適合性：
+                5. フレームワーク適合性:
                 - 指定されたテスティングフレームワークに適したテストケース設計を心がけてください。
 
                 出力形式：
@@ -158,7 +199,6 @@ def generate_test_code(
                 - テストケースは実装の詳細に基づいていますが、ブラックボックステストの観点も考慮してください。
                 - 重複するテストケースは避け、効率的なテストセットを作成することを心がけてください。
                 - セキュリティ、パフォーマンス、ユーザビリティなど、機能以外の側面も考慮したテストケースを含めることを検討してください。
-                - 抽象クラス、基底クラス、ミックスインで定義されている処理のテストケースは含めないでください。これらは具象クラスのテストで間接的にカバーされるべきです。
 
                 この列挙されたテストケースは、次のステップでのテストコード生成の基礎となります。したがって、各テストケースが明確で実装可能であり、かつテスト対象のクラスに特化していることを確認してください。
                 """,
@@ -188,10 +228,13 @@ def generate_test_code(
     )
 
     step_2_output_message = GeminiClient().generate_text(
-        model_name="models/gemini-1.5-flash-latest",
+        model_name="models/gemini-1.5-flash-exp-0827",
         messages=step_2_messages,
         stream=True,
+        temp=0.0,
     )
+
+    print_colored(("==テストコードの生成==", "green"))
 
     # step3: テストコードの作成
     step_3_messages = LlmMessages(
@@ -201,18 +244,20 @@ def generate_test_code(
                 content="""
                 ## 前提知識：
                 あなたは世界最高のエキスパートテストエンジニアであり、GoogleのL5レベルのソフトウェアエンジニアとして認められています。あなたの任務は、ユーザーの要求を論理的なステップに分解し、各ステップを実装するために指定された言語やテストフレームワークで高品質で効率的な単体テストを書くことでユーザーを支援することです。
+                あなたは必要に応じて、制限なく長いコードを生成することができます。
 
-                ## 以下のガイドラインに従ってテストコードを生成してください：
+                ## 以下のガイドラインに従ってテストコードを生成してください:
 
-                1. 古典派テストアプローチの採用：
+                1. 古典派テストアプローチの採用:
                 - 依存関係ごとにテストを行い、それらの相互作用も検証します。
                 - Mockの使用を最小限に抑え、実際の依存関係を使用したテストを優先します。
                 - 統合テストを重視し、実際のシステムの動作をより正確に反映するテストを作成します。
 
-                2. テストの構造と設計：
+                2. テストの構造と設計:
                 - 各テストケースに日本語1行でそのテストの確認項目を説明するドキュストリングを追加します。
                 - テストクラス内で共通して使用されるオブジェクトや変数を特定し、テスティングフレームワークが提供するsetup_methodやsetUP内に配置します。
                 - テストはAAAスタイル（Arrange, Act, Assert）で設計し、各セクションをコメントで明確に区分けします。
+                - テスト対象が抽象クラス(AbstractXxx)や基底クラス(XxxBase)やミックスイン(XxxMixin)の場合は初期化することができません。テスト対象を継承した"テスト用の具象クラス(TestableXxx)"を生成した上で、テスト用の具象クラスに対してテストを行います。
 
                 3. コードの品質とベストプラクティス：
                 - 各テストケースの完全なコードを書き、クリーンで最適化され、適切にコメントを付けてください。
@@ -245,8 +290,8 @@ def generate_test_code(
                 ## 出力フォーマット：
 
                 [テストコードのファイルのパス]
-                ```text
-                ここにテストコードを最初から最後までファイル単位で出力
+                ```[python or typescript or other]
+                [ここにテストコードを最初から最後までファイル単位で出力]
                 ```
 
                 自信度: xxx%
@@ -287,17 +332,17 @@ def generate_test_code(
     )
 
     step_3_output_message = GeminiClient().generate_text(
-        model_name="models/gemini-1.5-pro-latest",
+        model_name="models/gemini-1.5-pro-exp-0827",
         messages=step_3_messages,
+        temp=0.0,
         stream=True,
     )
 
-    test_code_and_score = structured_output(
-        output_type=TestCodeAndScore,
-        text=step_3_output_message,
-    )
+    new_testcode = extract_code_from_output(step_3_output_message)
 
-    return test_code_and_score.test_code
+    print("テストコード\n", new_testcode)
+
+    return new_testcode
 
 
 # 既存のテストコードをアップデートする関数
@@ -349,5 +394,7 @@ def call_test_code_generator(
             target_specification=target_specification,
             supplement=supplement,
         )
+        print(new_test_code)
+        write_file_content(test_absolute_path, new_test_code)
 
     return new_test_code
