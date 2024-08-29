@@ -19,29 +19,35 @@ from rich.live import Live
 from rich.markdown import Markdown
 
 
-def streaming_print_gemini(response: GenerateContentResponse) -> str:
+def streaming_print_gemini(response: GenerateContentResponse, markdown: bool = False) -> str:
     # Rich consoleを初期化
     console = Console()
     # マークダウンテキストを格納する変数
     full_text = ""
 
-    # Liveコンテキストを使用してストリーミング出力を表示
-    with Live(console=console, refresh_per_second=1) as live:
+    if markdown is True:
+        # Liveコンテキストを使用してストリーミング出力を表示
+        with Live(console=console, refresh_per_second=1) as live:
+            for chunk in response:
+                if chunk.text:
+                    full_text += chunk.text
+                    # 現在のマークダウンテキストをレンダリング
+                    live.update(Markdown(full_text))
+    else:
         for chunk in response:
             if chunk.text:
                 full_text += chunk.text
-                # 現在のマークダウンテキストをレンダリング
-                live.update(Markdown(full_text))
+                print(chunk.text, end="")
 
     return full_text
 
 
-def streaming_print_openai(response: Stream[ChatCompletionChunk], md: bool = False) -> tuple[str, str | None]:
+def streaming_print_openai(response: Stream[ChatCompletionChunk], markdown: bool = False) -> tuple[str, str | None]:
     full_text = ""
     finish_reason: str | None = None
     console = Console()
 
-    if md is True:
+    if markdown is True:
         with Live(console=console, refresh_per_second=1) as live:
             for chunk in response:
                 if chunk.choices[0].delta.content is not None:
