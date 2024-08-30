@@ -410,7 +410,7 @@ def update_test_code(
     """
 
     # ステップ1: 実装コードの解析と理解
-    step_1_messages = LlmMessages(
+    implementation_analysis_messages = LlmMessages(
         messages=[
             LlmMessage(
                 role="system",
@@ -454,17 +454,74 @@ def update_test_code(
             ),
         ]
     )
-    step_1_output_message = GeminiClient().generate_text(
+    implementation_analysis_output = GeminiClient().generate_text(
         model_name="models/gemini-1.5-flash-exp-0827",
-        messages=step_1_messages,
+        messages=implementation_analysis_messages,
         stream=True,
         temp=0.0,
     )
 
-    print_markdown(step_1_output_message)
+    print_markdown(implementation_analysis_output)
+
+    git_diff_analysis_messages = LlmMessages(
+        messages=[
+            LlmMessage(
+                role="system",
+                content="""
+                あなたは高度なコード変更分析AIアシスタントです。提供されたGitの差分、実装コード、および実装コードの解析結果を基に、実装コードにどのような変更があったかを詳細に分析し理解することが求められています。以下の手順に従って分析を行ってください：
+
+                1. Gitの差分を詳細に確認し、追加、削除、変更された部分を特定してください。
+                2. 実装コードの全体的な構造と、変更が加えられた箇所の関係性を分析してください。
+                3. 変更の種類（機能追加、バグ修正、リファクタリングなど）を識別し、その目的を推測してください。
+                4. 変更が既存の機能やロジックにどのような影響を与えるか評価してください。
+                5. 新しく追加された機能や変更された機能の詳細を説明してください。
+                6. 削除された機能やコードがある場合、その理由と影響を考察してください。
+                7. 変更によって生じる可能性のある新たな依存関係や副作用を特定してください。
+                8. これらの変更がテストコードにどのような影響を与える可能性があるか予測してください。
+
+                出力形式：
+                - 分析結果は構造化された形式で提示してください。各セクションには明確な見出しをつけてください。
+                - 重要な変更点については、該当するコードの行番号や関数名を参照して具体的に示してください。
+                - 技術的な専門用語を適切に使用し、必要に応じて簡潔な説明を加えてください。
+
+                注意事項：
+                - 分析は客観的かつ中立的な立場で行い、個人的な意見や批判は避けてください。
+                - 変更の意図を推測する際は、確実な情報と推測を明確に区別してください。
+                - テスト対象のスコープとフレームワークを考慮に入れて分析を行ってください。
+
+                この分析結果は、後続のテストコード更新のステップで重要な入力となります。したがって、実装コードの変更を正確に理解し、テストコードへの影響を適切に予測することに注力してください。
+                """,
+            ),
+            LlmMessage(
+                role="user",
+                content="""
+                ## 実装コード
+                {code}
+
+                ## 実装コードの解析結果
+                {implementation_analysis_output}
+
+                ## 分析の対象
+                {target_specification}
+
+                ## gitの差分
+                {target_git_diff}
+                """,
+            ),
+        ]
+    )
+
+    git_diff_analysis_output = GeminiClient().generate_text(
+        model_name="models/gemini-1.5-flash-exp-0827",
+        messages=git_diff_analysis_messages,
+        stream=True,
+        temp=0.0,
+    )
+
+    print_markdown(git_diff_analysis_output)
 
     # ステップ2: 既存のテストコードの解析と理解
-    step_2_messages = LlmMessages(
+    test_code_analysis_messages = LlmMessages(
         messages=[
             LlmMessage(
                 role="system",
@@ -510,17 +567,17 @@ def update_test_code(
             ),
         ]
     )
-    step_2_output_message = GeminiClient().generate_text(
+    test_code_analysis_output = GeminiClient().generate_text(
         model_name="models/gemini-1.5-flash-exp-0827",
-        messages=step_2_messages,
+        messages=test_code_analysis_messages,
         stream=True,
         temp=0.0,
     )
 
-    print_markdown(step_2_output_message)
+    print_markdown(test_code_analysis_output)
 
     # ステップ3: 既存のテストコードと実装コードを比較して、カバーされていない部分を識別
-    step_3_messages = LlmMessages(
+    uncovered_areas_identification_messages = LlmMessages(
         messages=[
             LlmMessage(
                 role="system",
@@ -558,6 +615,9 @@ def update_test_code(
                 ## 既存のテストコード
                 {test_code}
 
+                ## gitの差分
+                {target_git_diff}
+
                 ## テスト対象
                 {target_specification}
 
@@ -568,25 +628,28 @@ def update_test_code(
                 {scope.value.name}
 
                 ## 実装コードの解析結果
-                {step_1_output_message}
+                {implementation_analysis_output}
+
+                ## gitの差分の解析結果
+                {git_diff_analysis_output}
 
                 ## 既存テストコードの解析結果
-                {step_2_output_message}
+                {test_code_analysis_output}
                 """,
             ),
         ]
     )
-    step_3_output_message = GeminiClient().generate_text(
+    uncovered_areas_identification_output = GeminiClient().generate_text(
         model_name="models/gemini-1.5-pro-exp-0827",
-        messages=step_3_messages,
+        messages=uncovered_areas_identification_messages,
         stream=True,
         temp=0.0,
     )
 
-    print_markdown(step_3_output_message)
+    print_markdown(uncovered_areas_identification_output)
 
     # ステップ4: 既存のテストコードと実装コードを比較して、修正が必要なテストケースや不要になったテストケースを特定
-    step_4_messages = LlmMessages(
+    test_case_review_messages = LlmMessages(
         messages=[
             LlmMessage(
                 role="system",
@@ -621,6 +684,9 @@ def update_test_code(
                 ## 実装コード
                 {code}
 
+                ## gitの差分
+                {target_git_diff}
+
                 ## 既存のテストコード
                 {test_code}
 
@@ -634,28 +700,31 @@ def update_test_code(
                 {scope.value.name}
 
                 ## 実装コードの解析結果
-                {step_1_output_message}
+                {implementation_analysis_output}
 
                 ## 既存テストコードの解析結果
-                {step_2_output_message}
+                {test_code_analysis_output}
+
+                ## gitの差分の解析結果
+                {git_diff_analysis_output}
 
                 ## カバレッジ分析結果
-                {step_3_output_message}
+                {uncovered_areas_identification_output}
                 """,
             ),
         ]
     )
-    step_4_output_message = GeminiClient().generate_text(
+    test_case_review_output = GeminiClient().generate_text(
         model_name="models/gemini-1.5-pro-exp-0827",
-        messages=step_4_messages,
+        messages=test_case_review_messages,
         stream=True,
         temp=0.0,
     )
 
-    print_markdown(step_4_output_message)
+    print_markdown(test_case_review_output)
 
     # ステップ5: 実装コードの変更に基づいて、更新が必要なテストケースと新たに追加すべきテストケースをリストアップ
-    step_5_messages = LlmMessages(
+    test_case_update_list_messages = LlmMessages(
         messages=[
             LlmMessage(
                 role="system",
@@ -694,6 +763,9 @@ def update_test_code(
                 ## 実装コード
                 {code}
 
+                ## gitの差分
+                {target_git_diff}
+
                 ## 既存のテストコード
                 {test_code}
 
@@ -707,31 +779,34 @@ def update_test_code(
                 {scope.value.name}
 
                 ## 実装コードの解析結果
-                {step_1_output_message}
+                {implementation_analysis_output}
 
                 ## 既存テストコードの解析結果
-                {step_2_output_message}
+                {test_code_analysis_output}
 
                 ## カバレッジ分析結果
-                {step_3_output_message}
+                {uncovered_areas_identification_output}
+
+                ## gitの差分の解析結果
+                {git_diff_analysis_output}
 
                 ## 修正が必要なテストケースと不要になったテストケースの特定
-                {step_4_output_message}
+                {test_case_review_output}
                 """,
             ),
         ]
     )
-    step_5_output_message = GeminiClient().generate_text(
+    test_case_update_list_output = GeminiClient().generate_text(
         model_name="models/gemini-1.5-pro-exp-0827",
-        messages=step_5_messages,
+        messages=test_case_update_list_messages,
         stream=True,
         temp=0.0,
     )
 
-    print_markdown(step_5_output_message)
+    print_markdown(test_case_update_list_output)
 
     # ステップ6: 既存のテストコードに対して、テストケースの更新と追加を満たすようにテストコードをアップデート
-    step_6_messages = LlmMessages(
+    test_code_update_messages = LlmMessages(
         messages=[
             LlmMessage(
                 role="system",
@@ -782,6 +857,9 @@ def update_test_code(
                 ## 実装コード
                 {code}
 
+                ## gitの差分
+                {target_git_diff}
+
                 ## 既存のテストコード
                 {test_code}
 
@@ -795,7 +873,7 @@ def update_test_code(
                 {scope.value.name}
 
                 ## 更新が必要なテストケースと新たに追加すべきテストケースのリスト
-                {step_5_output_message}
+                {test_case_update_list_output}
 
                 ## 補足情報
                 {supplement}
@@ -803,16 +881,16 @@ def update_test_code(
             ),
         ]
     )
-    step_6_output_message = GeminiClient().generate_text(
+    test_code_update_output = GeminiClient().generate_text(
         model_name="models/gemini-1.5-pro-exp-0827",
-        messages=step_6_messages,
+        messages=test_code_update_messages,
         stream=True,
         temp=0.0,
     )
 
-    print_markdown(step_6_output_message)
+    print_markdown(test_code_update_output)
 
     # 更新されたテストコードを抽出
-    updated_test_code = extract_code_from_output(step_6_output_message)
+    updated_test_code = extract_code_from_output(test_code_update_output)
 
     return updated_test_code
