@@ -5,7 +5,7 @@ import pyperclip
 from apps.lib.utils import count_tokens, format_number, print_colored
 
 
-def set_clipboard():
+def set_clipboard() -> None:
     """
     実行環境に応じて適切なクリップボード設定を適用する
     """
@@ -66,7 +66,7 @@ def copy_chunks_to_clipboard(chunk_contents: list[str] | str) -> None:
             input("\nPress Enter to continue...")
 
 
-def print_and_copy(text) -> None:
+def print_and_copy(text: str) -> None:
     """ターミナルに表示し、クリップボードにコピーする関数."""
     print("\n")
     print(text)
