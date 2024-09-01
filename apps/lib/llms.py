@@ -1,4 +1,5 @@
 import time
+from enum import Enum
 from typing import Any, Literal, TypeVar
 
 import google.generativeai as genai
@@ -17,6 +18,22 @@ from pydantic import BaseModel, Field
 from rich.console import Console
 from rich.live import Live
 from rich.markdown import Markdown
+
+
+class LlmModel(BaseModel):
+    """LLMのモデル"""
+
+    name: str
+    max_tokens: int
+
+
+class LlmModelEnum(Enum):
+    """LLMのモデル"""
+
+    GEMINI15FLASH = LlmModel(name="models/gemini-1.5-flash-exp-0827", max_tokens=8100)
+    GEMINI15PRO = LlmModel(name="models/gemini-1.5-pro-exp-0827", max_tokens=8100)
+    GPT4O = LlmModel(name="gpt-4o", max_tokens=4096)
+    GPT4O_MINI = LlmModel(name="gpt-4o-mini", max_tokens=4096)
 
 
 def streaming_print_gemini(response: GenerateContentResponse, markdown: bool = False) -> str:
@@ -71,10 +88,10 @@ class LlmMessage(BaseModel):
     role: Literal["system", "user", "assistant"]
     content: str
 
-    def format_gemini(self) -> ContentDict:
+    def format_gemini(self) -> ContentDict | None:
         # roleをgeminiのものに変換
         if self.role == "system":
-            role = "user"
+            return None
         elif self.role == "user":
             role = "user"
         elif self.role == "assistant":
@@ -100,7 +117,7 @@ class LlmMessages(BaseModel):
 
     def format_gemini(self) -> list[ContentDict]:
         """Geminiのメッセージをフォーマットする"""
-        return [message.format_gemini() for message in self.messages]
+        return [message.format_gemini() for message in self.messages if message.format_gemini() is not None]
 
     def format_openai(self) -> list[ChatCompletionMessageParam]:
         """OpenAIのメッセージをフォーマットする"""
@@ -109,6 +126,18 @@ class LlmMessages(BaseModel):
     def format_instructor(self) -> list[ChatCompletionMessageParam]:
         """Instructorのメッセージをフォーマットする"""
         return [message.format_instructor() for message in self.messages]
+
+    def extract_instruction(self) -> str | None:
+        """Instructorのメッセージを抽出する"""
+        instruction_messages: list[str] = []
+        for message in self.messages:
+            if message.role == "system":
+                instruction_messages.append(message.content)
+
+        if len(instruction_messages) > 0:
+            return "\n\n".join(instruction_messages)
+        else:
+            return None
 
 
 T = TypeVar("T", bound=BaseModel)
@@ -162,23 +191,23 @@ class GeminiClient(LlmClientBase):
         if self.api_key is not None:
             genai.configure(api_key=self.api_key)
 
+        # メッセージが文字列の場合は、LlmMessagesに変換
+        if isinstance(messages, str):
+            messages = LlmMessages(messages=[LlmMessage(role="user", content=messages)])
+
         # モデルの準備
         if model_name is None:
             model_name = self.DEFAULT_MODEL
-        llm = GenerativeModel(model_name)
+        llm = GenerativeModel(model_name=model_name, system_instruction=messages.extract_instruction())
 
         # 設定の準備
         generation_config = GenerationConfig(
             temperature=temp,
-            max_output_tokens=max_tokens,
+            max_output_tokens=max_tokens or 8100,
         )
 
         # 出力する文字列
         output_text = ""
-
-        # メッセージが文字列の場合は、LlmMessagesに変換
-        if isinstance(messages, str):
-            messages = LlmMessages(messages=[LlmMessage(role="user", content=messages)])
 
         # レスポンスの生成
         max_retries = 3
@@ -191,6 +220,13 @@ class GeminiClient(LlmClientBase):
                     response = llm.generate_content(
                         messages.format_gemini(), generation_config=generation_config, stream=stream
                     )
+                    if stream is True:
+                        generated_text = streaming_print_gemini(response)
+                    else:
+                        generated_text = response.text
+
+                    output_text += generated_text
+
                     break  # 成功した場合、ループを抜ける
                 except google_exceptions.GoogleAPIError as e:
                     if attempt == max_retries - 1:  # 最後の試行の場合
@@ -199,18 +235,16 @@ class GeminiClient(LlmClientBase):
                     time.sleep(retry_delay)
                     retry_delay *= 2  # 指数バックオフ
 
-            if stream is True:
-                generated_text = streaming_print_gemini(response)
-            else:
-                generated_text = response.text
-
-            output_text += generated_text
-
             # 生成が完了したかどうかを確認
-            if max_tokens is None and response.candidates[0].finish_reason == "MAX_TOKENS":
+            if max_tokens is None and response.candidates[0].finish_reason.value == 2:
                 # 次の生成のために、これまでの出力を履歴に追加
                 messages.append(LlmMessage(role="assistant", content=generated_text))
-                messages.append(LlmMessage(role="user", content="go on"))
+                messages.append(
+                    LlmMessage(
+                        role="user",
+                        content="Resume text generation from the point of interruption. Do not preface or explain the process of combining text, as we will do that for you. Please continue generating continuously.",
+                    )
+                )
             else:
                 is_finished = True
                 # ストリーミングの場合は、ターミナルの表示を改行する
