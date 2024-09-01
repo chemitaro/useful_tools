@@ -8,6 +8,7 @@ from apps.lib.llms import (
     GeminiClient,
     LlmMessage,
     LlmMessages,
+    LlmModelEnum,
 )
 from apps.lib.utils import (
     print_markdown,
@@ -230,8 +231,8 @@ def generate_test_code(
         ]
     )
     step_1_output_message = GeminiClient().generate_text(
-        model_name="models/gemini-1.5-flash-exp-0827",
         messages=step_1_messages,
+        llm_model=LlmModelEnum.GEMINI15FLASH,
         stream=True,
         temp=0.0,
     )
@@ -311,7 +312,7 @@ def generate_test_code(
     )
 
     step_2_output_message = GeminiClient().generate_text(
-        model_name="models/gemini-1.5-flash-exp-0827",
+        llm_model=LlmModelEnum.GEMINI15FLASH,
         messages=step_2_messages,
         stream=True,
         temp=0.0,
@@ -392,7 +393,7 @@ def generate_test_code(
     )
 
     step_3_output_message = GeminiClient().generate_text(
-        model_name="models/gemini-1.5-pro-exp-0827",
+        llm_model=LlmModelEnum.GEMINI15FLASH,
         messages=step_3_messages,
         temp=0.0,
         stream=True,
@@ -491,7 +492,6 @@ def update_test_code(
                         5. 新しく追加された機能や変更された機能の詳細を説明してください。
                         6. 削除された機能やコードがある場合、その理由と影響を考察してください。
                         7. 変更によって生じる可能性のある新たな依存関係や副作用を特定してください。
-                        8. これらの変更がテストコードにどのような影響を与える可能性があるか予測してください。
 
                         出力形式：
                         - 分析結果は構造化された形式で提示してください。各セクションには明確な見出しをつけてください。
@@ -532,7 +532,7 @@ def update_test_code(
         )
 
         git_diff_analysis_output = GeminiClient().generate_text(
-            model_name="models/gemini-1.5-flash-exp-0827",
+            llm_model=LlmModelEnum.GEMINI15FLASH,
             messages=git_diff_analysis_messages,
             stream=True,
             temp=0.0,
@@ -551,17 +551,15 @@ def update_test_code(
 
                     1. テストコードの全体的な構造を把握し、テストクラスやテスト関数の構成を説明してください。
                     2. 各テストケースの目的と、テストしている機能や動作を特定し、説明してください。
-                    3. テストで使用されているアサーション、モック、フィクスチャなどのテスト技法を識別し、その使用方法を説明してください。
-                    4. テストカバレッジの範囲を分析し、どの部分の機能がテストされているかを明確にしてください。
-                    5. テストコードで使用されているテストフレームワークの特徴や機能を特定してください。
-                    6. テストデータの準備方法や、テスト環境のセットアップ方法を説明してください。
-                    7. エッジケースや異常系のテストが含まれているかを確認し、その内容を説明してください。
+                    3. テストカバレッジの範囲を分析し、どの部分の機能がテストされているかを明確にしてください。
+                    4. テストコードの品質を0~100%で評価してください。
 
                     出力形式：
                     - 分析結果は構造化された形式で提示してください。各セクションには明確な見出しをつけてください。
                     - 技術的な専門用語を適切に使用し、必要に応じて簡潔な説明を加えてください。
                     - テストコードの重要な部分については、該当する行番号やテスト関数名を参照してください。
                     - コードを生成することはできません。必ず自然言語で出力してください。
+                    - 日本語で出力してください。
 
                     注意事項：
                     - テストコードの品質や網羅性について客観的に評価してください。
@@ -594,7 +592,7 @@ def update_test_code(
         ]
     )
     test_code_analysis_output = GeminiClient().generate_text(
-        model_name="models/gemini-1.5-flash-exp-0827",
+        llm_model=LlmModelEnum.GEMINI15FLASH,
         messages=test_code_analysis_messages,
         stream=True,
         temp=0.0,
@@ -612,19 +610,16 @@ def update_test_code(
                     あなたは高度なテストカバレッジ分析AIアシスタントです。与えられた実装コードと既存のテストコードを比較し、テストでカバーされていない部分を特定することが求められています。以下の手順に従って分析を行ってください:
 
                     1. 実装コードの各クラス、メソッド、関数に対して、対応するテストが存在するかを確認してください。
-                    2. テストが存在しない、または不十分なコード部分を特定し、リストアップしてください。
-                    3. 特に以下の点に注意してカバレッジを分析してください：
+                    2. テストが存在しない、または不十分なコード部分を特定し、リストアップしてください。特に以下の点に注意してカバレッジを分析してください：
                         - 主要な機能や重要なロジックのテストカバレッジ
                         - エッジケースや異常系のテストカバレッジ
                         - 新しく追加された機能や変更された部分のテストカバレッジ
-                    4. テストが不足している理由や、追加すべきテストの種類について推測・提案してください。
-                    5. テストカバレッジを向上させるための具体的な提案をしてください。
 
                     出力形式：
                     - 分析結果は構造化された形式で提示してください。各セクションには明確な見出しをつけてください。
                     - カバーされていない部分は、該当するコードの行番号や関数名を参照して具体的に示してください。
-                    - 提案は簡潔かつ具体的に記述し、実装可能な形で提示してください。
                     - コードを生成することはできません。必ず自然言語で出力してください。
+                    - 日本語で出力してください。
 
                     注意事項：
                     - 分析は客観的かつ中立的な立場で行い、個人的な意見や批判は避けてください。
@@ -672,7 +667,7 @@ def update_test_code(
         ]
     )
     uncovered_areas_identification_output = GeminiClient().generate_text(
-        model_name="models/gemini-1.5-pro-exp-0827",
+        llm_model=LlmModelEnum.GEMINI15FLASH,
         messages=uncovered_areas_identification_messages,
         stream=True,
         temp=0.0,
@@ -687,7 +682,7 @@ def update_test_code(
                 role="system",
                 content=textwrap.dedent(
                     """
-                    あなたは高度なテスト分析AIアシスタントです。与えられた実装コードと既存のテストコードを比較し、修正が必要なテストケースや不要になったテストケースを特定することが求められています。以下の手順に従って分析を行ってください:
+                    あなたは高度なテスト分析AIアシスタントです。与えられた実装コードと既存のテストコードを比較し、不要になったテストケースを特定することが求められています。以下の手順に従って分析を行ってください:
 
                     1. 実装コードの変更点を特定し、それに関連する既存のテストケースを見つけてください。
                     2. 以下の観点から、各テストケースを評価してください：
@@ -753,7 +748,7 @@ def update_test_code(
         ]
     )
     test_case_review_output = GeminiClient().generate_text(
-        model_name="models/gemini-1.5-pro-exp-0827",
+        llm_model=LlmModelEnum.GEMINI15FLASH,
         messages=test_case_review_messages,
         stream=True,
         temp=0.0,
@@ -781,7 +776,6 @@ def update_test_code(
                         - 期待される結果
                     3. 更新が必要なテストケースについては、どのような更新が必要かを具体的に説明してください。
                     4. 新たに追加すべきテストケースについては、なぜそのテストが必要なのかを説明してください。
-                    5. テストケースの優先順位を設定し、最も重要なものから順にリストアップしてください。
 
                     出力形式：
                     - リストアップしたテストケースは、明確に構造化された形式で提示してください。
@@ -841,7 +835,7 @@ def update_test_code(
         ]
     )
     test_case_update_list_output = GeminiClient().generate_text(
-        model_name="models/gemini-1.5-pro-exp-0827",
+        llm_model=LlmModelEnum.GEMINI15FLASH,
         messages=test_case_update_list_messages,
         stream=True,
         temp=0.0,
@@ -933,7 +927,7 @@ def update_test_code(
         ]
     )
     test_code_changes_output = GeminiClient().generate_text(
-        model_name="models/gemini-1.5-pro-exp-0827",
+        llm_model=LlmModelEnum.GEMINI15FLASH,
         messages=test_code_changes_messages,
         stream=True,
         temp=0.0,
@@ -991,7 +985,7 @@ def update_test_code(
     )
 
     updated_test_code_output = GeminiClient().generate_text(
-        model_name="models/gemini-1.5-flash-exp-0827",
+        llm_model=LlmModelEnum.GEMINI15FLASH,
         messages=updated_test_code_messages,
         stream=True,
         temp=0.0,

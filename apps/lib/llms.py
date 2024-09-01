@@ -1,3 +1,4 @@
+import textwrap
 import time
 from enum import Enum
 from typing import Any, Literal, TypeVar
@@ -151,7 +152,7 @@ class LlmClientBase(BaseModel):
     def generate_text(
         self,
         messages: LlmMessages | str,
-        model_name: str | None = None,
+        llm_model: LlmModelEnum | None = None,
         temp: float | None = None,
         max_tokens: int | None = None,
         stream: bool = False,
@@ -164,7 +165,7 @@ class LlmClientBase(BaseModel):
         self,
         output_type: type[T],
         messages: LlmMessages | str,
-        model_name: str | None = None,
+        llm_model: LlmModelEnum | None = None,
         temp: float | None = None,
         max_tokens: int | None = None,
         **kwargs: Any,
@@ -176,12 +177,12 @@ class LlmClientBase(BaseModel):
 class GeminiClient(LlmClientBase):
     """Geminiクライアント"""
 
-    DEFAULT_MODEL: str = "models/gemini-1.5-flash-latest"
+    DEFAULT_MODEL: LlmModelEnum = LlmModelEnum.GEMINI15FLASH
 
     def generate_text(
         self,
         messages: LlmMessages | str,
-        model_name: str | None = None,
+        llm_model: LlmModelEnum | None = None,
         temp: float | None = None,
         max_tokens: int | None = None,
         stream: bool = False,
@@ -196,14 +197,14 @@ class GeminiClient(LlmClientBase):
             messages = LlmMessages(messages=[LlmMessage(role="user", content=messages)])
 
         # モデルの準備
-        if model_name is None:
-            model_name = self.DEFAULT_MODEL
-        llm = GenerativeModel(model_name=model_name, system_instruction=messages.extract_instruction())
+        if llm_model is None:
+            llm_model = self.DEFAULT_MODEL
+        llm = GenerativeModel(model_name=llm_model.value.name, system_instruction=messages.extract_instruction())
 
         # 設定の準備
         generation_config = GenerationConfig(
             temperature=temp,
-            max_output_tokens=max_tokens or 8100,
+            max_output_tokens=max_tokens or llm_model.value.max_tokens,
         )
 
         # 出力する文字列
@@ -257,7 +258,7 @@ class GeminiClient(LlmClientBase):
         self,
         output_type: type[T],
         messages: LlmMessages | str,
-        model_name: str | None = None,
+        llm_model: LlmModelEnum | None = None,
         temp: float | None = None,
         max_tokens: int | None = None,
         **kwargs: Any,
@@ -278,11 +279,11 @@ class GeminiClient(LlmClientBase):
         )
 
         # モデルの準備
-        if model_name is None:
-            model_name = self.DEFAULT_MODEL
+        if llm_model is None:
+            llm_model = self.DEFAULT_MODEL
 
         model = GenerativeModel(
-            model_name=model_name,
+            model_name=llm_model.value.name,
             generation_config=generation_config,
         )
 
@@ -305,12 +306,12 @@ class GeminiClient(LlmClientBase):
 class OpenAiClient(LlmClientBase):
     """OpenAIクライアント"""
 
-    DEFAULT_MODEL: str = "gpt-4o-mini"
+    DEFAULT_MODEL: LlmModelEnum = LlmModelEnum.GPT4O_MINI
 
     def generate_text(
         self,
         messages: LlmMessages | str,
-        model_name: str | None = None,
+        llm_model: LlmModelEnum | None = None,
         temp: float | None = None,
         max_tokens: int | None = None,
         stream: bool = False,
@@ -328,8 +329,8 @@ class OpenAiClient(LlmClientBase):
         output_text = ""
 
         # レスポンスの生成
-        if model_name is None:
-            model_name = self.DEFAULT_MODEL
+        if llm_model is None:
+            llm_model = self.DEFAULT_MODEL
 
         max_retries = 3
         retry_delay = 1  # 初期遅延（秒）
@@ -339,10 +340,10 @@ class OpenAiClient(LlmClientBase):
             for attempt in range(max_retries):
                 try:
                     response = model.chat.completions.create(
-                        model=model_name,
+                        model=llm_model.value.name,
                         messages=openai_messages,
                         temperature=temp,
-                        max_tokens=max_tokens,
+                        max_tokens=max_tokens or llm_model.value.max_tokens,
                         stream=stream,
                     )
                     break  # 成功した場合、ループを抜ける
@@ -386,7 +387,7 @@ class OpenAiClient(LlmClientBase):
         self,
         output_type: type[T],
         messages: LlmMessages | str,
-        model_name: str | None = None,
+        llm_model: LlmModelEnum | None = None,
         temp: float | None = None,
         max_tokens: int | None = None,
         **kwargs: Any,
@@ -401,8 +402,8 @@ class OpenAiClient(LlmClientBase):
         openai_messages = messages.format_openai()
 
         # レスポンスの生成
-        if model_name is None:
-            model_name = self.DEFAULT_MODEL
+        if llm_model is None:
+            llm_model = self.DEFAULT_MODEL
 
         max_retries = 3
         retry_delay = 1  # 初期遅延（秒）
@@ -410,11 +411,11 @@ class OpenAiClient(LlmClientBase):
         for attempt in range(max_retries):
             try:
                 response = model.beta.chat.completions.parse(
-                    model=model_name,
+                    model=llm_model.value.name,
                     messages=openai_messages,
                     response_format=output_type,
                     temperature=temp,
-                    max_tokens=max_tokens,
+                    max_tokens=max_tokens or llm_model.value.max_tokens,
                 )
                 break  # 成功した場合、ループを抜ける
             except OpenAIError as e:
@@ -467,7 +468,7 @@ def convert_text_to_pydantic(output_type: type[T], text: str) -> T:
     resp_data = model.generate_pydantic(
         output_type=output_type,
         messages=messages,
-        model_name="gpt-4o-mini",
+        llm_model=LlmModelEnum.GPT4O_MINI,
         temp=0.0,
     )
 
@@ -498,9 +499,11 @@ def convert_text_to_pydantic_with_instructor(output_type: type[T], text: str) ->
             ),
             LlmMessage(
                 role="user",
-                content=f"""
-                {text}
-                """,
+                content=textwrap.dedent(
+                    f"""
+                    {text}
+                    """
+                ),
             ),
         ]
     )
