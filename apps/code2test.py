@@ -4,9 +4,7 @@ import os
 import sys
 
 from pydantic import BaseModel, Field
-from rich.prompt import Prompt, Confirm
-
-from apps.lib.git_operater import get_diff_with_commit
+from rich.prompt import Confirm, Prompt
 
 # 現在のファイルの絶対パスを取得
 current_file_path = os.path.abspath(__file__)
@@ -19,6 +17,7 @@ if root_directory not in sys.path:
     sys.path.append(root_directory)
 
 from apps.import_collector import import_collect  # noqa: E402
+from apps.lib.git_operater import get_diff_with_commit  # noqa: E402
 from apps.lib.inputter import variable_input  # noqa: E402
 from apps.lib.test_code_generater import (  # noqa: E402
     TestingFlameworkEnum,
