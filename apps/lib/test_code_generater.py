@@ -1359,7 +1359,7 @@ def update_test_code_from_git_diff(
         )
         return response
 
-    def test_code_integration(test_code_generation_result: str, test_code: str) -> str:
+    def test_code_integration(test_code_generation_result: str, test_code: str, flamework: TestingFlameworkEnum) -> str:
         """テストコードを統合する関数
 
         Args:
@@ -1384,7 +1384,14 @@ def update_test_code_from_git_diff(
                     role="user",
                     content=textwrap.dedent(
                         f"""
+                        あなたは既存のテストコードに新しいテストコードを統合する専門家です。
+                        テストコードを忠実に完璧に統合する能力があります。
+                        必要に応じて、際限なく長いコードを生成することができます。
                         以下の情報を基に、新しく生成されたテストコードを既存のテストスイートに統合してください：
+
+                        プロジェクトのテストコーディング規約：
+                        {TEST_CODE_CONVENTION_AND_KNOWLEDGE}
+                        {flamework.value.usage}
 
                         現在のテストコード(全体)：
                         {test_code}
@@ -1396,7 +1403,8 @@ def update_test_code_from_git_diff(
                         - テストの論理的なグループ化を維持すること
                         - 重複を避け、コードの一貫性を保つこと
                         - 既存のテストスイートの構造を尊重すること
-                        - コメントやdocstringは削除しないこと
+                        - 既存のコードを省略したり、削除したりしないこと
+                        - 既存のコメントやdocstringは削除しないこと
                         - 出力された情報をそのままファイルに書き込みます。なので、余分な情報（フィアイルのパスやコードブロック``` ```）は不要です。
 
                         出力フォーマット：
@@ -1505,7 +1513,7 @@ def update_test_code_from_git_diff(
 
     # テストコードの統合
     test_code_integration_result = test_code_integration(
-        test_code_generation_result=test_code_generation_result, test_code=test_code
+        test_code_generation_result=test_code_generation_result, test_code=test_code, flamework=flamework
     )
     print_markdown(test_code_integration_result)
 
