@@ -21,20 +21,27 @@ from rich.live import Live
 from rich.markdown import Markdown
 
 
+class LlmProvider(Enum):
+    """LLMのプロバイダ"""
+
+    GEMINI = "gemini"
+    OPENAI = "openai"
+
+
 class LlmModel(BaseModel):
     """LLMのモデル"""
 
     name: str
+    provider: LlmProvider
     max_tokens: int
 
 
 class LlmModelEnum(Enum):
     """LLMのモデル"""
-
-    GEMINI15FLASH = LlmModel(name="models/gemini-1.5-flash-exp-0827", max_tokens=8100)
-    GEMINI15PRO = LlmModel(name="models/gemini-1.5-pro-exp-0827", max_tokens=8100)
-    GPT4O = LlmModel(name="gpt-4o", max_tokens=4096)
-    GPT4O_MINI = LlmModel(name="gpt-4o-mini", max_tokens=4096)
+    GEMINI15FLASH = LlmModel(name="models/gemini-1.5-flash-exp-0827", provider=LlmProvider.GEMINI, max_tokens=8100)
+    GEMINI15PRO = LlmModel(name="models/gemini-1.5-pro-exp-0827", provider=LlmProvider.GEMINI, max_tokens=8100)
+    GPT4O = LlmModel(name="gpt-4o", provider=LlmProvider.OPENAI, max_tokens=4096)
+    GPT4O_MINI = LlmModel(name="gpt-4o-mini", provider=LlmProvider.OPENAI, max_tokens=4096)
 
 
 def streaming_print_gemini(response: GenerateContentResponse, markdown: bool = False) -> str:
