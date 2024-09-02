@@ -5,7 +5,7 @@ import pyperclip
 import tiktoken
 from rich.console import Console
 from rich.markdown import Markdown
-
+import subprocess
 
 def count_tokens(text: str, model: str = "gpt-4") -> int:
     """
@@ -203,3 +203,22 @@ def get_clipboard_content() -> str:
     except pyperclip.PyperclipException as e:
         print(f"クリップボードにアクセスできません: {str(e)}")
         return ""
+
+
+def execute_command(command: str) -> Tuple[int, str]:
+    """
+    引数で受け取ったコマンドをコマンドラインから実行し、その結果の出力を文字列として返す
+
+    Args:
+        command (str): 実行するコマンド
+
+    Returns:
+        str: コマンドの実行結果
+    """
+    try:
+        result = subprocess.run(command, shell=True, check=False, capture_output=True, text=True)
+        return result.returncode, result.stdout + result.stderr
+    except Exception as e:
+        return -1, f"エラー: コマンドの実行に失敗しました。\n{str(e)}"
+
+
