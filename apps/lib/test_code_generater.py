@@ -816,8 +816,7 @@ def update_test_code(
                         - テストの目的
                         - 入力値や前提条件
                         - 期待される結果
-                    3. 更新が必要なテストケースについては、どのような更新が必要かを具体的に説明してください。
-                    4. 新たに追加すべきテストケースについては、なぜそのテストが必要なのかを説明してください。
+                    3. 新たに追加すべきテストケースについては、なぜそのテストが必要なのかを説明してください。
 
                     出力形式：
                     - リストアップしたテストケースは、明確に構造化された形式で提示してください。
@@ -830,6 +829,7 @@ def update_test_code(
                     - テストの網羅性と効率性のバランスを考慮し、重複を避けつつ十分なカバレッジを確保してください。
                     - 実装コードの変更点や新機能に特に注意を払い、それらが適切にテストされるようにしてください。
                     - 絶対にコードを生成しないでください。
+                    - git diffを生成しないでください。
 
                     この分析結果は、最終的なテストコードの更新に直接使用されます。したがって、具体的で実装可能なテストケースのリストを作成することに注力してください。
                     """
@@ -937,6 +937,7 @@ def update_test_code(
                     - テストの網羅性と効率性のバランスを維持してください。
                     - 実装コードの変更に対応した適切なアサーションを使用してください。
                     - テストデータやモックオブジェクトが適切に更新されていることを確認してください。
+                    - git diffを生成しないでください。必ず更新されたテストコードを出力してください。
 
                     この更新されたテストコードは、最終的な出力として使用されます。したがって、完全で実行可能なテストコードを生成することに注力してください。
                     """
@@ -1352,7 +1353,7 @@ def update_test_code_from_git_diff(
             ]
         )
         response = GeminiClient().generate_text(
-            llm_model=LlmModelEnum.GEMINI15FLASH,
+            llm_model=LlmModelEnum.GEMINI15PRO,
             messages=messages,
             stream=True,
             temp=0.0,
@@ -1525,3 +1526,378 @@ def update_test_code_from_git_diff(
     updated_test_code = extract_code_from_output(test_code_integration_result)
 
     return updated_test_code
+
+
+def analyze_test_failure_and_update(
+    code: str,
+    single_code: str,
+    test_code: str,
+    test_results: str,
+    flamework: TestingFlameworkEnum,
+    scope: TestScopeEnum,
+    target_specification: str,
+    supplement: str,
+) -> str:
+    """テスト失敗の原因を解析し、必要に応じてテストコードを修正する関数
+
+    Args:
+        code (str): 実装コード
+        single_code (str): 単一の実装コード
+        test_code (str): テストコード
+        test_results (str): テスト結果
+        target_git_diff (str): 対象のGit差分
+        flamework (TestingFlameworkEnum): テストフレームワーク
+        scope (TestScopeEnum): テストスコープ
+        target_specification (str): テスト対象
+        supplement (str): 補足情報
+
+    Returns:
+        str: 更新されたテストコード
+    """
+
+    def analyze_failure(test_results: str, code: str, test_code: str) -> str:
+        """テスト失敗の原因を解析する関数
+
+        Args:
+            test_results (str): テスト結果
+            code (str): 実装コード
+            test_code (str): テストコード
+
+        Returns:
+            str: 解析結果
+        """
+        messages = LlmMessages(
+            messages=[
+                LlmMessage(
+                    role="system",
+                    content=textwrap.dedent(
+                        """
+                        あなたは優秀なソフトウェアエンジニアで、テスト失敗の原因を特定する専門家です。
+                        提供されたテスト結果、実装コード、およびテストコードを基に、失敗の原因を特定してください。
+                        """
+                    ),
+                ),
+                LlmMessage(
+                    role="user",
+                    content=textwrap.dedent(
+                        f"""
+                        以下の情報を基に、テスト失敗の原因を分析してください：
+
+                        実装コード：
+                        {code}
+
+                        テストコード：
+                        {test_code}
+
+                        テスト結果：
+                        {test_results}
+
+                        分析結果として、以下の情報を提供してください：
+                        - 具体的な失敗箇所
+                        - 具体的な失敗原因
+                        - 失敗の区分（実装コードのバグ / テストコードの誤り）
+
+                        回答は簡潔にまとめ、箇条書きで提供してください。
+                        """
+                    ),
+                ),
+            ]
+        )
+        response = GeminiClient().generate_text(
+            llm_model=LlmModelEnum.GEMINI15FLASH,
+            messages=messages,
+            stream=True,
+            temp=0.0,
+        )
+        return response
+
+    def is_test_code_fault(analyze_failure_result: str) -> bool:
+        """テストコードの修正が必要かどうかを判断する関数
+
+        Args:
+            analyze_failure_result (str): 失敗解析結果
+
+        Returns:
+            bool: テストコードの修正が必要かどうか
+        """
+
+        # テストコードに誤りがあるかどうか判定結果を持つクラス
+        class TestCodeFault(BaseModel):
+            is_test_code_fault: bool = Field(..., description="テストコードに誤りがある場合はTrue, 誤りがない場合はFalse")
+
+        messages = LlmMessages(
+            messages=[
+                LlmMessage(
+                    role="system",
+                    content=textwrap.dedent(
+                        """
+                        あなたは優秀なテストコードの修正専門家で、テストコードの修正が必要かどうかを判断する専門家です。
+                        提供された失敗解析結果を基に、テストコードの修正が必要かどうかを判断してください。
+                        """
+                    ),
+                ),
+                LlmMessage(
+                    role="user",
+                    content=textwrap.dedent(
+                        f"""
+                        以下の情報を基に、テストコードの修正が必要かどうかを判断してください：
+
+                        失敗解析結果：
+                        {analyze_failure_result}
+                        テストコードに誤りがある場合はTrue, 誤りがない場合はFalseを出力してください。
+                        """
+                    ),
+                ),
+            ]
+        )
+        response = GeminiClient().generate_pydantic(
+            output_type=TestCodeFault,
+            messages=messages,
+            temp=0.0,
+        )
+        return response.is_test_code_fault
+
+    def test_case_update_plan(
+        analyze_failure_result: str, code: str, scope: TestScopeEnum, flamework: TestingFlameworkEnum
+    ) -> str:
+        """テストケース更新計画を立案する関数
+
+        Args:
+            analyze_failure_result (str): 失敗解析結果
+            code (str): 実装コード
+            scope (TestScopeEnum): テストスコープ
+            flamework (TestingFlameworkEnum): テストフレームワーク
+
+        Returns:
+            str: テストケース更新計画
+        """
+        messages = LlmMessages(
+            messages=[
+                LlmMessage(
+                    role="system",
+                    content=textwrap.dedent(
+                        """
+                        あなたは優秀なテスト設計者で、効果的なテストケース更新計画を立案する専門家です。
+                        失敗解析結果を基に、各テストケースの更新方針を決定し、優先順位を付けてください。
+                        """
+                    ),
+                ),
+                LlmMessage(
+                    role="user",
+                    content=textwrap.dedent(
+                        f"""
+                        以下の情報を基に、テストケースの更新計画を立案してください：
+
+                        プロジェクトのテストコーディング規約：
+                        {TEST_CODE_CONVENTION_AND_KNOWLEDGE}
+                        {flamework.value.usage}
+
+                        テストの種類：{scope.value.name}
+                        {scope.value.usage}
+
+                        現在の実装コード：
+                        {code}
+
+                        テストコード：
+                        {test_code}
+
+                        失敗解析結果：
+                        {analyze_failure_result}
+
+                        更新計画として、以下の情報を提供してください：
+                        - テスト対象のクラス名、関数名、メソッド名
+                        - 更新の種類（追加、変更、削除）
+                        - 各テストケースの更新計画（追加すべきアサーション、変更すべき入力値など）
+                        - 更新の優先順位
+                        - 自然言語で設計してください。
+
+                        禁止事項
+                        - 絶対にコードは生成しないでください。
+
+                        回答は簡潔にまとめ、箇条書きで提供してください。
+                        """
+                    ),
+                ),
+            ]
+        )
+        response = GeminiClient().generate_text(
+            llm_model=LlmModelEnum.GEMINI15FLASH,
+            messages=messages,
+            stream=True,
+            temp=0.0,
+        )
+        return response
+
+    def test_code_generation(
+        test_case_update_plan_result: str,
+        code: str,
+        test_code: str,
+        analyze_failure_result: str,
+        scope: TestScopeEnum,
+        flamework: TestingFlameworkEnum,
+    ) -> str:
+        """テストコードを生成する関数
+
+        Args:
+            test_case_update_plan_result (str): テストケース更新計画
+            code (str): 実装コード
+            test_code (str): 既存のテストコード
+
+        Returns:
+            str: 生成されたテストコード
+        """
+        messages = LlmMessages(
+            messages=[
+                LlmMessage(
+                    role="system",
+                    content=textwrap.dedent(
+                        """
+                        あなたは熟練したテストコード開発者で、高品質なテストコードを生成する専門家です。
+                        更新計画に基づいて、プロジェクトの規約に準拠した新しいテストコードを生成してください。
+                        """
+                    ),
+                ),
+                LlmMessage(
+                    role="user",
+                    content=textwrap.dedent(
+                        f"""
+                        以下の情報を基に、更新されたテストコードを生成してください：
+
+                        プロジェクトのテストコーディング規約：
+                        {TEST_CODE_CONVENTION_AND_KNOWLEDGE}
+                        {flamework.value.usage}
+
+                        テストの種類：{scope.value.name}
+
+                        現在の実装コード：
+                        {code}
+
+                        現在のテストコード：
+                        {test_code}
+
+                        失敗解析結果：
+                        {analyze_failure_result}
+
+                        テストケース更新計画：
+                        {test_case_update_plan_result}
+
+                        生成するテストコードは、以下の点に注意してください：
+                        - プロジェクトのコーディング規約に準拠すること
+                        - テストコードは変更点に対してのみ生成すること
+                        - 変更のないコードは省略して、変更のあるテストケースのみを生成すること
+                        - 削除するコードは作事除することをコメントで宣言すること
+                        - 可読性が高く、メンテナンスしやすいこと
+                        - 適切なアサーションを含むこと
+
+                        各テストケース単位で更新されたコードを提供してください。
+                        """
+                    ),
+                ),
+            ]
+        )
+        response = GeminiClient().generate_text(
+            llm_model=LlmModelEnum.GEMINI15FLASH,
+            messages=messages,
+            stream=True,
+            temp=0.0,
+        )
+        return response
+
+    def test_code_integration(test_code_generation_result: str, test_code: str, flamework: TestingFlameworkEnum) -> str:
+        """テストコードを統合する関数
+
+        Args:
+            test_code_generation_result (str): 生成されたテストコード
+            test_code (str): 既存のテストコード
+
+        Returns:
+            str: 統合されたテストコード
+        """
+        messages = LlmMessages(
+            messages=[
+                LlmMessage(
+                    role="system",
+                    content=textwrap.dedent(
+                        """
+                        あなたは経験豊富なソフトウェア統合エンジニアで、新しく生成されたテストコードを既存のテストスイートにシームレスに統合する専門家です。
+                        コードの一貫性と全体的な構造を維持しながら、新しいテストを適切に配置してください。
+                        """
+                    ),
+                ),
+                LlmMessage(
+                    role="user",
+                    content=textwrap.dedent(
+                        f"""
+                        あなたは既存のテストコードに新しいテストコードを統合する専門家です。
+                        テストコードを忠実に完璧に統合する能力があります。
+                        必要に応じて、際限なく長いコードを生成することができます。
+                        以下の情報を基に、新しく生成されたテストコードを既存のテストスイートに統合してください：
+
+                        プロジェクトのテストコーディング規約：
+                        {TEST_CODE_CONVENTION_AND_KNOWLEDGE}
+                        {flamework.value.usage}
+
+                        現在のテストコード(全体)：
+                        {test_code}
+
+                        生成された新しいテストコード(各テストケース)：
+                        {test_code_generation_result}
+
+                        統合の際は、以下の点に注意してください：
+                        - テストの論理的なグループ化を維持すること
+                        - 重複を避け、コードの一貫性を保つこと
+                        - 既存のテストスイートの構造を尊重すること
+                        - 既存のコードを省略したり、削除したりしないこと
+                        - 既存のコメントやdocstringは削除しないこと
+                        - 出力された情報をそのままファイルに書き込みます。なので、余分な情報（フィアイルのパスやコードブロック``` ```）は不要です。
+
+                        出力フォーマット：
+                        - 直接ファイルに書き込み、実行可能なテストコードを出力してください。
+
+                        統合後の実行可能な完全なテストコード(全体)を提供してください。
+                        """
+                    ),
+                ),
+            ]
+        )
+        response = GeminiClient().generate_text(
+            llm_model=LlmModelEnum.GEMINI15PRO,
+            messages=messages,
+            stream=True,
+            temp=0.0,
+        )
+        return response
+
+    # テスト失敗の原因を解析
+    analyze_failure_result = analyze_failure(test_results=test_results, code=code, test_code=test_code)
+    print_markdown(analyze_failure_result)
+
+    # テストコードの修正が必要かどうかを判断
+    if is_test_code_fault(analyze_failure_result):
+        # テストケース更新計画
+        test_case_update_plan_result = test_case_update_plan(
+            analyze_failure_result=analyze_failure_result, code=code, scope=scope, flamework=flamework
+        )
+        print_markdown(test_case_update_plan_result)
+
+        # テストコードの生成
+        test_code_generation_result = test_code_generation(
+            test_case_update_plan_result=test_case_update_plan_result,
+            code=code,
+            test_code=test_code,
+            analyze_failure_result=analyze_failure_result,
+            scope=scope,
+            flamework=flamework,
+        )
+        print_markdown(test_code_generation_result)
+
+        # テストコードの統合
+        test_code_integration_result = test_code_integration(
+            test_code_generation_result=test_code_generation_result, test_code=test_code, flamework=flamework
+        )
+        print_markdown(test_code_integration_result)
+
+        updated_test_code = extract_code_from_output(test_code_integration_result)
+        return updated_test_code
+    else:
+        return "実装コードの修正が必要です。"
