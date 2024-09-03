@@ -1248,16 +1248,19 @@ def update_test_code_from_git_diff(
         return response
 
     # 実装コードの解析
+    print_markdown("## 実装コードの解析")
     code_analysis_result = code_analysis(code=code, target_specification=target_specification)
     print_markdown(code_analysis_result)
 
     # Git差分の分析
+    print_markdown("## Git差分の分析")
     git_diff_analysis_result = git_diff_analysis(
         target_git_diff=target_git_diff, code=code, code_analysis_result=code_analysis_result
     )
     print_markdown(git_diff_analysis_result)
 
     # テストケースへの影響分析
+    print_markdown("## テストケースへの影響分析")
     test_impact_analysis_result = test_impact_analysis(
         git_diff_analysis_result=git_diff_analysis_result,
         test_code=test_code,
@@ -1267,12 +1270,14 @@ def update_test_code_from_git_diff(
     print_markdown(test_impact_analysis_result)
 
     # テストケース更新計画
+    print_markdown("## テストケース更新計画")
     test_case_update_plan_result = test_case_update_plan(
         test_impact_analysis_result=test_impact_analysis_result, code=code, scope=scope, flamework=flamework
     )
     print_markdown(test_case_update_plan_result)
 
     # テストコードの生成
+    print_markdown("## テストコードの生成")
     test_code_generation_result = test_code_generation(
         test_case_update_plan_result=test_case_update_plan_result,
         code=code,
@@ -1283,18 +1288,20 @@ def update_test_code_from_git_diff(
     print_markdown(test_code_generation_result)
 
     # テストコードの統合
+    print_markdown("## テストコードの統合")
     test_code_integration_result = test_code_integration(
         test_code_generation_result=test_code_generation_result, test_code=test_code, flamework=flamework
     )
     print_markdown(test_code_integration_result)
 
     # テストコードの品質評価
+    print_markdown("## テストコードの品質評価")
     test_quality_assessment_result = test_quality_assessment(
         test_code_integration_result=test_code_integration_result, code=code, test_scope=scope, test_flamework=flamework
     )
     print_markdown(test_quality_assessment_result)
-    updated_test_code = extract_code_from_output(test_code_integration_result)
 
+    updated_test_code = extract_code_from_output(test_code_integration_result)
     return updated_test_code
 
 
@@ -1641,18 +1648,22 @@ def analyze_test_failure_and_update(
         return response
 
     # テスト失敗の原因を解析
+    print_markdown("## テスト失敗の原因を解析")
     analyze_failure_result = analyze_failure(test_results=test_results, code=code, test_code=test_code)
     print_markdown(analyze_failure_result)
 
     # テストコードの修正が必要かどうかを判断
+    print_markdown("## テストコードの修正が必要かどうかを判断")
     if is_test_code_fault(analyze_failure_result):
         # テストケース更新計画
+        print_markdown("## テストケース更新計画")
         test_case_update_plan_result = test_case_update_plan(
             analyze_failure_result=analyze_failure_result, code=code, scope=scope, flamework=flamework
         )
         print_markdown(test_case_update_plan_result)
 
         # テストコードの生成
+        print_markdown("## テストコードの生成")
         test_code_generation_result = test_code_generation(
             test_case_update_plan_result=test_case_update_plan_result,
             code=code,
@@ -1664,6 +1675,7 @@ def analyze_test_failure_and_update(
         print_markdown(test_code_generation_result)
 
         # テストコードの統合
+        print_markdown("## テストコードの統合")
         test_code_integration_result = test_code_integration(
             test_code_generation_result=test_code_generation_result, test_code=test_code, flamework=flamework
         )
