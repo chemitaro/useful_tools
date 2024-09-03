@@ -170,6 +170,7 @@ TEST_CODE_CONVENTION_AND_KNOWLEDGE = textwrap.dedent(
     e. 特殊なケース:
         - 抽象クラス(AbstractXxx)、基底クラス(XxxBase)、ミックスイン(XxxMixin)のテスト:
             テスト用の具象クラス(TestableXxx)を作成してテストを実施
+        - インターフェイス(XxxIf)のテストは必要ありません。
 
     ## 3. テストコードの品質
     a. アサーション:
