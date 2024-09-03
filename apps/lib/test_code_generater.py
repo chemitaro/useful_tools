@@ -220,6 +220,7 @@ TEST_CODE_CONVENTION_AND_KNOWLEDGE = textwrap.dedent(
     """
 )
 
+
 def analyze_implementation_code(code: str, target_specification: str) -> str:
     """
     実装コードを分析する関数
@@ -276,8 +277,11 @@ def generate_test_code(
     """
     テストコードを生成する関数
     """
+
     # テストケースを列挙する関数
-    def extract_test_cases(target_code: str, target_specification: str, impl_code_analysis: str, supplement: str, scope: TestScopeEnum) -> str:
+    def extract_test_cases(
+        target_code: str, target_specification: str, impl_code_analysis: str, supplement: str, scope: TestScopeEnum
+    ) -> str:
         messages = LlmMessages(
             messages=[
                 LlmMessage(
@@ -359,7 +363,9 @@ def generate_test_code(
 
         return output_message
 
-    def generate_test_code(code: str, flamework: TestingFlameworkEnum, scope: TestScopeEnum, target_specification: str, supplement: str) -> str:
+    def generate_test_code(
+        code: str, flamework: TestingFlameworkEnum, scope: TestScopeEnum, target_specification: str, supplement: str
+    ) -> str:
         """
         テストコードを生成する関数
         """
@@ -440,20 +446,29 @@ def generate_test_code(
 
         return output_message
 
-
     # step1:実装コードを分析する
     print_markdown("## 実装コードの分析")
-    analyze_implementation_code_result = analyze_implementation_code(code=code, target_specification=target_specification)
+    analyze_implementation_code_result = analyze_implementation_code(
+        code=code, target_specification=target_specification
+    )
     print_markdown(analyze_implementation_code_result)
 
     # step2: テストケースの列挙
     print_markdown("## テストケースの列挙")
-    extract_test_cases_result = extract_test_cases(target_code=target_code, target_specification=target_specification, impl_code_analysis=analyze_implementation_code_result, supplement=supplement, scope=scope)
+    extract_test_cases_result = extract_test_cases(
+        target_code=target_code,
+        target_specification=target_specification,
+        impl_code_analysis=analyze_implementation_code_result,
+        supplement=supplement,
+        scope=scope,
+    )
     print_markdown(extract_test_cases_result)
 
     # step3: テストコードの作成
     print_markdown("## テストコードの作成")
-    generate_test_code_result = generate_test_code(code=code, flamework=flamework, scope=scope, target_specification=target_specification, supplement=supplement)
+    generate_test_code_result = generate_test_code(
+        code=code, flamework=flamework, scope=scope, target_specification=target_specification, supplement=supplement
+    )
     print_markdown(generate_test_code_result)
 
     new_testcode = extract_code_from_output(generate_test_code_result)
