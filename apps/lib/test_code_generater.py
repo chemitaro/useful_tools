@@ -580,10 +580,10 @@ def update_test_code(
 
                         テストの種類：{scope.value.name}
                         {scope.value.usage}
-                        
+
                         テスト対象のコード：
                         {target_code}
-                        
+
                         現在のテストコード：
                         {test_code}
 
@@ -778,33 +778,33 @@ def update_test_code(
         )
 
     # ステップ1: コード解析
+    print_markdown("## コード解析")
     code_analysis_result = analyze_implementation_code(code, target_specification)
-    print_markdown("## コード解析結果")
     print_markdown(code_analysis_result)
 
     # ステップ2: テストカバレッジ分析
+    print_markdown("## テストカバレッジ分析")
     coverage_analysis_result = analyze_test_coverage(target_code, test_code, code_analysis_result)
-    print_markdown("## テストカバレッジ分析結果")
     print_markdown(coverage_analysis_result)
 
     # ステップ3: テストケース設計
-    test_case_design = design_new_test_cases(coverage_analysis_result, scope, flamework)
     print_markdown("## 新しいテストケース設計")
+    test_case_design = design_new_test_cases(coverage_analysis_result, scope, flamework)
     print_markdown(test_case_design)
 
     # ステップ4: テストコード生成
+    print_markdown("## テストコードの生成")
     generated_test_code = generate_test_code(test_case_design, target_code, test_code, scope, flamework)
-    print_markdown("## 生成されたテストコード")
     print_markdown(generated_test_code)
 
     # ステップ5: テストコード統合
+    print_markdown("## テストコードの統合")
     integrated_test_code = integrate_test_code(generated_test_code, test_code, flamework)
-    print_markdown("## 統合されたテストコード")
     print_markdown(integrated_test_code)
 
     # ステップ6: テストコード品質評価
-    quality_assessment = assess_test_quality(integrated_test_code, target_code, scope, flamework)
     print_markdown("## テストコード品質評価")
+    quality_assessment = assess_test_quality(integrated_test_code, target_code, scope, flamework)
     print_markdown(quality_assessment)
 
     # 最終的に更新されたテストコードを返す
