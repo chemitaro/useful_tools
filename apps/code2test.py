@@ -161,6 +161,7 @@ def run_test_code_generator(
         else:
             new_test_code = generate_test_code(
                 code=impl_code,
+                target_code=target_code,
                 flamework=flamework,
                 scope=scope,
                 target_specification=target_specification,
@@ -173,12 +174,13 @@ def run_test_code_generator(
 
             # テストを実行する
             while True:
+                test_command = f"{flamework.value.command} {test_relative_path}"
                 print_colored((f"テストコードを実行するコマンド: {test_command}", "green"))
                 test_result_code, test_result_output = execute_command(test_command)
                 print(test_result_output)
                 print_colored((f"テスト結果コード: {test_result_code}", "green"))
-                is_test_quit = Confirm.ask("テストを終了しますか？", default=False)
-                if is_test_quit is True:
+                is_test_retry = Confirm.ask("テストを再実行しますか？", default=False)
+                if is_test_retry is False:
                     break
 
         if user_instruction == "q":
