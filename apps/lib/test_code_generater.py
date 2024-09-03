@@ -460,7 +460,355 @@ def update_test_code(
     """
     既存のテストコードをアップデートする関数
     """
-    raise NotImplementedError
+
+    def analyze_implementation_code(code: str, target_specification: str) -> str:
+        messages = LlmMessages(
+            messages=[
+                LlmMessage(
+                    role="system",
+                    content=textwrap.dedent(
+                        """
+                        あなたは優秀なソフトウェアエンジニアで、コードの構造と機能を深く理解する専門家です。提供された実装コードを詳細に分析し、その構造、主要な機能、および重要なロジックを説明してください。
+                        """
+                    ),
+                ),
+                LlmMessage(
+                    role="user",
+                    content=textwrap.dedent(
+                        f"""
+                        以下の実装コードを分析し、その構造と機能を説明してください：
+                        {code}
+
+                        解説の対象のコードは以下の通りです。
+                        {target_specification}
+
+                        分析結果として、以下の情報を提供してください：
+                        - コードの全体的な構造
+                        - 主要な関数やメソッドの一覧とその役割
+                        - 重要なロジックや処理の流れ
+                        - 使用されている主要なデータ構造やアルゴリズム
+                        - コードの特徴やテストを行う上で注意すべき点
+
+                        箇条書きで提供してください。
+                        """
+                    ),
+                ),
+            ]
+        )
+        return GeminiClient().generate_text(
+            llm_model=LlmModelEnum.GEMINI15FLASH,
+            messages=messages,
+            stream=True,
+            temp=0.0,
+        )
+
+    def analyze_test_coverage(target_code: str, test_code: str, code_analysis_result: str) -> str:
+        messages = LlmMessages(
+            messages=[
+                LlmMessage(
+                    role="system",
+                    content=textwrap.dedent(
+                        """
+                        あなたは経験豊富なテストエンジニアで、実装コードとテストコードを比較し、テストカバレッジを分析する専門家です。提供された情報を基に、テストの網羅性を評価し、不足しているテストケースを特定してください。
+                        """
+                    ),
+                ),
+                LlmMessage(
+                    role="user",
+                    content=textwrap.dedent(
+                        f"""
+                        以下の情報を基に、テストカバレッジを分析し、不足しているテストケースを特定してください：
+
+                        テストの種類：{scope.value.name}
+                        {scope.value.usage}
+
+                        テスト対象のコード：
+                        {target_code}
+
+                        実装コードの分析結果：
+                        {code_analysis_result}
+
+                        分析の対象のコード：
+                        {target_specification}
+
+                        現在のテストコード：
+                        {test_code}
+
+                        分析結果として、以下の情報を提供してください：
+                        - テストされている機能や条件のリスト
+                        - テストされていない機能や条件のリスト
+                        - 現在のテストカバレッジの推定
+
+                        注意点：
+                        - コードは生成せずに、自然言語で回答してください。
+
+                        箇条書きで提供してください。
+                        """
+                    ),
+                ),
+            ]
+        )
+        return GeminiClient().generate_text(
+            llm_model=LlmModelEnum.GEMINI15FLASH,
+            messages=messages,
+            stream=True,
+            temp=0.0,
+        )
+
+    def design_new_test_cases(
+        coverage_analysis_result: str, scope: TestScopeEnum, flamework: TestingFlameworkEnum
+    ) -> str:
+        messages = LlmMessages(
+            messages=[
+                LlmMessage(
+                    role="system",
+                    content=textwrap.dedent(
+                        """
+                        あなたは創造的なテスト設計者で、効果的なテストケースを設計する専門家です。カバレッジ分析の結果を基に、新しいテストケースを設計し、既存のテストスイートを補完してください。
+                        """
+                    ),
+                ),
+                LlmMessage(
+                    role="user",
+                    content=textwrap.dedent(
+                        f"""
+                        以下の情報を基に、新しいテストケースを設計してください：
+                        プロジェクトのテストコーディング規約：
+                        {TEST_CODE_CONVENTION_AND_KNOWLEDGE}
+                        {flamework.value.usage}
+
+                        テストの種類：{scope.value.name}
+                        {scope.value.usage}
+                        
+                        テスト対象のコード：
+                        {target_code}
+                        
+                        現在のテストコード：
+                        {test_code}
+
+                        テストカバレッジ分析結果：
+                        {coverage_analysis_result}
+
+                        設計するテストケースは、以下の点に注意してください：
+                        - テストの網羅性を向上させること
+                        - エッジケースや境界値を考慮すること
+                        - テストフレームワークの特性を活かすこと
+                        - テストの可読性と保守性を確保すること
+                        - 自然言語で回答してください。
+
+                        各テストケースについて、以下の情報を提供してください：
+                        - テストの目的
+                        - 入力値と期待される出力
+                        - テストの前提条件（必要な場合）
+                        - テスト手順の概要
+
+                        注意点：
+                        - コードは生成せずに、自然言語で回答してください。
+
+                        箇条書きで提供してください。
+                        """
+                    ),
+                ),
+            ]
+        )
+        return GeminiClient().generate_text(
+            llm_model=LlmModelEnum.GEMINI15FLASH,
+            messages=messages,
+            stream=True,
+            temp=0.0,
+        )
+
+    def generate_test_code(
+        test_case_design: str, code: str, test_code: str, scope: TestScopeEnum, flamework: TestingFlameworkEnum
+    ) -> str:
+        messages = LlmMessages(
+            messages=[
+                LlmMessage(
+                    role="system",
+                    content=textwrap.dedent(
+                        """
+                        あなたは熟練したテストコード開発者で、高品質なテストコードを生成する専門家です。設計されたテストケースに基づいて、プロジェクトの規約に準拠した新しいテストコードを生成してください。
+                        """
+                    ),
+                ),
+                LlmMessage(
+                    role="user",
+                    content=textwrap.dedent(
+                        f"""
+                        以下の情報を基に、更新するテストコードを生成してください：
+
+                        プロジェクトのテストコーディング規約：
+                        {TEST_CODE_CONVENTION_AND_KNOWLEDGE}
+                        {flamework.value.usage}
+
+                        テストの種類：{scope.value.name}
+
+                        現在の実装コード：
+                        {code}
+
+                        現在のテストコード：
+                        {test_code}
+
+                        テストケース更新計画：
+                        {test_case_design}
+
+                        生成するテストコードは、以下の点に注意してください：
+                        - プロジェクトのコーディング規約に準拠すること
+                        - テストコードは変更点に対してのみ生成すること
+                        - 変更のないコードは省略すること
+                        - 削除するコードは作事除することをコメントで宣言すること
+                        - 可読性が高く、メンテナンスしやすいこと
+                        - 適切なアサーションを含むこと
+
+                        各テストケース単位で更新されたコードを提供してください。
+                        """
+                    ),
+                ),
+            ]
+        )
+        return GeminiClient().generate_text(
+            llm_model=LlmModelEnum.GEMINI15PRO,
+            messages=messages,
+            stream=True,
+            temp=0.0,
+        )
+
+    def integrate_test_code(generated_test_code: str, existing_test_code: str, flamework: TestingFlameworkEnum) -> str:
+        messages = LlmMessages(
+            messages=[
+                LlmMessage(
+                    role="system",
+                    content=textwrap.dedent(
+                        """
+                        あなたは経験豊富なソフトウェア統合エンジニアで、新しく生成されたテストコードを既存のテストスイートにシームレスに統合する専門家です。コードの一貫性と全体的な構造を維持しながら、新しいテストを適切に配置してください。
+                        """
+                    ),
+                ),
+                LlmMessage(
+                    role="user",
+                    content=textwrap.dedent(
+                        f"""
+                        あなたは既存のテストコードに新しいテストコードを統合する専門家です。
+                        テストコードを忠実に完璧に統合する能力があります。
+                        必要に応じて、際限なく長いコードを生成することができます。
+                        以下の情報を基に、新しく生成されたテストコードを既存のテストスイートに統合してください：
+
+                        プロジェクトのテストコーディング規約：
+                        {TEST_CODE_CONVENTION_AND_KNOWLEDGE}
+                        {flamework.value.usage}
+
+                        現在のテストコード(全体)：
+                        {test_code}
+
+                        生成された新しいテストコード(各テストケース)：
+                        {generated_test_code}
+
+                        統合の際は、以下の点に注意してください：
+                        - テストの論理的なグループ化を維持すること
+                        - 重複を避け、コードの一貫性を保つこと
+                        - 既存のテストスイートの構造を尊重すること
+                        - 既存のコードを省略したり、削除したりしないこと
+                        - 既存のコメントやdocstringは削除しないこと
+                        - 出力された情報をそのままファイルに書き込みます。なので、余分な情報（フィアイルのパスやコードブロック``` ```）は不要です。
+
+                        出力フォーマット：
+                        - 直接ファイルに書き込み、実行可能なテストコードを出力してください。
+
+                        統合後の実行可能な完全なテストコード(全体)を提供してください。
+                        """
+                    ),
+                ),
+            ]
+        )
+        return GeminiClient().generate_text(
+            llm_model=LlmModelEnum.GEMINI15FLASH,
+            messages=messages,
+            stream=True,
+            temp=0.0,
+        )
+
+    def assess_test_quality(
+        integrated_test_code: str, target_code: str, scope: TestScopeEnum, flamework: TestingFlameworkEnum
+    ) -> str:
+        messages = LlmMessages(
+            messages=[
+                LlmMessage(
+                    role="system",
+                    content=textwrap.dedent(
+                        """
+                        あなたは精密なコード品質アナリストで、テストコードの品質を客観的に評価する専門家です。統合されたテストコードを分析し、その品質、網羅性、規約準拠度を評価してください。
+                        """
+                    ),
+                ),
+                LlmMessage(
+                    role="user",
+                    content=textwrap.dedent(
+                        f"""
+                        以下の情報を基に、統合されたテストコードの品質を評価してください：
+
+                        統合されたテストコード：
+                        {integrated_test_code}
+
+                        テスト対象のコード：
+                        {target_code}
+
+                        テストの種類：{scope.value.name}
+
+                        テストフレームワーク：
+                        {flamework.value.usage}
+
+                        評価結果として、以下の情報を提供してください：
+                        - コーディング規約への準拠度
+                        - テストカバレッジの予測
+                        - テストケースの網羅性評価
+                        - 改善が必要な箇所のリストと具体的な改善提案
+
+                        回答は箇条書きで提供してください。また、重要度に応じて改善提案に優先順位を付けてください。
+                        """
+                    ),
+                ),
+            ]
+        )
+        return GeminiClient().generate_text(
+            llm_model=LlmModelEnum.GEMINI15FLASH,
+            messages=messages,
+            stream=True,
+            temp=0.0,
+        )
+
+    # ステップ1: コード解析
+    code_analysis_result = analyze_implementation_code(code, target_specification)
+    print_markdown("## コード解析結果")
+    print_markdown(code_analysis_result)
+
+    # ステップ2: テストカバレッジ分析
+    coverage_analysis_result = analyze_test_coverage(target_code, test_code, code_analysis_result)
+    print_markdown("## テストカバレッジ分析結果")
+    print_markdown(coverage_analysis_result)
+
+    # ステップ3: テストケース設計
+    test_case_design = design_new_test_cases(coverage_analysis_result, scope, flamework)
+    print_markdown("## 新しいテストケース設計")
+    print_markdown(test_case_design)
+
+    # ステップ4: テストコード生成
+    generated_test_code = generate_test_code(test_case_design, target_code, test_code, scope, flamework)
+    print_markdown("## 生成されたテストコード")
+    print_markdown(generated_test_code)
+
+    # ステップ5: テストコード統合
+    integrated_test_code = integrate_test_code(generated_test_code, test_code, flamework)
+    print_markdown("## 統合されたテストコード")
+    print_markdown(integrated_test_code)
+
+    # ステップ6: テストコード品質評価
+    quality_assessment = assess_test_quality(integrated_test_code, target_code, scope, flamework)
+    print_markdown("## テストコード品質評価")
+    print_markdown(quality_assessment)
+
+    # 最終的に更新されたテストコードを返す
+    updated_test_code = extract_code_from_output(integrated_test_code)
+    return updated_test_code
 
 
 # Git差分からテストコードをアップデートする関数
@@ -525,9 +873,9 @@ def update_test_code_from_git_diff(
                         - 主要な関数やメソッドの一覧とその役割
                         - 重要なロジックや処理の流れ
                         - 使用されている主要なデータ構造やアルゴリズム
-                        - コードの特徴や注意すべき点
+                        - コードの特徴やテストを行う上での注意点
 
-                        回答は簡潔にまとめ、箇条書きで提供してください。
+                        回答は箇条書きで提供してください。
                         """
                     ),
                 ),
@@ -579,7 +927,7 @@ def update_test_code_from_git_diff(
                         - 各変更の種類（追加、削除、修正）
                         - 変更の概要説明
 
-                        回答は簡潔にまとめ、箇条書きで提供してください。
+                        回答は箇条書きで提供してください。
                         """
                     ),
                 ),
@@ -639,7 +987,7 @@ def update_test_code_from_git_diff(
                         - 更新が必要なテストケースのリスト
                         - 各テストケースと関連する実装コードの変更点のマッピング
 
-                        回答は簡潔にまとめ、箇条書きで提供してください。
+                        回答は箇条書きで提供してください。
                         """
                     ),
                 ),
@@ -696,7 +1044,7 @@ def update_test_code_from_git_diff(
                         禁止事項
                         - 絶対にコードは生成しないでください。
 
-                        回答は簡潔にまとめ、箇条書きで提供してください。
+                        回答は箇条書きで提供してください。
                         """
                     ),
                 ),
@@ -884,7 +1232,7 @@ def update_test_code_from_git_diff(
                         - テストケースの網羅性評価
                         - 改善が必要な箇所のリストと具体的な改善提案
 
-                        回答は簡潔にまとめ、箇条書きで提供してください。また、重要度に応じて改善提案に優先順位を付けてください。
+                        回答は箇条書きで提供してください。また、重要度に応じて改善提案に優先順位を付けてください。
                         """
                     ),
                 ),
@@ -1018,7 +1366,7 @@ def analyze_test_failure_and_update(
                         - 具体的な失敗原因
                         - 失敗の区分（実装コードのバグ / テストコードの誤り）
 
-                        回答は簡潔にまとめ、箇条書きで提供してください。
+                        回答は箇条書きで提供してください。
                         """
                     ),
                 ),
@@ -1137,7 +1485,7 @@ def analyze_test_failure_and_update(
                         禁止事項
                         - 絶対にコードは生成しないでください。
 
-                        回答は簡潔にまとめ、箇条書きで提供してください。
+                        回答は箇条書きで提供してください。
                         """
                     ),
                 ),

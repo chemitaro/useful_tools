@@ -151,8 +151,8 @@ def run_test_code_generator(
         elif is_exist_test_code:
             new_test_code = update_test_code(
                 code=impl_code,
+                target_code=target_code,
                 test_code=test_code,
-                target_git_diff=target_git_diff,
                 flamework=flamework,
                 scope=scope,
                 target_specification=target_specification,
