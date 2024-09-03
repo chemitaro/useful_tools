@@ -171,6 +171,16 @@ def run_test_code_generator(
             write_file_content(test_absolute_path, new_test_code)
             print_colored(f"生成されたテストコードを{test_relative_path}に出力しました。", "green")
 
+            # テストを実行する
+            while True:
+                print_colored((f"テストコードを実行するコマンド: {test_command}", "green"))
+                test_result_code, test_result_output = execute_command(test_command)
+                print(test_result_output)
+                print_colored((f"テスト結果コード: {test_result_code}", "green"))
+                is_test_quit = Confirm.ask("テストを終了しますか？", default=False)
+                if is_test_quit is True:
+                    break
+
         if user_instruction == "q":
             break
 
