@@ -70,7 +70,7 @@ def run_test_code_generator(
     while True:
         loop_count += 1
 
-        target_code = import_collect(
+        impl_code = import_collect(
             root_path=root_path,
             target_paths=[target_relative_path, *reference_relative_paths],
             no_comment=False,
@@ -79,7 +79,7 @@ def run_test_code_generator(
             max_token=1_900_000,
         )[0]
 
-        single_target_code = import_collect(
+        target_code = import_collect(
             root_path=root_path,
             target_paths=[target_relative_path],
             depth=0,
@@ -110,7 +110,7 @@ def run_test_code_generator(
             print_colored((f"テスト結果コード: {test_result_code}", "green"))
 
             is_test_success = test_result_code == 0
-            
+
             user_instruction = variable_input(
                 message='テストコード生成時のユーザー指示を入力してください。終了する場合は"q"と入力してください。',
                 color="green",
@@ -128,8 +128,8 @@ def run_test_code_generator(
 
         if is_exist_git_diff and is_exist_test_code and loop_count < 2:
             new_test_code = update_test_code_from_git_diff(
-                code=target_code,
-                single_code=single_target_code,
+                code=impl_code,
+                target_code=target_code,
                 test_code=test_code,
                 target_git_diff=target_git_diff,
                 flamework=flamework,
@@ -139,8 +139,8 @@ def run_test_code_generator(
             )
         elif is_exist_test_code and is_test_success is False:
             new_test_code = analyze_test_failure_and_update(
-                code=target_code,
-                single_code=single_target_code,
+                code=impl_code,
+                target_code=target_code,
                 test_code=test_code,
                 test_results=test_result_output,
                 flamework=flamework,
@@ -150,7 +150,7 @@ def run_test_code_generator(
             )
         elif is_exist_test_code:
             new_test_code = update_test_code(
-                code=target_code,
+                code=impl_code,
                 test_code=test_code,
                 target_git_diff=target_git_diff,
                 flamework=flamework,
@@ -160,7 +160,7 @@ def run_test_code_generator(
             )
         else:
             new_test_code = generate_test_code(
-                code=target_code,
+                code=impl_code,
                 flamework=flamework,
                 scope=scope,
                 target_specification=target_specification,
