@@ -220,9 +220,54 @@ TEST_CODE_CONVENTION_AND_KNOWLEDGE = textwrap.dedent(
     """
 )
 
+def analyze_implementation_code(code: str, target_specification: str) -> str:
+    """
+    実装コードを分析する関数
+    """
+    messages = LlmMessages(
+        messages=[
+            LlmMessage(
+                role="system",
+                content=textwrap.dedent(
+                    """
+                    あなたは優秀なソフトウェアエンジニアで、コードの構造と機能を深く理解する専門家です。提供された実装コードを詳細に分析し、その構造、主要な機能、および重要なロジックを説明してください。
+                    """
+                ),
+            ),
+            LlmMessage(
+                role="user",
+                content=textwrap.dedent(
+                    f"""
+                    以下の実装コードを分析し、その構造と機能を説明してください：
+                    {code}
+
+                    解説の対象のコードは以下の通りです。
+                    {target_specification}
+
+                    分析結果として、以下の情報を提供してください：
+                    - コードの全体的な構造
+                    - 主要な関数やメソッドの一覧とその役割
+                    - 重要なロジックや処理の流れ
+                    - 使用されている主要なデータ構造やアルゴリズム
+                    - コードの特徴やテストを行う上で注意すべき点
+
+                    箇条書きで提供してください。
+                    """
+                ),
+            ),
+        ]
+    )
+    return GeminiClient().generate_text(
+        llm_model=LlmModelEnum.GEMINI15FLASH,
+        messages=messages,
+        stream=True,
+        temp=0.0,
+    )
+
 
 def generate_test_code(
     code: str,
+    target_code: str,
     flamework: TestingFlameworkEnum,
     scope: TestScopeEnum,
     target_specification: str,
@@ -231,222 +276,187 @@ def generate_test_code(
     """
     テストコードを生成する関数
     """
+    # テストケースを列挙する関数
+    def extract_test_cases(target_code: str, target_specification: str, impl_code_analysis: str, supplement: str, scope: TestScopeEnum) -> str:
+        messages = LlmMessages(
+            messages=[
+                LlmMessage(
+                    role="system",
+                    content=textwrap.dedent(
+                        """
+                        あなたはテスト設計の専門家AIアシスタントです。前のステップで得られた実装コードの理解と元のコードを基に、包括的なテストケースを抽出し列挙することが求められています。以下の手順と注意事項に従ってテストケースを作成してください:
 
-    # step1: 実装コードの理解
-    step_1_messages = LlmMessages(
-        messages=[
-            LlmMessage(
-                role="system",
-                content=textwrap.dedent(
+                        1. テスト対象の特定:
+                        - 提供された実装コードの各主要機能に対するテストケースを特定します。
+                        - テスト対象ではない抽象クラス、基底クラス、ミックスインで定義されている処理については、テストケースとして抽出しないでください。
+                        - 抽象クラス、基底クラス、ミックスインは初期化できないので、テスト用の具象クラスに対してテストケースを��出してください。
+                        - テスト対象のクラスで直接定義されている振る舞いや状態のみをテストケースとして考慮してください。
+
+                        2. テストケースの種類:
+                        - 正常系（期待される通常の動作）と異常系（エラーケース、境界値、エッジケース）の両方のテストケースを考慮します。
+                        - テストの範囲（単体テスト、インテグレーションテストなど）に応じたテストケースを作成します。
+
+                        3. テストケースの詳細:
+                        各テストケースに対して、以下の情報を含めてください：
+                        - テストケースの簡潔な説明
+                        - テストの前提条件（必要な場合）
+                        - 入力値または操作手順
+                        - 期待される出力または結果
+                        - テストの種類（正常系、異常系、境界値テストなど）
+
+                        4. コードカバレッジ:
+                        - 可能な限り多くのコードパスをカバーするテストケースを作成します。
+                        - ただし、抽象クラスや基底クラスの実装に依存するテストは避けてください。
+
+                        5. フレームワーク適合性:
+                        - 指定されたテスティングフレームワークに適したテストケース設計を心がけてください。
+
+                        出力形式：
+                        - テストケースは明確に構造化され、番号付けされたリストとして提示してください。
+                        - 各テストケースは簡潔かつ具体的に記述し、テストの目的が明確に伝わるようにしてください。
+                        - 関連する実装コードの部分（関数名、メソッド名、行番号など）への参照を含めてください。
+
+                        注意事項：
+                        - テストケースは実装の詳細に基づいていますが、ブラックボックステストの観点も考慮してください。
+                        - 重複するテストケースは避け、効率的なテストセットを作成することを心がけてください。
+                        - セキュリティ、パフォーマンス、ユーザビリティなど、機能以外の側面も考慮したテストケースを含めることを検討してください。
+
+                        この列挙されたテストケースは、次のステップでのテストコード生成の基礎となります。したがって、各テストケースが明確で実装可能であり、かつテスト対象のクラスに特化していることを確認してください。
                     """
-                    あなたは高度なコード解析AIアシスタントです。与えられた実装コードを詳細に分析し、その構造と機能を包括的に理解することが求められています。以下の手順に従ってコードを解析してください:
-                    1. 提供した実装コードの中の、テスト対象となるクラスや関数を特定して列挙してください。
-                    2. 各要素の役割と目的を分析し、その機能を説明します。
-                    3. テスト対象に抽象クラス(AbstractXxx)、基底クラス(XxxBase)、ミックスイン(XxxMixin)が存在する場合、具象クラスの関係を明確に識別し、それぞれの役割を説明します。
-                    4. テスト対象のコードの重要なロジック、アルゴリズム、データ構造を識別し、それらがどのように動作するかを説明します。
-                    5. 使用されているライブラリやフレームワーク、および重要な依存関係を特定します。
-                    6. テスト対象のエッジケース、例外処理、エラーハンドリングの方法を分析します。
-                    7. テスト対象の抽象クラス(AbstractXxx)、基底クラス(XxxBase)、ミックスイン(XxxMixin)は実装クラスではないため、初期化することができません。テストを実行するために、テスト対象に対応し、これらを継承した"テスト用の具象クラス(TestableXxx)"を設計してください。
-
-                    出力形式：
-                    - 分析結果は構造化された形式で提示してください。各セクションには明確な見出しをつけてください。
-                    - 技術的な専門用語を適切に使用し、必要に応じて簡潔な説明を加えてください。
-                    - コードの重要な部分については、該当する行番号や関数名を参照してください。
-                    - 抽象クラス、基底クラス、ミックスインと具象クラスの関係を明確に示してください。
-
-                    注意事項：
-                    - 提供されたコードの範囲（ファイル、モジュール、クラスなど）に焦点を当てて分析を行ってください。
-                    - コードの意図を推測する際は、確実な情報と推測を明確に区別してください。
-                    - 分析は客観的かつ中立的な立場で行い、個人的な意見や批判は避けてください。
-                    - 抽象クラス、基底クラス、ミックスインで定義されている振る舞いと、具象クラスで実装されている振る舞いを区別して説明してください。
-
-                    この分析結果は、後続のテストケース抽出とテストコード生成のステップで重要な入力となります。したがって、テスト可能な機能や境界条件に特に注意を払い、具象クラスの実装に焦点を当てた分析を心がけてください。
-                """
+                    ),
                 ),
-            ),
-            LlmMessage(
-                role="user",
-                content=f"""
-                ## 実装コード
-                {code}
+                LlmMessage(
+                    role="user",
+                    content=textwrap.dedent(
+                        f"""
 
-                ## テスト対象
-                {target_specification}
-                """,
-            ),
-        ]
-    )
-    step_1_output_message = GeminiClient().generate_text(
-        messages=step_1_messages,
-        llm_model=LlmModelEnum.GEMINI15FLASH,
-        stream=True,
-        temp=0.0,
-    )
+                        ## 対象コードの解説
+                        {impl_code_analysis}
 
-    print_markdown(step_1_output_message)
+                        ## テスト対象のコード
+                        {target_code}
+
+                        ## テスト対象
+                        {target_specification}
+
+                        ## 補足情報
+                        {supplement}
+
+                        ## テストのスコープ
+                        {scope.value.name}
+                        """
+                    ),
+                ),
+            ]
+        )
+
+        output_message = GeminiClient().generate_text(
+            llm_model=LlmModelEnum.GEMINI15FLASH,
+            messages=messages,
+            stream=True,
+            temp=0.0,
+        )
+
+        return output_message
+
+    def generate_test_code(code: str, flamework: TestingFlameworkEnum, scope: TestScopeEnum, target_specification: str, supplement: str) -> str:
+        """
+        テストコードを生成する関数
+        """
+        messages = LlmMessages(
+            messages=[
+                LlmMessage(
+                    role="system",
+                    content=textwrap.dedent(
+                        f"""
+                        ## テストコードのコーディング規約
+                        {TEST_CODE_CONVENTION_AND_KNOWLEDGE}
+
+                        ## テストコードのコーディング方法
+                        {scope.value.usage}
+                        {flamework.value.usage}
+
+                        ## タスクの内容と指示:
+                        あなたの任務は、提供された実装コードに対する高品質なテストコードを生成することです。以下の指示に従ってください：
+
+                        1. 不完全または部分的なテストコードスニペットは提供しないでください。完全なテストソリューションを提供してください。
+                        2. プレースホルダーは使用せず、具体的で実行可能なコードを書いてください。
+                        3. このガイドラインの各ステップを必ず遵守してください。
+
+                        ## 出力形式：
+                        - テストコードは、指定されたプログラミング言語とテスティングフレームワークの規約に従って記述してください。
+                        - テストクラスやテストスイートの構造を適切に設計し、関連するテストをグループ化してください。
+                        - 各テスト関数の前に、そのテストの目的と期待される動作を簡潔に説明する日本語のドキュストリングを付けてください。
+                        - ファイル単位で作成してください。
+                        - コードブロック``` ```で囲ってください。またプログラミング言語を宣言してください。
+                        - 最後にテストコードの自信度を0~100%で評価してください。
+
+                        ## 出力フォーマット：
+
+                        [テストコードのファイルのパス]
+                        ```[python or typescript or other]
+                        [ここにテストコードを最初から最後までファイル単位で出力]
+                        ```
+
+                        自信度: xxx%
+
+                        このガイドラインに従うことで、高品質で信頼性の高いテストコードを生成することができます。テストは提供された実装コードの品質と信頼性を確保するための重要な要素であることを常に念頭に置いてください。
+                        """
+                    ),
+                ),
+                LlmMessage(
+                    role="user",
+                    content=textwrap.dedent(
+                        f"""
+                        ## 実装コード
+                        {code}
+
+                        ## テスト対象
+                        {target_specification}
+
+                        ## 補足情報
+                        {supplement}
+
+                        ## テストケースの一覧
+                        {extract_test_cases_result}
+
+                        ## テストスコープ
+                        {scope.value.name}
+
+                        ## フレームワーク
+                        {flamework.value.name}
+                        """
+                    ),
+                ),
+            ]
+        )
+
+        output_message = GeminiClient().generate_text(
+            llm_model=LlmModelEnum.GEMINI15PRO,
+            messages=messages,
+            temp=0.0,
+            stream=True,
+        )
+
+        return output_message
+
+
+    # step1:実装コードを分析する
+    print_markdown("## 実装コードの分析")
+    analyze_implementation_code_result = analyze_implementation_code(code=code, target_specification=target_specification)
+    print_markdown(analyze_implementation_code_result)
 
     # step2: テストケースの列挙
-    step_2_messages = LlmMessages(
-        messages=[
-            LlmMessage(
-                role="system",
-                content=textwrap.dedent(
-                    """
-                    あなたはテスト設計の専門家AIアシスタントです。前のステップで得られた実装コードの理解と元のコードを基に、包括的なテストケースを抽出し列挙することが求められています。以下の手順と注意事項に従ってテストケースを作成してください:
-
-                    1. テスト対象の特定:
-                    - 提供された実装コードの各主要機能に対するテストケースを特定します。
-                    - テスト対象ではない抽象クラス、基底クラス、ミックスインで定義されている処理については、テストケースとして抽出しないでください。
-                    - 抽象クラス、基底クラス、ミックスインは初期化できないので、テスト用の具象クラスに対してテストケースを抽出してください。
-                    - テスト対象のクラスで直接定義されている振る舞いや状態のみをテストケースとして考慮してください。
-
-                    2. テストケースの種類:
-                    - 正常系（期待される通常の動作）と異常系（エラーケース、境界値、エッジケース）の両方のテストケースを考慮します。
-                    - テストの範囲（単体テスト、インテグレーションテストなど）に応じたテストケースを作成します。
-
-                    3. テストケースの詳細:
-                    各テストケースに対して、以下の情報を含めてください：
-                    - テストケースの簡潔な説明
-                    - テストの前提条件（必要な場合）
-                    - 入力値または操作手順
-                    - 期待される出力または結果
-                    - テストの種類（正常系、異常系、境界値テストなど）
-
-                    4. コードカバレッジ:
-                    - 可能な限り多くのコードパスをカバーするテストケースを作成します。
-                    - ただし、抽象クラスや基底クラスの実装に依存するテストは避けてください。
-
-                    5. フレームワーク適合性:
-                    - 指定されたテスティングフレームワークに適したテストケース設計を心がけてください。
-
-                    出力形式：
-                    - テストケースは明確に構造化され、番号付けされたリストとして提示してください。
-                    - 各テストケースは簡潔かつ具体的に記述し、テストの目的が明確に伝わるようにしてください。
-                    - 関連する実装コードの部分（関数名、メソッド名、行番号など）への参照を含めてください。
-
-                    注意事項：
-                    - テストケースは実装の詳細に基づいていますが、ブラックボックステストの観点も考慮してください。
-                    - 重複するテストケースは避け、効率的なテストセットを作成することを心がけてください。
-                    - セキュリティ、パフォーマンス、ユーザビリティなど、機能以外の側面も考慮したテストケースを含めることを検討してください。
-
-                    この列挙されたテストケースは、次のステップでのテストコード生成の基礎となります。したがって、各テストケースが明確で実装可能であり、かつテスト対象のクラスに特化していることを確認してください。
-                """
-                ),
-            ),
-            LlmMessage(
-                role="user",
-                content=textwrap.dedent(
-                    f"""
-                    ## 実装コード
-                    {code}
-
-                    ## テスト対象
-                    {target_specification}
-
-                    ## 補足情報
-                    {supplement}
-
-                    ## テストのスコープ
-                    {scope.value.name}
-
-                    ## 対象コードの解説
-                    {step_1_output_message}
-                    """
-                ),
-            ),
-        ]
-    )
-
-    step_2_output_message = GeminiClient().generate_text(
-        llm_model=LlmModelEnum.GEMINI15FLASH,
-        messages=step_2_messages,
-        stream=True,
-        temp=0.0,
-    )
-
-    print_markdown(step_2_output_message)
+    print_markdown("## テストケースの列挙")
+    extract_test_cases_result = extract_test_cases(target_code=target_code, target_specification=target_specification, impl_code_analysis=analyze_implementation_code_result, supplement=supplement, scope=scope)
+    print_markdown(extract_test_cases_result)
 
     # step3: テストコードの作成
-    step_3_messages = LlmMessages(
-        messages=[
-            LlmMessage(
-                role="system",
-                content=textwrap.dedent(
-                    f"""
-                    {TEST_CODE_CONVENTION_AND_KNOWLEDGE}
+    print_markdown("## テストコードの作成")
+    generate_test_code_result = generate_test_code(code=code, flamework=flamework, scope=scope, target_specification=target_specification, supplement=supplement)
+    print_markdown(generate_test_code_result)
 
-                    ## テストコードのコーディング方法
-                    {scope.value.usage}
-                    {flamework.value.usage}
-
-                    ## タスクの内容と指示:
-                    あなたの任務は、提供された実装コードに対する高品質なテストコードを生成することです。以下の指示に従ってください：
-
-                    1. 不完全または部分的なテストコードスニペットは提供しないでください。完全なテストソリューションを提供してください。
-                    2. プレースホルダーは使用せず、具体的で実行可能なコードを書いてください。
-                    3. このガイドラインの各ステップを必ず遵守してください。
-
-                    ## 出力形式：
-                    - テストコードは、指定されたプログラミング言語とテスティングフレームワークの規約に従って記述してください。
-                    - テストクラスやテストスイートの構造を適切に設計し、関連するテストをグループ化してください。
-                    - 各テスト関数の前に、そのテストの目的と期待される動作を簡潔に説明する日本語のドキュストリングを付けてください。
-                    - ファイル単位で作成してください。
-                    - コードブロック``` ```で囲ってください。またプログラミング言語を宣言してください。
-                    - 最後にテストコードの自信度を0~100%で評価してください。
-
-                    ## 出力フォーマット：
-
-                    [テストコードのファイルのパス]
-                    ```[python or typescript or other]
-                    [ここにテストコードを最初から最後までファイル単位で出力]
-                    ```
-
-                    自信度: xxx%
-
-                    このガイドラインに従うことで、高品質で信頼性の高いテストコードを生成することができます。テストは提供された実装コードの品質と信頼性を確保するための重要な要素であることを常に念頭に置いてください。
-                    """
-                ),
-            ),
-            LlmMessage(
-                role="user",
-                content=textwrap.dedent(
-                    f"""
-                    ## 実装コード
-                    {code}
-
-                    ## テスト対象
-                    {target_specification}
-
-                    ## 補足情報
-                    {supplement}
-
-                    ## テストケースの一覧
-                    {step_2_output_message}
-
-                    ## テストスコープ
-                    {scope.value.name}
-
-                    ## フレームワーク
-                    {flamework.value.name}
-
-                    ## テストコードのコーディング方法
-                    {scope.value.usage}
-                    {flamework.value.usage}
-                    """
-                ),
-            ),
-        ]
-    )
-
-    step_3_output_message = GeminiClient().generate_text(
-        llm_model=LlmModelEnum.GEMINI15FLASH,
-        messages=step_3_messages,
-        temp=0.0,
-        stream=True,
-    )
-
-    print_markdown(step_3_output_message)
-    new_testcode = extract_code_from_output(step_3_output_message)
+    new_testcode = extract_code_from_output(generate_test_code_result)
 
     return new_testcode
 
