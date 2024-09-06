@@ -612,6 +612,9 @@ def update_test_code(
         )
 
     def analyze_test_coverage(target_code: str, test_code: str, code_analysis_result: str) -> str:
+        """
+        テストカバレッジを分析する関数
+        """
         messages = LlmMessages(
             messages=[
                 LlmMessage(
@@ -667,6 +670,9 @@ def update_test_code(
     def design_new_test_cases(
         coverage_analysis_result: str, scope: TestScopeEnum, flamework: TestingFlameworkEnum
     ) -> str:
+        """
+        新しいテストケースを設計する関数
+        """
         messages = LlmMessages(
             messages=[
                 LlmMessage(
@@ -730,6 +736,9 @@ def update_test_code(
     def generate_test_code(
         test_case_design: str, code: str, test_code: str, scope: TestScopeEnum, flamework: TestingFlameworkEnum
     ) -> str:
+        """
+        新しいテストコードを生成する関数
+        """
         messages = LlmMessages(
             messages=[
                 LlmMessage(
@@ -783,6 +792,9 @@ def update_test_code(
         )
 
     def integrate_test_code(generated_test_code: str, existing_test_code: str, flamework: TestingFlameworkEnum) -> str:
+        """
+        新しいテストコードを既存のテストスイートに統合する関数
+        """
         messages = LlmMessages(
             messages=[
                 LlmMessage(
@@ -839,6 +851,9 @@ def update_test_code(
     def assess_test_quality(
         integrated_test_code: str, target_code: str, scope: TestScopeEnum, flamework: TestingFlameworkEnum
     ) -> str:
+        """
+        テストコードの品質を評価する関数
+        """
         messages = LlmMessages(
             messages=[
                 LlmMessage(
@@ -1149,7 +1164,7 @@ def update_test_code_from_git_diff(
                         - 各テストケースの更新計画（追加すべきアサーション、変更すべき入力値など）
                         - 更新の優先順位
                         - 自然言語で設計してください。
-￥
+
                         禁止事項
                         - 絶対にコードは生成しないでください。
 
@@ -1296,7 +1311,7 @@ def update_test_code_from_git_diff(
             ]
         )
         response = GeminiClient().generate_text(
-            llm_model=LlmModelEnum.GEMINI15PRO,
+            llm_model=LlmModelEnum.GEMINI15FLASH,
             messages=messages,
             stream=True,
             temp=0.0,
@@ -1683,7 +1698,7 @@ def analyze_test_failure_and_update(
             ]
         )
         response = GeminiClient().generate_text(
-            llm_model=LlmModelEnum.GEMINI15FLASH,
+            llm_model=LlmModelEnum.GEMINI15PRO,
             messages=messages,
             stream=True,
             temp=0.0,
@@ -1748,7 +1763,7 @@ def analyze_test_failure_and_update(
             ]
         )
         response = GeminiClient().generate_text(
-            llm_model=LlmModelEnum.GEMINI15PRO,
+            llm_model=LlmModelEnum.GEMINI15FLASH,
             messages=messages,
             stream=True,
             temp=0.0,
