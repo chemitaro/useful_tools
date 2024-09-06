@@ -125,19 +125,19 @@ def extract_code_from_output(output: str) -> str:
         output (str): 出力フォーマットに沿った文字列
 
     Returns:
-        str: 抽出されたコード部分
+        str: 抽出されたコード部分（複数のコードブロックがある場合は改行で結合）
     """
     # コードブロックを抽出するための正規表現パターン
     pattern = r"```(?:\w+)?\n(.*?)\n```"
 
-    # 正規表現を使用してコードブロックを検索
-    match = re.search(pattern, output, re.DOTALL)
+    # 正規表現を使用してすべてのコードブロックを検索
+    matches = re.findall(pattern, output, re.DOTALL)
 
-    if match:
-        # コードブロックが見つかった場合、その内容を返す
-        return match.group(1).strip()
+    if matches:
+        # コードブロックが見つかった場合、それらを3つの改行で結合して返す
+        return "\n\n\n".join(match.strip() for match in matches)
     else:
-        # コードブロックが見つからなかった場合、空文字列を返す
+        # コードブロックが見つからなかった場合、元の出力を返す
         return output
 
 
