@@ -145,11 +145,17 @@ class ClassDiagramGenerator:
             self.class_info.append(self._analyze_class(cls))
 
     def _analyze_class(self, cls: type) -> ClassInfo:
+        """
+        クラスを解析してClassInfoを返す
+        """
         class_name = cls.__name__
         module_name = self._get_module_name(cls)
         class_type = self._analyze_class_type(cls)
         base_classes = self._analyze_base_classes(cls)
-        fields = self._analyze_fields(cls)
+        if class_type == ClassType.ENUM:
+            fields = self._analyze_enum_members(cls)
+        else:
+            fields = self._analyze_fields(cls)
         methods = self._analyze_methods(cls)
         return ClassInfo(class_name, module_name, class_type, base_classes, fields, methods)
 
@@ -215,6 +221,18 @@ class ClassDiagramGenerator:
             except Exception:
                 continue
 
+        return fields
+
+    def _analyze_enum_members(self, cls: type) -> list[FieldInfo]:
+        """列挙型のメンバーを解析する"""
+        if not issubclass(cls, Enum):
+            raise Exception(f"{cls.__name__} is not an Enum")
+
+        fields = []
+        for name, member in cls.__members__.items():
+            field_type_info = self._type_to_field_type_info(type(member.value))
+            field_info = FieldInfo(name, field_type_info)
+            fields.append(field_info)
         return fields
 
     def _type_to_field_type_info(self, type_: Any) -> FieldTypeInfoIf:
