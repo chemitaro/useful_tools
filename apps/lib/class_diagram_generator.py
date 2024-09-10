@@ -368,9 +368,6 @@ class ClassDiagramGenerator:
         for field_info in class_info.fields:
             field_type = field_info.type
             if isinstance(field_type, OriginalTypeInfo):
-                # enumは除外する
-                if field_type.class_type == ClassType.ENUM:
-                    continue
                 puml += (
                     f'{class_info.module_name}.{class_info.name} *-- "1" {field_type.module_name}.{field_type.name}\n'
                 )
