@@ -142,7 +142,8 @@ class ClassDiagramGenerator:
         self.class_info = []
         # クラス情報を取得
         for cls in self.classes:
-            self.class_info.append(self._analyze_class(cls))
+            class_info = self._analyze_class(cls)
+            self.class_info.append(class_info)
 
     def _analyze_class(self, cls: type) -> ClassInfo:
         """
@@ -182,7 +183,8 @@ class ClassDiagramGenerator:
         base_classes = []
         for base_class in cls.__bases__:
             # base_classがclassesに含まれている場合はmodule_nameを取得して追加
-            if self._add_class_if_root_and_not_exists(base_class):
+            is_add_class = self._add_class_if_root_and_not_exists(base_class)
+            if is_add_class:
                 base_class_name = base_class.__name__
                 base_module_name = self._get_module_name(base_class)
                 base_class_type = self._analyze_class_type(base_class)
@@ -483,11 +485,14 @@ class ClassDiagramGenerator:
         Returns:
             bool: クラスがルートモジュールに属しているかどうか
         """
-        if isinstance(cls, type) and self._is_root_path(cls) and self._is_ignore_path(cls) is False:
-            # if not self._has_classes(cls):
-            #     self.classes.append(cls)
-            # print_colored((f"  +Add Class: {cls.__name__}", "green"))
+        # 既にclassesに含まれている場合はTrueを返す
+        if cls in self.classes:
             return True
+
+        # ルートモジュールに属しているかどうかをチェック
+        if isinstance(cls, type) and self._is_root_path(cls) and self._is_ignore_path(cls) is False:
+            return True
+
         return False
 
     # クラス名をpumlのフォーマットで整形する
