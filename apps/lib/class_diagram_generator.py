@@ -382,15 +382,22 @@ class ClassDiagramGenerator:
 
     # コンポジットの関係をpumlとして文字列として返す
     def _generate_composition_puml(self, class_info: ClassInfo) -> str:
-        puml = ""
+        relation: list[str] = []
         for field_info in class_info.fields:
             field_type = field_info.type
             if isinstance(field_type, OriginalTypeInfo):
-                puml += (
-                    f'{class_info.module_name}.{class_info.name} *-- "1" {field_type.module_name}.{field_type.name}\n'
+                relation.append(
+                    f'{class_info.module_name}.{class_info.name} *-- "1" {field_type.module_name}.{field_type.name}'
                 )
             elif isinstance(field_type, ListInfo) and isinstance(field_type.element_type, OriginalTypeInfo):
-                puml += f'{class_info.module_name}.{class_info.name} o-- "0..*" {field_type.element_type.module_name}.{field_type.element_type.name}\n'
+                relation.append(
+                    f'{class_info.module_name}.{class_info.name} o-- "0..*" {field_type.element_type.module_name}.{field_type.element_type.name}'
+                )
+        # 重複を削除
+        relation = list(set(relation))
+        # 文字列で結合
+        puml = "\n".join(relation)
+        puml += "\n"
         return puml
 
     def _get_module_name(self, class_type: Any) -> str:
