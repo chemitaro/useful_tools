@@ -149,6 +149,7 @@ class ClassDiagramGenerator:
         """
         クラスを解析してClassInfoを返す
         """
+        print_colored((f"Analyzing: {cls.__name__}", "blue"))
         class_name = cls.__name__
         module_name = self._get_module_name(cls)
         class_type = self._analyze_class_type(cls)
@@ -395,6 +396,12 @@ class ClassDiagramGenerator:
                 relation.append(
                     f'{class_info.module_name}.{class_info.name} o-- "0..*" {field_type.element_type.module_name}.{field_type.element_type.name}'
                 )
+            elif isinstance(field_type, UnionInfo):
+                for element_type in field_type.element_types:
+                    if isinstance(element_type, OriginalTypeInfo):
+                        relation.append(
+                            f'{class_info.module_name}.{class_info.name} o-- "0..*" {element_type.module_name}.{element_type.name}'
+                        )
         # 重複を削除
         relation = list(set(relation))
         # 文字列で結合
