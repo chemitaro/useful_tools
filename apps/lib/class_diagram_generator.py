@@ -4,18 +4,59 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 from types import GenericAlias, UnionType
-from typing import Any, Protocol, Self, get_type_hints
+from typing import Any, Literal, Protocol, Self, get_type_hints
 
 from apps.lib.utils import module_to_absolute_path, print_colored
 
 
-class ClassType(Enum):
-    CLASS = "class"
-    ENTITY = "entity"
-    INTERFACE = "interface"
-    ABSTRACT = "abstract"
-    ENUM = "enum"
-    EXCEPTION = "exception"
+@dataclass(frozen=True)
+class ClassType:
+    type_name: str
+    puml_element: Literal["class", "entity", "interface", "abstract", "mixin", "base", "enum", "exception"]
+    style: str = ""
+
+
+class ClassTypeEnum(Enum):
+    ENTITY = ClassType(
+        type_name="entity",
+        puml_element="entity",
+        style="#f2d1c9",  # 薄いオレンジ系
+    )
+    VALUE_OBJECT = ClassType(
+        type_name="value_object",
+        puml_element="class",
+        style="#d5f4e6",  # 明るい緑と淡いグリーン
+    )
+    INTERFACE = ClassType(
+        type_name="interface",
+        puml_element="interface",
+        style="#d3e0ff",  # 涼しげな青系
+    )
+    ABSTRACT = ClassType(
+        type_name="abstract",
+        puml_element="abstract",
+        style="#f3f3f3",  # 薄いグレー系
+    )
+    MIXIN = ClassType(
+        type_name="mixin",
+        puml_element="abstract",  # PlantUMLではMixinをAbstractとして表現
+        style="#f9f3c2",  # 明るい黄色系
+    )
+    BASE = ClassType(
+        type_name="base",
+        puml_element="abstract",  # PlantUMLではBaseをAbstractとして表現
+        style="#e3e3e3",  # ダークグレー系
+    )
+    ENUM = ClassType(
+        type_name="enum",
+        puml_element="enum",
+        style="#f2f4c3",  # 黄緑系
+    )
+    EXCEPTION = ClassType(
+        type_name="exception",
+        puml_element="exception",
+        style="#f4c3c3",  # 明るい赤系
+    )
 
 
 class MethodDisplayType(Enum):
@@ -28,14 +69,14 @@ class MethodDisplayType(Enum):
 class BaseClassInfo:
     name: str
     module_name: str
-    class_type: ClassType
+    class_type: ClassTypeEnum
 
 
 @dataclass
 class FieldTypeInfoIf:
     name: str
     module_name: str
-    class_type: ClassType
+    class_type: ClassTypeEnum
 
 
 class OriginalTypeInfo(FieldTypeInfoIf):
@@ -53,7 +94,7 @@ class ListInfo(FieldTypeInfoIf):
         self.name = name
         self.module_name = module_name
         self.element_type = element_type
-        self.class_type = ClassType.CLASS
+        self.class_type = ClassTypeEnum.VALUE_OBJECT
 
 
 class UnionInfo(FieldTypeInfoIf):
@@ -63,7 +104,7 @@ class UnionInfo(FieldTypeInfoIf):
         self.name = name
         self.module_name = module_name
         self.element_types = element_types
-        self.class_type = ClassType.CLASS
+        self.class_type = ClassTypeEnum.VALUE_OBJECT
 
 
 @dataclass(frozen=True)
@@ -84,7 +125,7 @@ class MethodInfo:
 class ClassInfo:
     name: str
     module_name: str
-    class_type: ClassType
+    class_type: ClassTypeEnum
     base_classes: list[BaseClassInfo]
     fields: list[FieldInfo]
     methods: list[MethodInfo]
@@ -154,31 +195,33 @@ class ClassDiagramGenerator:
         module_name = self._get_module_name(cls)
         class_type = self._analyze_class_type(cls)
         base_classes = self._analyze_base_classes(cls)
-        if class_type == ClassType.ENUM:
+        if class_type == ClassTypeEnum.ENUM:
             fields = self._analyze_enum_members(cls)
         else:
             fields = self._analyze_fields(cls)
         methods = self._analyze_methods(cls)
         return ClassInfo(class_name, module_name, class_type, base_classes, fields, methods)
 
-    def _analyze_class_type(self, cls: type) -> ClassType:
+    def _analyze_class_type(self, cls: type) -> ClassTypeEnum:
         class_name = cls.__name__
         if class_name.endswith("If"):
-            return ClassType.INTERFACE
+            return ClassTypeEnum.INTERFACE
         elif Protocol in cls.__bases__:
-            return ClassType.INTERFACE
+            return ClassTypeEnum.INTERFACE
         elif class_name.startswith("Abstract"):
-            return ClassType.ABSTRACT
+            return ClassTypeEnum.ABSTRACT
         elif class_name.endswith("Mixin"):
-            return ClassType.ABSTRACT
+            return ClassTypeEnum.MIXIN
+        elif class_name.endswith("Base"):
+            return ClassTypeEnum.BASE
         elif issubclass(cls, Enum):
-            return ClassType.ENUM
+            return ClassTypeEnum.ENUM
         elif issubclass(cls, Exception):
-            return ClassType.EXCEPTION
+            return ClassTypeEnum.EXCEPTION
         elif class_name.endswith("Entity"):
-            return ClassType.ENTITY
+            return ClassTypeEnum.ENTITY
         else:
-            return ClassType.CLASS
+            return ClassTypeEnum.VALUE_OBJECT
 
     def _analyze_base_classes(self, cls: type) -> list[BaseClassInfo]:
         base_classes = []
@@ -338,10 +381,11 @@ class ClassDiagramGenerator:
     # クラス定義のpumlを文字列として返す
     def _generate_class_puml(self, class_info: ClassInfo) -> str:
         puml = ""
-        class_type = class_info.class_type.value
+        puml_element = class_info.class_type.value.puml_element
         class_name = self._format_class_name(class_info.name)
+        style = class_info.class_type.value.style
 
-        puml += f'{class_type} "{class_name}" as {class_info.module_name}.{class_info.name} {{\n'
+        puml += f'{puml_element} "{class_name}" as {class_info.module_name}.{class_info.name} <<{class_info.class_type.value.type_name}>> {style} {{\n'
 
         # フィールドを定義を追加
         for field in class_info.fields:
@@ -375,10 +419,8 @@ class ClassDiagramGenerator:
         for base_class in class_info.base_classes:
             # インターフェイスの場合は継承関係を点線で表現
             base_class_name = self._format_class_name(base_class.name)
-            if base_class.class_type == ClassType.INTERFACE:
+            if base_class.class_type == ClassTypeEnum.INTERFACE:
                 puml += f"{base_class.module_name}.{base_class_name} <|.. {class_info.module_name}.{class_info.name}\n"
-            elif base_class.class_type == ClassType.ABSTRACT:
-                puml += f"{base_class.module_name}.{base_class_name} <|.. {class_info.module_name}.{class_info.name} #AAAAAA\n"
             else:
                 puml += f"{base_class.module_name}.{base_class_name} <|-- {class_info.module_name}.{class_info.name}\n"
         return puml
