@@ -53,7 +53,9 @@ def create_class_diagram(
     class_collector.print_classes()
 
     # クラス図を作成
-    class_diagram_generator = ClassDiagramGenerator.create(classes=classes, root_path=root_path, ignore_paths=ignore_paths)
+    class_diagram_generator = ClassDiagramGenerator.create(
+        classes=classes, root_path=root_path, ignore_paths=ignore_paths
+    )
     class_diagram_generator.analyze()
     class_diagram = class_diagram_generator.generate_puml()
     return class_diagram
@@ -109,6 +111,7 @@ def run_from_cli() -> None:
 
     # 出力先のパスを表示
     print_colored(("\n== Output file ==\n", "green"))
+    print(class_diagram)
     print_colored((f"{main_args.output}", "cyan"))
 
 
