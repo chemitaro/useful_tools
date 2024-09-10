@@ -243,7 +243,7 @@ class ClassDiagramGenerator:
             return OriginalTypeInfo(type_.__name__, module_name, class_type)
 
         # リストの場合
-        if isinstance(type_, GenericAlias) and type_.__origin__ == list:
+        if isinstance(type_, GenericAlias) and isinstance(type_.__origin__, type(list)):
             element_type = self._type_to_field_type_info(type_.__args__[0])
             list_name = type_.__name__
             list_module_name = self._get_module_name(type_)
