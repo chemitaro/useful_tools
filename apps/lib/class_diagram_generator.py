@@ -244,7 +244,7 @@ class ClassDiagramGenerator:
             init_signature = inspect.signature(cls.__init__)  # type: ignore
             for name, param in init_signature.parameters.items():
                 # self, cls, 及び、可変長引数は除外
-                if name in ["self", "cls", "*"]:
+                if name in ["self", "cls", "*", "args", "kwargs"]:
                     continue
 
                 field_type = param.annotation
