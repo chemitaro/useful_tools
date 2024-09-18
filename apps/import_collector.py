@@ -34,7 +34,7 @@ default_max_token = 125_000
 default_output = cast(OutputType, "code")
 
 
-ModeType = Literal["cursor", "chatgpt", "gpt4t", "gemini1.5pro", "claude", "dify"]
+ModeType = Literal["cursor", "chatgpt", "o1-mini", "gemini1.5pro", "claude", "dify"]
 
 mode_types = cast(list[str], ModeType.__args__)
 
@@ -62,7 +62,7 @@ default_configs: dict[ModeType, ModeConfig] = {
         "max_char": 999_999_999,
         "max_token": 20_000,
     },
-    "gpt4t": {
+    "o1-mini": {
         "output": cast(OutputType, "code"),
         "no_comment": False,
         "with_prompt": True,
@@ -166,7 +166,7 @@ def import_collect(
     return optimized_contents
 
 
-def main():
+def main() -> None:
     # コマンドライン引数の解析
     parser = argparse.ArgumentParser(
         description="""
