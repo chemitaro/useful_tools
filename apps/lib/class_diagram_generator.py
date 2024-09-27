@@ -420,9 +420,9 @@ class ClassDiagramGenerator:
             # インターフェイスの場合は継承関係を点線で表現
             base_class_name = self._format_class_name(base_class.name)
             if base_class.class_type == ClassTypeEnum.INTERFACE:
-                puml += f"{base_class.module_name}.{base_class_name} <|.. {class_info.module_name}.{class_info.name}\n"
+                puml += f"{base_class.module_name}.{base_class_name} <|... {class_info.module_name}.{class_info.name}\n"
             else:
-                puml += f"{base_class.module_name}.{base_class_name} <|-- {class_info.module_name}.{class_info.name}\n"
+                puml += f"{base_class.module_name}.{base_class_name} <|--- {class_info.module_name}.{class_info.name}\n"
         return puml
 
     # コンポジットの関係をpumlとして文字列として返す
