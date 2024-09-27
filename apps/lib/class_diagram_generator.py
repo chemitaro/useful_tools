@@ -239,6 +239,9 @@ class ClassDiagramGenerator:
     def _analyze_fields(self, cls: type) -> list[FieldInfo]:
         fields_dict: dict[str, type] = {}
 
+        # 親クラスから継承されたフィールドを取得（名前と型のペア）
+        inherited_fields = self._get_inherited_fields(cls)
+
         # コンストラクタの引数を解析
         try:
             init_signature = inspect.signature(cls.__init__)  # type: ignore
@@ -248,12 +251,15 @@ class ClassDiagramGenerator:
                     continue
 
                 field_type = param.annotation
-                fields_dict[name] = field_type
+                # 名前と型の両方が一致する場合は継承されたと見なす
+                if (name, field_type) not in inherited_fields:
+                    fields_dict[name] = field_type
 
             # クラスアノテーションを取得
             class_annotations = get_type_hints(cls)
             for name, type_ in class_annotations.items():
-                fields_dict[name] = type_
+                if (name, type_) not in inherited_fields:
+                    fields_dict[name] = type_
         except Exception as e:
             print(f"{e}")
 
@@ -266,6 +272,43 @@ class ClassDiagramGenerator:
                 fields.append(field_info)
             except Exception:
                 continue
+
+        return fields
+
+    def _get_inherited_fields(self, cls: type) -> set[tuple[str, type]]:
+        """
+        親クラスから継承されたフィールドの名前と型のセットを取得する
+        """
+        inherited_fields = set()
+        for base_class in cls.__bases__:
+            if base_class in self.classes:
+                base_fields = self._collect_class_fields(base_class)
+                inherited_fields.update(base_fields)
+        return inherited_fields
+
+    def _collect_class_fields(self, cls: type) -> set[tuple[str, type]]:
+        """
+        クラスが持つフィールド名と型のセットを収集する
+        """
+        fields = set()
+
+        # コンストラクタの引数を解析
+        try:
+            init_signature = inspect.signature(cls.__init__)  # type: ignore
+            for name, param in init_signature.parameters.items():
+                if name in ["self", "cls", "*", "args", "kwargs"]:
+                    continue
+                fields.add((name, param.annotation))
+        except Exception:
+            pass
+
+        # クラスアノテーションを取得
+        try:
+            class_annotations = get_type_hints(cls)
+            for name, type_ in class_annotations.items():
+                fields.add((name, type_))
+        except Exception:
+            pass
 
         return fields
 
