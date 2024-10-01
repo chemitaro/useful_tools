@@ -40,7 +40,9 @@ class LlmModelEnum(Enum):
     """LLMのモデル"""
 
     GEMINI15FLASH = LlmModel(name="models/gemini-1.5-flash-002", provider=LlmProvider.GEMINI, max_tokens=8100)
+    GEMINI15FLASH_LATEST = LlmModel(name="models/gemini-1.5-flash-latest", provider=LlmProvider.GEMINI, max_tokens=8100)
     GEMINI15PRO = LlmModel(name="models/gemini-1.5-pro-002", provider=LlmProvider.GEMINI, max_tokens=8100)
+    GEMINI15PRO_LATEST = LlmModel(name="models/gemini-1.5-pro-latest", provider=LlmProvider.GEMINI, max_tokens=8100)
     GPT4O = LlmModel(name="gpt-4o", provider=LlmProvider.OPENAI, max_tokens=4096)
     GPT4O_MINI = LlmModel(name="gpt-4o-mini", provider=LlmProvider.OPENAI, max_tokens=4096)
 
@@ -295,15 +297,23 @@ class GeminiClient(LlmClientBase):
             generation_config=generation_config,
         )
 
+        print("model: ", model)
+
         client = instructor.from_gemini(
             client=model,
             mode=instructor.Mode.GEMINI_JSON,
         )
 
+        print("client: ", client)
+        print("gemini_messages: ", gemini_messages)
+        print("output_type: ", output_type)
+
         resp_data = client.messages.create(
             messages=gemini_messages,
             response_model=output_type,
         )
+
+        print("resp_data: ", resp_data)
 
         if not isinstance(resp_data, output_type):
             raise ValueError(f"Invalid response: {resp_data}")

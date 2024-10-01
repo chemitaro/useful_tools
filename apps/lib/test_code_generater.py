@@ -1555,6 +1555,7 @@ def analyze_test_failure_and_update(
         response = GeminiClient().generate_pydantic(
             output_type=TestCodeFault,
             messages=messages,
+            llm_model=LlmModelEnum.GEMINI15FLASH_LATEST,
             temp=0.0,
         )
         return response.is_test_code_fault
