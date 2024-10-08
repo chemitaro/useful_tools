@@ -221,7 +221,7 @@ class GeminiClient(LlmClientBase):
         output_text = ""
 
         # レスポンスの生成
-        max_retries = 3
+        max_retries = 30
         retry_delay = 1  # 初期遅延（秒）
         is_finished = False
 
@@ -243,6 +243,11 @@ class GeminiClient(LlmClientBase):
                     if attempt == max_retries - 1:  # 最後の試行の場合
                         raise  # エラーを再発生させる
                     print(f"エラーが発生しました。リトライします（{attempt + 1}/{max_retries}）: {e}")
+
+                    # retry_delayは最大で10秒にする
+                    if retry_delay > 10:
+                        retry_delay = 10
+
                     time.sleep(retry_delay)
                     retry_delay *= 2  # 指数バックオフ
 
