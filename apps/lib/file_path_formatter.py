@@ -23,12 +23,13 @@ class FilePathFormatter:
         """
         # ファイルパスを初期化する
         self.formatted_file_paths = []
+        self.formatted_file_paths.append("code")
 
         # ファイルパスを整形する
         for file_path in self.file_paths:
             formatted_file_path = make_relative_path(self.root_path, file_path)
             if self.type == "cursor":
-                formatted_file_path = f"@{formatted_file_path}\n"
+                formatted_file_path = f" {formatted_file_path}"
             self.formatted_file_paths.append(formatted_file_path)
 
         return self.formatted_file_paths
