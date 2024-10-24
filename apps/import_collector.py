@@ -148,15 +148,14 @@ def import_collect(
         # ファイルの内容を取得
         file_content_collector = FileContentCollector(dependency_file_paths, root_path, no_docstring=no_comment)
         contents = file_content_collector.collect()
+        # ディレクトリ構成図と依存解析のログをコンテンツの先頭に追加する
+        contents.insert(0, path_tree.get_tree_map())
     elif output == "path":
         # 出力形式が"path"の場合の処理
         file_path_formatter = FilePathFormatter(dependency_file_paths, root_path)
         contents = file_path_formatter.format()
     else:
         raise ValueError("output must be 'code' or 'path'")
-
-    # ディレクトリ構成図と依存解析のログをコンテンツの先頭に追加する
-    contents.insert(0, path_tree.get_tree_map())
 
     # 取得したコンテンツをトークン数で調整する
     optimizer = ContentSizeOptimizer(
