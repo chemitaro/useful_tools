@@ -68,7 +68,6 @@ def main(main_args: MainArgs) -> None:
 
 def run_from_cli() -> None:
     """CLIから実行するための関数."""
-    print("Hello, World!")
     parser = argparse.ArgumentParser(description="")
     parser.add_argument(
         "target_paths",
@@ -111,7 +110,6 @@ def run_from_cli() -> None:
 
     # 出力先のパスを表示
     print_colored(("\n== Output file ==\n", "green"))
-    print(class_diagram)
     print_colored((f"{main_args.output}", "cyan"))
 
 
