@@ -9,6 +9,21 @@ from apps.lib.dependency_analyzer.file_analyzer import (
 from apps.lib.enums import ProgramType
 from apps.lib.utils import make_absolute_path, make_relative_path, print_colored
 
+# デフォルトで無視するディレクトリ名のリスト
+default_ignore_dirs = [
+    "__pycashe__",
+    "node_modules",
+    "cypress",
+    "coverage",
+    ".next",
+    ".devcontainer",
+    ".storybook",
+    ".swc",
+    ".vscode",
+    "cypress",
+    ".mypy_cache",
+]
+
 
 def get_all_file_paths(
     root_path: str,
@@ -32,18 +47,7 @@ def get_all_file_paths(
     if ignore_paths is None:
         ignore_paths = []
     if ignore_dirs is None:
-        ignore_dirs = [
-            "__pycashe__",
-            "node_modules",
-            "cypress",
-            "coverage",
-            ".next",
-            ".devcontainer",
-            ".storybook",
-            ".swc",
-            ".vscode",
-            "cypress",
-        ]
+        ignore_dirs = default_ignore_dirs
     if extensions is None:
         extensions = (".py", ".js", ".json", ".jsx", ".ts", ".tsx")
 
