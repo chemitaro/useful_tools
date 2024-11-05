@@ -154,6 +154,7 @@ def import_collect(
         # 出力形式が"path"の場合の処理
         file_path_formatter = FilePathFormatter(dependency_file_paths, root_path)
         contents = file_path_formatter.format()
+        return [" ".join(contents)]
     else:
         raise ValueError("output must be 'code' or 'path'")
 
